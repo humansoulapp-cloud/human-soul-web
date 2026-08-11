@@ -55,19 +55,32 @@ export async function proxy(request: NextRequest) {
 
   // ─── Admin guard ──────────────────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
+    console.log('[Proxy Debug] Accessing admin route:', pathname);
+    console.log('[Proxy Debug] User object present:', !!user);
+    if (user) {
+      console.log('[Proxy Debug] User ID:', user.id);
+      console.log('[Proxy Debug] User Email:', user.email);
+    }
+
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = '/sign-in';
       return NextResponse.redirect(url);
     }
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
+    console.log('[Proxy Debug] Profile query result:', profile);
+    if (error) {
+      console.log('[Proxy Debug] Profile query error:', error.message);
+    }
+
     if (profile?.role !== 'admin') {
+      console.log('[Proxy Debug] Non-admin redirected to dashboard. Role was:', profile?.role);
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
