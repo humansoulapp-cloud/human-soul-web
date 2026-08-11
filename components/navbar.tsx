@@ -16,11 +16,31 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
+import { Shield } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    async function checkAdminRole() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+        if (profile?.role === "admin") {
+          setIsAdmin(true);
+        }
+      }
+    }
+    checkAdminRole();
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -36,6 +56,8 @@ export function Navigation() {
     { label: "Favorites", href: "/favorites", icon: Heart },
     { label: "Profile",   href: "/profile",   icon: User },
   ];
+
+  const adminItem = { label: "Admin Panel", href: "/admin", icon: Shield };
 
   return (
     <>
@@ -73,6 +95,19 @@ export function Navigation() {
                 </Link>
               );
             })}
+            
+            {/* Conditional Admin Button (Desktop) */}
+            {isAdmin && (
+              <Link
+                href={adminItem.href}
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium transition-colors border border-dashed border-[#8BA58F]/40 text-[#8BA58F] hover:bg-[#8BA58F]/10 hover:text-[#78937C] ${
+                  pathname.startsWith("/admin") ? "bg-[#8BA58F]/20" : ""
+                }`}
+              >
+                <adminItem.icon className="w-5 h-5 flex-shrink-0 text-[#8BA58F]" />
+                <span>{adminItem.label}</span>
+              </Link>
+            )}
           </div>
 
           {/* Bottom actions — pinned to bottom */}
@@ -132,6 +167,18 @@ export function Navigation() {
             </Link>
           );
         })}
+        {/* Conditional Admin Button (Mobile) */}
+        {isAdmin && (
+          <Link
+            href={adminItem.href}
+            className={`flex flex-col items-center gap-1 p-2 text-xs transition-colors ${
+              pathname.startsWith("/admin") ? "text-[#8BA58F] font-medium" : "text-[var(--text-secondary)]"
+            }`}
+          >
+            <adminItem.icon className="w-5 h-5" />
+            <span className="text-[10px]">Admin</span>
+          </Link>
+        )}
       </nav>
     </>
   );
