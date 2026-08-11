@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Upload, Link as LinkIcon, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Link as LinkIcon,
+} from "lucide-react";
 import {
   createJourney,
   updateJourney,
@@ -38,6 +44,16 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [textsOpen, setTextsOpen] = useState(false);
+  const [activeDay, setActiveDay] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const markDirty = () => {
+    setDirty(true);
+    setSaved(false);
+  };
 
   // Day handlers
   const handleAddDay = () => {
@@ -46,19 +62,25 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
       ...days,
       { day: nextDayNum, title: `Day ${nextDayNum}`, prompt: "", purpose: "", deeper: "" },
     ]);
+    setActiveDay(days.length);
+    markDirty();
   };
 
   const handleRemoveDay = (index: number) => {
+    if (days.length <= 1) return;
     const updated = days
       .filter((_, i) => i !== index)
       .map((d, idx) => ({ ...d, day: idx + 1 }));
     setDays(updated);
+    setActiveDay((prev) => Math.min(prev, updated.length - 1));
+    markDirty();
   };
 
   const handleDayChange = (index: number, field: keyof JourneyDayInput, value: string) => {
     const updated = [...days];
     updated[index] = { ...updated[index], [field]: value };
     setDays(updated);
+    markDirty();
   };
 
   // Image upload
@@ -114,52 +136,70 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
         : await createJourney(payload);
       if (result?.error) {
         setError(result.error);
+      } else {
+        setDirty(false);
+        setSaved(true);
       }
     });
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-8 w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/journeys"
-            className="w-9 h-9 rounded-xl border flex items-center justify-center transition-colors"
-            style={{
-              background: "var(--admin-surface)",
-              borderColor: "var(--admin-border)",
-              color: "var(--admin-text-secondary)",
-            }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-semibold" style={{ color: "var(--admin-text)" }}>
-              {isEditing ? "Edit Journey" : "New Journey"}
-            </h1>
-            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
-              {isEditing ? `ID: ${journey.id}` : "Create a new guided multi-day experience"}
-            </p>
-          </div>
-        </div>
+  const day = days[activeDay];
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50"
+  const inputStyle = {
+    background: "var(--admin-input-bg)",
+    borderColor: "var(--admin-input-border)",
+    color: "var(--admin-text)",
+  };
+  const labelClass = "text-[11px] font-semibold uppercase tracking-wider mb-1.5 block";
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full">
+      {/* Top bar */}
+      <div
+        className="flex items-center gap-3.5 -mx-8 -mt-8 mb-6 px-8 py-3.5 border-b sticky top-0 z-10 backdrop-blur"
+        style={{ background: "var(--admin-bg)", borderColor: "var(--admin-border)" }}
+      >
+        <Link
+          href="/admin/journeys"
+          className="w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0"
           style={{
-            background: "var(--admin-accent)",
-            color: "#FFFFFF",
+            background: "var(--admin-surface)",
+            borderColor: "var(--admin-border)",
+            color: "var(--admin-text-secondary)",
           }}
         >
-          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Journey"}
-        </button>
+          <ArrowLeft className="w-3.5 h-3.5" />
+        </Link>
+        <div className="min-w-0">
+          <h1
+            className="font-serif-editorial text-lg font-semibold leading-tight truncate"
+            style={{ color: "var(--admin-text)" }}
+          >
+            {title || (isEditing ? "Edit Journey" : "New Journey")}
+          </h1>
+          <div className="text-[11px] mt-0.5 truncate" style={{ color: "var(--admin-text-muted)" }}>
+            {id || "untitled"} · {days.length} day{days.length === 1 ? "" : "s"}
+            {category ? ` · ${category}` : ""}
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-2.5 flex-shrink-0">
+          <span className="text-xs" style={{ color: "var(--admin-text-muted)" }}>
+            {saved ? "Saved" : dirty ? "Unsaved changes" : ""}
+          </span>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4.5 py-2 rounded-lg text-[13px] font-semibold transition-opacity disabled:opacity-50"
+            style={{ background: "var(--admin-accent)", color: "#FFFFFF" }}
+          >
+            {isPending ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </div>
 
       {error && (
         <div
-          className="p-4 rounded-xl border text-sm"
+          className="p-4 rounded-xl border text-sm mb-6"
           style={{
             background: "var(--admin-danger-bg)",
             borderColor: "var(--admin-danger)",
@@ -170,460 +210,397 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
         </div>
       )}
 
-      {/* Main Form Fields */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Main Info & Image */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* General Information Card */}
-          <div
-            className="rounded-2xl border p-6 space-y-4"
-            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
-          >
-            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
-              General Information
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Journey ID *
-                </label>
+      <div className="flex flex-col gap-5 max-w-[1240px]">
+        {/* Journey settings */}
+        <section
+          className="rounded-xl border p-5"
+          style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-5">
+            {/* Cover */}
+            <div>
+              <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                Cover
+              </span>
+              <div
+                className="relative rounded-lg overflow-hidden"
+                style={{ aspectRatio: "16/10", background: "var(--admin-input-bg)" }}
+              >
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Cover" className="w-full h-full object-cover block" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs" style={{ color: "var(--admin-text-muted)" }}>
+                    No image
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImageMode("upload");
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={uploadingImage}
+                  className="absolute right-1.5 bottom-1.5 px-2.5 py-1 rounded-md text-[11px] disabled:opacity-60"
+                  style={{ background: "rgba(20,24,20,.72)", color: "#f4f1ea" }}
+                >
+                  {uploadingImage ? "Uploading..." : "Change"}
+                </button>
                 <input
-                  type="text"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setImageMode(imageMode === "url" ? "upload" : "url")}
+                  className="flex items-center gap-1.5 text-[11px]"
+                  style={{ color: "var(--admin-text-muted)" }}
+                >
+                  <LinkIcon className="w-3 h-3" />
+                  {imageMode === "url" ? "Hide URL field" : "Use external URL"}
+                </button>
+                {imageMode === "url" && (
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full mt-1.5 px-2.5 py-1.5 rounded-md text-xs border font-mono"
+                    style={inputStyle}
+                  />
+                )}
+              </div>
+              <div className="flex gap-3.5 mt-3">
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: "var(--admin-text-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={featured}
+                    onChange={(e) => setFeatured(e.target.checked)}
+                    className="accent-[var(--admin-accent)]"
+                  />
+                  Featured
+                </label>
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: "var(--admin-text-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={premium}
+                    onChange={(e) => setPremium(e.target.checked)}
+                    className="accent-[var(--admin-accent)]"
+                  />
+                  Premium only
+                </label>
+              </div>
+            </div>
+
+            {/* Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 content-start">
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Title
+                </span>
+                <input
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Becoming More Human"
+                  className="px-3 py-2 rounded-lg text-sm border font-medium"
+                  style={inputStyle}
+                />
+              </label>
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Tagline
+                </span>
+                <input
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  placeholder="A short subtitle shown on cards"
+                  className="px-3 py-2 rounded-lg text-sm border"
+                  style={inputStyle}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Category
+                </span>
+                <input
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="e.g. Human Soul Foundations"
+                  className="px-3 py-2 rounded-lg text-sm border"
+                  style={inputStyle}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Realm
+                </span>
+                <input
+                  value={realm}
+                  onChange={(e) => setRealm(e.target.value)}
+                  placeholder="e.g. Human Soul Foundations"
+                  className="px-3 py-2 rounded-lg text-sm border"
+                  style={inputStyle}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Time required
+                </span>
+                <input
+                  value={timeRequired}
+                  onChange={(e) => setTimeRequired(e.target.value)}
+                  placeholder="About 7 minutes a day"
+                  className="px-3 py-2 rounded-lg text-sm border"
+                  style={inputStyle}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                  Journey ID{" "}
+                  <span className="normal-case font-normal tracking-normal">
+                    {isEditing ? "(locked)" : ""}
+                  </span>
+                </span>
+                <input
                   required
                   disabled={isEditing}
                   value={id}
                   onChange={(e) => setId(e.target.value)}
                   placeholder="e.g. inner-peace"
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-mono transition-colors disabled:opacity-50"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
+                  className="px-3 py-2 rounded-lg text-sm border font-mono disabled:opacity-50"
+                  style={
+                    isEditing
+                      ? { ...inputStyle, background: "transparent", borderStyle: "dashed" }
+                      : inputStyle
+                  }
                 />
-                <p className="text-[10px] mt-1" style={{ color: "var(--admin-text-muted)" }}>ID cannot be changed after creation</p>
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Time Required
-                </label>
-                <input
-                  type="text"
-                  value={timeRequired}
-                  onChange={(e) => setTimeRequired(e.target.value)}
-                  placeholder="About 7 minutes a day"
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                Title *
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Becoming More Human"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-medium transition-colors"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  borderColor: "var(--admin-input-border)",
-                  color: "var(--admin-text)",
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                Tagline
-              </label>
-              <input
-                type="text"
-                value={tagline}
-                onChange={(e) => setTagline(e.target.value)}
-                placeholder="A short subtitle shown on cards"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  borderColor: "var(--admin-input-border)",
-                  color: "var(--admin-text)",
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Category
-                </label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="e.g. Human Soul Foundations"
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Realm
-                </label>
-                <input
-                  type="text"
-                  value={realm}
-                  onChange={(e) => setRealm(e.target.value)}
-                  placeholder="e.g. Human Soul Foundations"
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-6 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: "var(--admin-text-secondary)" }}>
-                <input
-                  type="checkbox"
-                  checked={featured}
-                  onChange={(e) => setFeatured(e.target.checked)}
-                  className="w-4 h-4 rounded accent-[var(--admin-accent)]"
-                />
-                Featured
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: "var(--admin-text-secondary)" }}>
-                <input
-                  type="checkbox"
-                  checked={premium}
-                  onChange={(e) => setPremium(e.target.checked)}
-                  className="w-4 h-4 rounded accent-[var(--admin-accent)]"
-                />
-                Premium only
               </label>
             </div>
           </div>
 
-          {/* Cover Image Card */}
-          <div
-            className="rounded-2xl border p-6 space-y-4"
-            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
-          >
-            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
-              Cover Image
-            </h2>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setImageMode("url")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors`}
-                style={{
-                  background: imageMode === "url" ? "var(--admin-accent)" : "var(--admin-surface-2)",
-                  color: imageMode === "url" ? "#FFFFFF" : "var(--admin-text-secondary)",
-                }}
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-                External URL
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageMode("upload")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors`}
-                style={{
-                  background: imageMode === "upload" ? "var(--admin-accent)" : "var(--admin-surface-2)",
-                  color: imageMode === "upload" ? "#FFFFFF" : "var(--admin-text-secondary)",
-                }}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Upload file
-              </button>
-            </div>
-
-            {imageMode === "url" ? (
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-mono transition-colors"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                  Upload Cover Image to Supabase Storage
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  disabled={uploadingImage}
-                  className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-medium file:bg-[var(--admin-accent)] file:text-white hover:file:opacity-90 cursor-pointer disabled:opacity-50"
-                  style={{ color: "var(--admin-text-muted)" }}
-                />
-                {uploadingImage && (
-                  <p className="text-xs mt-2 text-[var(--admin-accent)]">Uploading image...</p>
-                )}
-              </div>
-            )}
-
-            {imageUrl && (
-              <div className="mt-3">
-                <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--admin-text-muted)" }}>Preview</p>
-                <div className="relative h-40 w-full max-w-sm rounded-xl overflow-hidden border" style={{ borderColor: "var(--admin-border)" }}>
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right 1 Col: Descriptions */}
-        <div className="space-y-6">
-          <div
-            className="rounded-2xl border p-6 space-y-4"
-            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
-          >
-            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
-              Detailed Texts
-            </h2>
-
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                Purpose / Short Intro
-              </label>
-              <textarea
-                rows={4}
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                placeholder="What is the intention behind this journey?"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  borderColor: "var(--admin-input-border)",
-                  color: "var(--admin-text)",
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                Full Introduction
-              </label>
-              <textarea
-                rows={6}
-                value={intro}
-                onChange={(e) => setIntro(e.target.value)}
-                placeholder="Detailed text shown on the journey landing page..."
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  borderColor: "var(--admin-input-border)",
-                  color: "var(--admin-text)",
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
-                Completion Message
-              </label>
-              <textarea
-                rows={4}
-                value={completionMessage}
-                onChange={(e) => setCompletionMessage(e.target.value)}
-                placeholder="Shown when a user finishes all days..."
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
-                style={{
-                  background: "var(--admin-input-bg)",
-                  borderColor: "var(--admin-input-border)",
-                  color: "var(--admin-text)",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Days Section */}
-      <div
-        className="rounded-2xl border p-6 space-y-6"
-        style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
-      >
-        <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--admin-border)" }}>
-          <div>
-            <h2 className="text-base font-semibold" style={{ color: "var(--admin-text)" }}>
-              Journey Days ({days.length})
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
-              Configure the daily reflection prompts and guidance for this journey.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAddDay}
-            className="px-4 py-2 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-colors"
-            style={{
-              background: "var(--admin-surface-2)",
-              borderColor: "var(--admin-border)",
-              color: "var(--admin-text)",
-            }}
-          >
-            <Plus className="w-4 h-4 text-[var(--admin-accent)]" />
-            Add Day {days.length + 1}
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {days.map((dayItem, index) => (
-            <div
-              key={index}
-              className="rounded-xl border p-5 space-y-4 relative"
-              style={{
-                background: "var(--admin-surface-2)",
-                borderColor: "var(--admin-border)",
-              }}
+          {/* Detailed texts, collapsible */}
+          <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--admin-border)" }}>
+            <button
+              type="button"
+              onClick={() => setTextsOpen(!textsOpen)}
+              className="flex items-center gap-2 text-[13px] font-semibold"
+              style={{ color: "var(--admin-text)" }}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ background: "var(--admin-accent)", color: "#FFFFFF" }}>
-                  Day {dayItem.day}
-                </span>
+              <ChevronRight
+                className="w-3 h-3 transition-transform"
+                style={{ transform: textsOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+              />
+              Detailed texts
+              <span className="font-normal text-xs" style={{ color: "var(--admin-text-muted)" }}>
+                purpose, full introduction, completion message
+              </span>
+            </button>
 
-                {days.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDay(index)}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--admin-danger-bg)] text-[var(--admin-danger)]"
-                    title="Remove Day"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
-                    Day Title
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={dayItem.title}
-                    onChange={(e) => handleDayChange(index, "title", e.target.value)}
-                    placeholder="e.g. Beginning Where You Are"
-                    className="w-full px-3 py-2 rounded-lg text-sm border font-medium transition-colors"
-                    style={{
-                      background: "var(--admin-input-bg)",
-                      borderColor: "var(--admin-input-border)",
-                      color: "var(--admin-text)",
-                    }}
+            {textsOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-3">
+                <label className="flex flex-col gap-1">
+                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                    Purpose / short intro
+                  </span>
+                  <textarea
+                    rows={7}
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    placeholder="What is the intention behind this journey?"
+                    className="px-2.5 py-2 rounded-lg text-[12.5px] leading-relaxed border resize-y"
+                    style={inputStyle}
                   />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
-                    Short Purpose / Subtitle
-                  </label>
-                  <input
-                    type="text"
-                    value={dayItem.purpose}
-                    onChange={(e) => handleDayChange(index, "purpose", e.target.value)}
-                    placeholder="Brief intention for today..."
-                    className="w-full px-3 py-2 rounded-lg text-sm border transition-colors"
-                    style={{
-                      background: "var(--admin-input-bg)",
-                      borderColor: "var(--admin-input-border)",
-                      color: "var(--admin-text)",
-                    }}
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                    Full introduction
+                  </span>
+                  <textarea
+                    rows={7}
+                    value={intro}
+                    onChange={(e) => setIntro(e.target.value)}
+                    placeholder="Detailed text shown on the journey landing page..."
+                    className="px-2.5 py-2 rounded-lg text-[12.5px] leading-relaxed border resize-y"
+                    style={inputStyle}
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
-                  Daily Prompt Text
                 </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={dayItem.prompt}
-                  onChange={(e) => handleDayChange(index, "prompt", e.target.value)}
-                  placeholder="The main reflection text for this day..."
-                  className="w-full px-3 py-2 rounded-lg text-sm border transition-colors resize-none"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1 flex items-center gap-1" style={{ color: "var(--admin-text-muted)" }}>
-                  <Sparkles className="w-3 h-3 text-[var(--admin-accent)]" />
-                  Deeper Reflection Question (Optional)
+                <label className="flex flex-col gap-1">
+                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                    Completion message
+                  </span>
+                  <textarea
+                    rows={7}
+                    value={completionMessage}
+                    onChange={(e) => setCompletionMessage(e.target.value)}
+                    placeholder="Shown when a user finishes all days..."
+                    className="px-2.5 py-2 rounded-lg text-[12.5px] leading-relaxed border resize-y"
+                    style={inputStyle}
+                  />
                 </label>
-                <input
-                  type="text"
-                  value={dayItem.deeper ?? ""}
-                  onChange={(e) => handleDayChange(index, "deeper", e.target.value)}
-                  placeholder="What did you almost overlook today?"
-                  className="w-full px-3 py-2 rounded-lg text-sm border transition-colors"
-                  style={{
-                    background: "var(--admin-input-bg)",
-                    borderColor: "var(--admin-input-border)",
-                    color: "var(--admin-text)",
-                  }}
-                />
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            )}
+          </div>
+        </section>
 
-      {/* Submit Bottom Bar */}
-      <div className="flex justify-end pt-4">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50"
-          style={{
-            background: "var(--admin-accent)",
-            color: "#FFFFFF",
-          }}
+        {/* Days: master-detail */}
+        <section
+          className="rounded-xl border overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr]"
+          style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)", minHeight: 520 }}
         >
-          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Journey"}
-        </button>
+          <aside className="border-b md:border-b-0 md:border-r flex flex-col" style={{ borderColor: "var(--admin-border)" }}>
+            <div className="flex items-center justify-between px-3.5 pt-3.5 pb-2.5">
+              <div className="text-[13px] font-semibold" style={{ color: "var(--admin-text)" }}>
+                Journey Days{" "}
+                <span className="font-normal" style={{ color: "var(--admin-text-muted)" }}>
+                  · {days.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddDay}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-border)",
+                  color: "var(--admin-text)",
+                }}
+              >
+                <Plus className="w-3 h-3" />
+                Add
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-2 pb-2.5 flex flex-col gap-0.5 max-h-[460px] md:max-h-none">
+              {days.map((dayItem, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setActiveDay(index)}
+                  className="flex items-center gap-2.5 w-full text-left px-2.5 py-2 rounded-lg"
+                  style={{
+                    color: "var(--admin-text)",
+                    background: index === activeDay ? "var(--admin-surface-2)" : "transparent",
+                  }}
+                >
+                  <span
+                    className="flex-shrink-0 w-6 h-6 rounded-md grid place-items-center text-[11px] font-semibold"
+                    style={
+                      index === activeDay
+                        ? { background: "var(--admin-accent)", color: "#FFFFFF" }
+                        : {
+                            background: "var(--admin-input-bg)",
+                            color: "var(--admin-text-muted)",
+                            border: "1px solid var(--admin-border)",
+                          }
+                    }
+                  >
+                    {dayItem.day}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-medium truncate">
+                      {dayItem.title || "Untitled day"}
+                    </span>
+                    <span className="block text-[11px] mt-0.5 truncate" style={{ color: "var(--admin-text-muted)" }}>
+                      {dayItem.purpose || "—"}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <div className="p-4.5 md:p-5.5 flex flex-col gap-3.5 min-w-0">
+            {day ? (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full"
+                    style={{ color: "var(--admin-accent)", background: "var(--admin-surface-2)" }}
+                  >
+                    DAY {day.day}
+                  </span>
+                  <span className="flex-1" />
+                  {days.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDay(activeDay)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs"
+                      style={{ color: "var(--admin-text-muted)" }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete day
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <label className="flex flex-col gap-1">
+                    <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                      Day title
+                    </span>
+                    <input
+                      required
+                      value={day.title}
+                      onChange={(e) => handleDayChange(activeDay, "title", e.target.value)}
+                      placeholder="e.g. Beginning Where You Are"
+                      className="px-3 py-2 rounded-lg text-sm border font-medium"
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                      Short purpose / subtitle
+                    </span>
+                    <input
+                      value={day.purpose}
+                      onChange={(e) => handleDayChange(activeDay, "purpose", e.target.value)}
+                      placeholder="Brief intention for today..."
+                      className="px-3 py-2 rounded-lg text-sm border"
+                      style={inputStyle}
+                    />
+                  </label>
+                </div>
+
+                <label className="flex flex-col gap-1 flex-1">
+                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                    Daily prompt
+                  </span>
+                  <textarea
+                    rows={9}
+                    required
+                    value={day.prompt}
+                    onChange={(e) => handleDayChange(activeDay, "prompt", e.target.value)}
+                    placeholder="The main reflection text for this day..."
+                    className="px-3 py-2.5 rounded-lg text-sm leading-relaxed border flex-1 resize-y"
+                    style={inputStyle}
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                    Deeper reflection question{" "}
+                    <span className="normal-case font-normal tracking-normal">(optional)</span>
+                  </span>
+                  <input
+                    value={day.deeper ?? ""}
+                    onChange={(e) => handleDayChange(activeDay, "deeper", e.target.value)}
+                    placeholder="What did you almost overlook today?"
+                    className="px-3 py-2 rounded-lg text-sm border italic"
+                    style={inputStyle}
+                  />
+                </label>
+              </>
+            ) : (
+              <p className="text-sm" style={{ color: "var(--admin-text-muted)" }}>
+                Add a day to get started.
+              </p>
+            )}
+          </div>
+        </section>
       </div>
     </form>
   );
