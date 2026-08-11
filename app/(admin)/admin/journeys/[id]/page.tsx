@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getJourney } from "@/lib/actions/journeys";
-import JourneyDetailClient from "@/components/JourneyDetailClient";
+import JourneyForm from "@/components/admin/JourneyForm";
 
-export default async function JourneyDetailPage({
+export default async function EditJourneyPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -12,5 +12,5 @@ export default async function JourneyDetailPage({
 
   if (!journey) notFound();
 
-  return <JourneyDetailClient journey={journey} />;
+  return <JourneyForm journey={journey} />;
 }
