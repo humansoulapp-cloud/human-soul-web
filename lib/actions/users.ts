@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 
 export type UserRow = {
@@ -17,42 +18,41 @@ async function requireAdmin() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data: profile } = await supabase
+  const serviceClient = createServiceClient();
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .single();
 
   if (profile?.role !== "admin") throw new Error("Forbidden");
-  return supabase;
+  return serviceClient;
 }
 
 export async function getUsers(): Promise<UserRow[]> {
-  const supabase = await requireAdmin();
+  const serviceClient = await requireAdmin();
 
-  // Join profiles (role) with auth.users (email, created_at) via RPC or view
-  // We select from profiles and get email via auth.users using service approach
-  const { data, error } = await supabase
+  const { data, error } = await serviceClient
     .from("profiles")
-    .select("id, role, created_at");
+    .select("user_id, role, created_at");
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((p: { id: string; role: string; created_at: string }) => ({
-    id: p.id,
-    email: "—", // email not exposed via anon key for security; admin sees via Supabase Dashboard
+  return (data ?? []).map((p: { user_id: string; role: string; created_at: string }) => ({
+    id: p.user_id,
+    email: "—",
     role: p.role ?? "user",
     created_at: p.created_at,
   }));
 }
 
 export async function updateUserRole(userId: string, role: "admin" | "user") {
-  const supabase = await requireAdmin();
+  const serviceClient = await requireAdmin();
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("profiles")
     .update({ role })
-    .eq("id", userId);
+    .eq("user_id", userId);
 
   if (error) return { error: error.message };
 
@@ -61,11 +61,11 @@ export async function updateUserRole(userId: string, role: "admin" | "user") {
 }
 
 export async function getStats() {
-  const supabase = await createClient();
+  const serviceClient = createServiceClient();
 
   const [journeysRes, usersRes] = await Promise.all([
-    supabase.from("journeys").select("id, featured, premium"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    serviceClient.from("journeys").select("id, featured, premium"),
+    serviceClient.from("profiles").select("user_id", { count: "exact", head: true }),
   ]);
 
   const journeys = journeysRes.data ?? [];

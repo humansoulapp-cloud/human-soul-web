@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,20 +52,24 @@ export type JourneyRow = {
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 
 async function requireAdmin() {
+  // Get session user via SSR cookie client
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data: profile } = await supabase
+  // Use service client to bypass RLS when verifying admin role
+  const serviceClient = createServiceClient();
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .single();
 
   if (profile?.role !== "admin") throw new Error("Forbidden");
-  return supabase;
+  // Return service client so writes also bypass RLS
+  return serviceClient;
 }
 
 // ─── Read ──────────────────────────────────────────────────────────────────────

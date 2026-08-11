@@ -1,6 +1,6 @@
 import React from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
@@ -9,6 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // 1. Get the authenticated user from the session cookie
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,10 +17,12 @@ export default async function AdminLayout({
 
   if (!user) redirect("/sign-in");
 
-  const { data: profile } = await supabase
+  // 2. Use service client to bypass RLS and check the admin role
+  const serviceClient = createServiceClient();
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .single();
 
   if (profile?.role !== "admin") redirect("/dashboard");
