@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Plus, Pencil, Star, Crown, Image as ImageIcon } from "lucide-react";
+import { Plus, Compass, Clock, Star, Edit, Layers } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import DeleteJourneyButton from "@/components/admin/DeleteJourneyButton";
 
@@ -8,120 +8,151 @@ export default async function AdminJourneysPage() {
   const journeys = await getJourneys();
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Journeys</h1>
-          <p className="text-white/40 text-sm mt-1">{journeys.length} journeys total</p>
+          <h1 className="text-2xl font-semibold" style={{ color: "var(--admin-text)" }}>
+            Journeys
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--admin-text-muted)" }}>
+            {journeys.length} total guided experiences
+          </p>
         </div>
+
         <Link
           href="/admin/journeys/new"
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#8BA58F] hover:bg-[#78937C] text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center gap-2"
+          style={{
+            background: "var(--admin-accent)",
+            color: "#FFFFFF",
+          }}
         >
           <Plus className="w-4 h-4" />
-          New Journey
+          <span>New Journey</span>
         </Link>
       </div>
 
-      {/* Table */}
-      <div className="bg-[#161616] border border-white/[0.06] rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-[2.5fr_1.5fr_80px_80px_80px_80px_120px] text-[10px] uppercase tracking-widest text-white/25 px-6 py-3 border-b border-white/[0.06]">
-          <span>Journey</span>
-          <span>Category</span>
-          <span className="text-center">Days</span>
-          <span className="text-center">Featured</span>
-          <span className="text-center">Premium</span>
-          <span className="text-center">Image</span>
-          <span className="text-right">Actions</span>
-        </div>
+      {/* Journeys Grid — full width */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {journeys.map((journey) => {
+          const daysCount = journey.journey_days?.length ?? 0;
 
-        <div className="divide-y divide-white/[0.04]">
-          {journeys.map((journey) => (
+          return (
             <div
               key={journey.id}
-              className="grid grid-cols-[2.5fr_1.5fr_80px_80px_80px_80px_120px] items-center px-6 py-4 hover:bg-white/[0.02] transition-colors"
+              className="rounded-2xl border flex flex-col justify-between overflow-hidden transition-all hover:border-[var(--admin-accent)]"
+              style={{
+                background: "var(--admin-surface)",
+                borderColor: "var(--admin-border)",
+              }}
             >
-              {/* Title */}
-              <div className="flex items-center gap-3 min-w-0">
+              {/* Card Top: Cover Image or Placeholder */}
+              <div className="relative h-36 w-full overflow-hidden" style={{ background: "var(--admin-surface-2)" }}>
                 {journey.image_url ? (
                   <img
                     src={journey.image_url}
                     alt={journey.title}
-                    className="w-9 h-9 rounded-xl object-cover flex-shrink-0"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-                    <ImageIcon className="w-4 h-4 text-white/20" />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Compass className="w-8 h-8 opacity-20" style={{ color: "var(--admin-text)" }} />
                   </div>
                 )}
-                <div className="min-w-0">
-                  <p className="text-sm text-white/80 font-medium truncate">{journey.title}</p>
-                  <p className="text-[11px] text-white/30 font-mono truncate">{journey.id}</p>
+
+                <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                  {journey.featured && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-amber-500/80 text-white backdrop-blur-sm">
+                      Featured
+                    </span>
+                  )}
+                  {journey.premium && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-purple-500/80 text-white backdrop-blur-sm">
+                      Premium
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Category */}
-              <p className="text-sm text-white/40 truncate pr-4">{journey.category ?? "—"}</p>
+              {/* Card Body */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <div>
+                  <span className="text-[10px] font-medium uppercase tracking-widest block mb-1" style={{ color: "var(--admin-accent)" }}>
+                    {journey.category || "Uncategorized"}
+                  </span>
+                  <h3 className="text-base font-semibold leading-tight mb-1" style={{ color: "var(--admin-text)" }}>
+                    {journey.title}
+                  </h3>
+                  <p className="text-xs line-clamp-2" style={{ color: "var(--admin-text-muted)" }}>
+                    {journey.tagline || journey.purpose || "No description provided."}
+                  </p>
+                </div>
 
-              {/* Days */}
-              <p className="text-sm text-white/60 text-center">
-                {journey.journey_days?.length ?? 0}
-              </p>
-
-              {/* Featured */}
-              <div className="flex justify-center">
-                {journey.featured ? (
-                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                ) : (
-                  <span className="text-white/20 text-xs">—</span>
-                )}
+                <div className="flex items-center justify-between text-xs pt-3 border-t" style={{ color: "var(--admin-text-muted)", borderColor: "var(--admin-border)" }}>
+                  <div className="flex items-center gap-1">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>{daysCount} {daysCount === 1 ? "day" : "days"}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{journey.time_required || "N/A"}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Premium */}
-              <div className="flex justify-center">
-                {journey.premium ? (
-                  <Crown className="w-4 h-4 text-purple-400" />
-                ) : (
-                  <span className="text-white/20 text-xs">—</span>
-                )}
-              </div>
-
-              {/* Image indicator */}
-              <div className="flex justify-center">
-                {journey.image_url ? (
-                  <span className="inline-block w-2 h-2 rounded-full bg-[#8BA58F]" />
-                ) : (
-                  <span className="inline-block w-2 h-2 rounded-full bg-white/10" />
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2">
+              {/* Card Actions Footer */}
+              <div
+                className="px-5 py-3 border-t flex items-center justify-between gap-2"
+                style={{
+                  background: "var(--admin-surface-2)",
+                  borderColor: "var(--admin-border)",
+                }}
+              >
                 <Link
                   href={`/admin/journeys/${journey.id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/60 hover:text-white bg-white/[0.05] hover:bg-white/[0.08] rounded-lg transition-all"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors"
+                  style={{
+                    background: "var(--admin-surface)",
+                    borderColor: "var(--admin-border)",
+                    color: "var(--admin-text)",
+                  }}
                 >
-                  <Pencil className="w-3 h-3" />
-                  Edit
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit</span>
                 </Link>
+
                 <DeleteJourneyButton id={journey.id} title={journey.title} />
               </div>
             </div>
-          ))}
+          );
+        })}
 
-          {journeys.length === 0 && (
-            <div className="px-6 py-16 text-center">
-              <p className="text-white/30 text-sm mb-3">No journeys yet.</p>
-              <Link
-                href="/admin/journeys/new"
-                className="text-[#8BA58F] text-sm hover:underline"
-              >
-                Create your first journey →
-              </Link>
-            </div>
-          )}
-        </div>
+        {journeys.length === 0 && (
+          <div
+            className="col-span-full rounded-2xl border p-12 text-center"
+            style={{
+              background: "var(--admin-surface)",
+              borderColor: "var(--admin-border)",
+            }}
+          >
+            <Compass className="w-10 h-10 mx-auto mb-3 opacity-20" style={{ color: "var(--admin-text)" }} />
+            <p className="text-sm font-medium mb-1" style={{ color: "var(--admin-text)" }}>
+              No journeys found
+            </p>
+            <p className="text-xs mb-4" style={{ color: "var(--admin-text-muted)" }}>
+              Get started by creating your first guided experience.
+            </p>
+            <Link
+              href="/admin/journeys/new"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white"
+              style={{ background: "var(--admin-accent)" }}
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Journey</span>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

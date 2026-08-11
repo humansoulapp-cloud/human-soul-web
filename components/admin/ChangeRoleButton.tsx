@@ -27,11 +27,18 @@ export default function ChangeRoleButton({
       <button
         onClick={handleToggle}
         disabled={isPending}
-        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+        style={
           currentRole === "admin"
-            ? "text-white/40 hover:text-white/70 bg-white/[0.05] hover:bg-white/[0.08]"
-            : "text-[#8BA58F] hover:text-white bg-[#8BA58F]/10 hover:bg-[#8BA58F]/20"
-        }`}
+            ? {
+                color: "var(--admin-text-muted)",
+                background: "var(--admin-surface-2)",
+              }
+            : {
+                color: "var(--admin-accent)",
+                background: "color-mix(in srgb, var(--admin-accent) 15%, transparent)",
+              }
+        }
       >
         {isPending
           ? "…"
@@ -40,7 +47,9 @@ export default function ChangeRoleButton({
           : "Make admin"}
       </button>
       {error && (
-        <p className="text-red-400 text-[10px] mt-1 text-right">{error}</p>
+        <p className="text-[10px] mt-1 text-right" style={{ color: "var(--admin-danger)" }}>
+          {error}
+        </p>
       )}
     </div>
   );

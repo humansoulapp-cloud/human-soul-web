@@ -72,3 +72,40 @@
   background: #D4CED5;
   border-radius: 999px;
 }
+
+/* ── Admin Panel Themes ──────────────────────────────────────── */
+.admin-panel {
+  --admin-bg:            #0C0B0A;
+  --admin-sidebar:       #111110;
+  --admin-surface:       #1A1917;
+  --admin-surface-2:     #222120;
+  --admin-border:        rgba(255,255,255,0.07);
+  --admin-border-hover:  rgba(255,255,255,0.13);
+  --admin-text:          #F5F4F2;
+  --admin-text-muted:    rgba(245,244,242,0.35);
+  --admin-text-secondary:rgba(245,244,242,0.58);
+  --admin-input-bg:      #0F0E0D;
+  --admin-input-border:  rgba(255,255,255,0.09);
+  --admin-accent:        #8BA58F;
+  --admin-accent-hover:  #78937C;
+  --admin-danger:        #E57373;
+  --admin-danger-bg:     rgba(229,115,115,0.1);
+}
+
+.admin-panel.light {
+  --admin-bg:            #EDEAE5;
+  --admin-sidebar:       #FAFAF8;
+  --admin-surface:       #FFFFFF;
+  --admin-surface-2:     #F5F3EF;
+  --admin-border:        #E2DED8;
+  --admin-border-hover:  #C8C4BE;
+  --admin-text:          #1C1A18;
+  --admin-text-muted:    #948E88;
+  --admin-text-secondary:#5C5A56;
+  --admin-input-bg:      #F5F3EF;
+  --admin-input-border:  #D8D4CE;
+  --admin-accent:        #8BA58F;
+  --admin-accent-hover:  #78937C;
+  --admin-danger:        #D32F2F;
+  --admin-danger-bg:     rgba(211,47,47,0.08);
+}

@@ -1,598 +1,628 @@
 "use client";
 
-import React, { useState, useRef, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Trash2,
-  GripVertical,
-  Upload,
-  Link as LinkIcon,
-  Image as ImageIcon,
-  ChevronDown,
-  ChevronUp,
-  ArrowLeft,
-} from "lucide-react";
+import React, { useState, useTransition } from "react";
+import Link from "next/link";
+import { ArrowLeft, Plus, Trash2, Upload, Link as LinkIcon, Sparkles } from "lucide-react";
 import {
   createJourney,
   updateJourney,
   uploadJourneyImage,
   type JourneyInput,
+  type JourneyDayInput,
   type JourneyRow,
 } from "@/lib/actions/journeys";
 
-const CATEGORIES = [
-  "Human Soul Foundations",
-  "Awareness & Reflection",
-  "Identity & Self-Discovery",
-  "The Inner Landscape",
-  "Emotional Awareness",
-  "Character & Virtue",
-  "Relationships",
-  "Purpose & Daily Living",
-  "Healing & Growth",
-  "Meaning & Wisdom",
-];
-
-type DayForm = {
-  day: number;
-  title: string;
-  prompt: string;
-  purpose: string;
-  deeper: string;
-};
-
-function emptyDay(dayNumber: number): DayForm {
-  return { day: dayNumber, title: "", prompt: "", purpose: "", deeper: "" };
-}
-
 export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
-  const isEdit = !!journey;
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const isEditing = !!journey;
 
-  // ── Form state ──────────────────────────────────────────────────────────
   const [id, setId] = useState(journey?.id ?? "");
   const [title, setTitle] = useState(journey?.title ?? "");
-  const [category, setCategory] = useState(journey?.category ?? "");
-  const [realm, setRealm] = useState(journey?.realm ?? "");
+  const [category, setCategory] = useState(journey?.category ?? "Human Soul Foundations");
+  const [realm, setRealm] = useState(journey?.realm ?? "Human Soul Foundations");
   const [tagline, setTagline] = useState(journey?.tagline ?? "");
   const [purpose, setPurpose] = useState(journey?.purpose ?? "");
   const [intro, setIntro] = useState(journey?.intro ?? "");
-  const [timeRequired, setTimeRequired] = useState(journey?.time_required ?? "");
-  const [completionMessage, setCompletionMessage] = useState(journey?.completion_message ?? "");
+  const [timeRequired, setTimeRequired] = useState(journey?.time_required ?? "About 7 minutes a day");
+  const [imageUrl, setImageUrl] = useState(journey?.image_url ?? "");
   const [premium, setPremium] = useState(journey?.premium ?? false);
   const [featured, setFeatured] = useState(journey?.featured ?? false);
+  const [completionMessage, setCompletionMessage] = useState(journey?.completion_message ?? "");
 
-  // ── Image state ─────────────────────────────────────────────────────────
-  const [imageMode, setImageMode] = useState<"url" | "upload">("url");
-  const [imageUrl, setImageUrl] = useState(journey?.image_url ?? "");
-  const [imagePreview, setImagePreview] = useState(journey?.image_url ?? "");
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  // ── Days state ───────────────────────────────────────────────────────────
-  const [days, setDays] = useState<DayForm[]>(
-    journey?.journey_days?.length
-      ? journey.journey_days.map((d) => ({
-          day: d.day,
-          title: d.title ?? "",
-          prompt: d.prompt ?? "",
-          purpose: d.purpose ?? "",
-          deeper: d.deeper ?? "",
-        }))
-      : [emptyDay(1)]
+  const [days, setDays] = useState<JourneyDayInput[]>(
+    journey?.journey_days ?? [
+      { day: 1, title: "Beginning Where You Are", prompt: "", purpose: "", deeper: "" },
+    ]
   );
-  const [expandedDay, setExpandedDay] = useState<number>(0);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
-  function handleUrlChange(val: string) {
-    setImageUrl(val);
-    setImagePreview(val);
-  }
+  const [imageMode, setImageMode] = useState<"url" | "upload">("url");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Day handlers
+  const handleAddDay = () => {
+    const nextDayNum = days.length + 1;
+    setDays([
+      ...days,
+      { day: nextDayNum, title: `Day ${nextDayNum}`, prompt: "", purpose: "", deeper: "" },
+    ]);
+  };
+
+  const handleRemoveDay = (index: number) => {
+    const updated = days
+      .filter((_, i) => i !== index)
+      .map((d, idx) => ({ ...d, day: idx + 1 }));
+    setDays(updated);
+  };
+
+  const handleDayChange = (index: number, field: keyof JourneyDayInput, value: string) => {
+    const updated = [...days];
+    updated[index] = { ...updated[index], [field]: value };
+    setDays(updated);
+  };
+
+  // Image upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Local preview immediately
-    const localUrl = URL.createObjectURL(file);
-    setImagePreview(localUrl);
-    setUploading(true);
+    setUploadingImage(true);
+    setError(null);
 
     const formData = new FormData();
     formData.append("file", file);
-    const journeyId = id || `temp-${Date.now()}`;
-    const result = await uploadJourneyImage(journeyId, formData);
 
-    setUploading(false);
+    const result = await uploadJourneyImage(id || "temp", formData);
+    setUploadingImage(false);
+
     if (result.error) {
       setError(`Image upload failed: ${result.error}`);
     } else if (result.url) {
       setImageUrl(result.url);
-      setImagePreview(result.url);
     }
-  }
+  };
 
-  function addDay() {
-    const newDay = emptyDay(days.length + 1);
-    setDays((prev) => [...prev, newDay]);
-    setExpandedDay(days.length);
-  }
-
-  function removeDay(idx: number) {
-    setDays((prev) => {
-      const updated = prev.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day: i + 1 }));
-      return updated;
-    });
-    if (expandedDay >= idx && expandedDay > 0) setExpandedDay(expandedDay - 1);
-  }
-
-  function updateDay(idx: number, field: keyof DayForm, value: string) {
-    setDays((prev) => prev.map((d, i) => (i === idx ? { ...d, [field]: value } : d)));
-  }
-
-  function moveDay(idx: number, direction: "up" | "down") {
-    const newDays = [...days];
-    const target = direction === "up" ? idx - 1 : idx + 1;
-    if (target < 0 || target >= newDays.length) return;
-    [newDays[idx], newDays[target]] = [newDays[target], newDays[idx]];
-    setDays(newDays.map((d, i) => ({ ...d, day: i + 1 })));
-    setExpandedDay(target);
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  // Save submit
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!id.trim()) { setError("Journey ID is required"); return; }
-    if (!title.trim()) { setError("Title is required"); return; }
+    if (!id.trim() || !title.trim()) {
+      setError("Journey ID and Title are required.");
+      return;
+    }
 
-    const input: JourneyInput = {
+    const payload: JourneyInput = {
       id: id.trim(),
       title: title.trim(),
-      category: category || null,
-      realm: realm || null,
-      tagline: tagline || null,
-      purpose: purpose || null,
-      intro: intro || null,
-      time_required: timeRequired || null,
-      image_url: imageUrl || null,
+      category: category.trim(),
+      realm: realm.trim(),
+      tagline: tagline.trim(),
+      purpose: purpose.trim(),
+      intro: intro.trim(),
+      time_required: timeRequired.trim(),
+      image_url: imageUrl.trim(),
       premium,
       featured,
-      completion_message: completionMessage || null,
-      days: days.map((d) => ({
-        day: d.day,
-        title: d.title,
-        prompt: d.prompt,
-        purpose: d.purpose,
-        deeper: d.deeper || null,
-      })),
+      completion_message: completionMessage.trim(),
+      days,
     };
 
     startTransition(async () => {
-      const result = isEdit
-        ? await updateJourney(journey!.id, input)
-        : await createJourney(input);
-
-      if (result?.error) setError(result.error);
+      const result = isEditing
+        ? await updateJourney(id.trim(), payload)
+        : await createJourney(payload);
+      if (result?.error) {
+        setError(result.error);
+      }
     });
-  }
-
-  const inputClass =
-    "w-full px-4 py-2.5 bg-[#0F0F0F] border border-white/[0.08] rounded-xl text-sm text-white/80 placeholder-white/20 focus:outline-none focus:border-[#8BA58F]/60 transition-colors";
-  const labelClass = "block text-xs text-white/40 mb-1.5 uppercase tracking-wider";
-  const textareaClass = `${inputClass} resize-none`;
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl">
+    <form onSubmit={handleSubmit} className="space-y-8 w-full">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => router.push("/admin/journeys")}
-          className="p-2 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-white">
-            {isEdit ? "Edit Journey" : "New Journey"}
-          </h1>
-          <p className="text-white/40 text-sm mt-0.5">
-            {isEdit ? journey.title : "Create a new guided journey"}
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/journeys"
+            className="w-9 h-9 rounded-xl border flex items-center justify-center transition-colors"
+            style={{
+              background: "var(--admin-surface)",
+              borderColor: "var(--admin-border)",
+              color: "var(--admin-text-secondary)",
+            }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-semibold" style={{ color: "var(--admin-text)" }}>
+              {isEditing ? "Edit Journey" : "New Journey"}
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+              {isEditing ? `ID: ${journey.id}` : "Create a new guided multi-day experience"}
+            </p>
+          </div>
         </div>
+
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50"
+          style={{
+            background: "var(--admin-accent)",
+            color: "#FFFFFF",
+          }}
+        >
+          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Journey"}
+        </button>
       </div>
 
       {error && (
-        <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+        <div
+          className="p-4 rounded-xl border text-sm"
+          style={{
+            background: "var(--admin-danger-bg)",
+            borderColor: "var(--admin-danger)",
+            color: "var(--admin-danger)",
+          }}
+        >
           {error}
         </div>
       )}
 
-      {/* ─── General Info ─────────────────────────────────────────────────── */}
-      <section className="bg-[#161616] border border-white/[0.06] rounded-2xl p-6 space-y-5">
-        <h2 className="text-sm font-medium text-white border-b border-white/[0.06] pb-3">
-          General Information
-        </h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Journey ID *</label>
-            <input
-              id="journey-id"
-              type="text"
-              value={id}
-              onChange={(e) => setId(e.target.value.toLowerCase().replace(/\s+/g, "-"))}
-              placeholder="e.g. becoming-more-human"
-              className={inputClass}
-              disabled={isEdit}
-              required
-            />
-            {isEdit && (
-              <p className="text-white/25 text-xs mt-1">ID cannot be changed after creation</p>
-            )}
-          </div>
-          <div>
-            <label className={labelClass}>Time Required</label>
-            <input
-              id="journey-time"
-              type="text"
-              value={timeRequired}
-              onChange={(e) => setTimeRequired(e.target.value)}
-              placeholder="e.g. About 7 minutes a day"
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className={labelClass}>Title *</label>
-          <input
-            id="journey-title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Journey title"
-            className={inputClass}
-            required
-          />
-        </div>
-
-        <div>
-          <label className={labelClass}>Tagline</label>
-          <input
-            id="journey-tagline"
-            type="text"
-            value={tagline}
-            onChange={(e) => setTagline(e.target.value)}
-            placeholder="Short description shown on the card"
-            className={inputClass}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Category</label>
-            <select
-              id="journey-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={`${inputClass} appearance-none`}
-            >
-              <option value="">Select category…</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Realm</label>
-            <input
-              id="journey-realm"
-              type="text"
-              value={realm}
-              onChange={(e) => setRealm(e.target.value)}
-              placeholder="Same as category usually"
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-6 pt-1">
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              id="journey-featured"
-              type="checkbox"
-              checked={featured}
-              onChange={(e) => setFeatured(e.target.checked)}
-              className="w-4 h-4 rounded accent-[#8BA58F]"
-            />
-            <span className="text-sm text-white/60">Featured</span>
-          </label>
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              id="journey-premium"
-              type="checkbox"
-              checked={premium}
-              onChange={(e) => setPremium(e.target.checked)}
-              className="w-4 h-4 rounded accent-[#8BA58F]"
-            />
-            <span className="text-sm text-white/60">Premium only</span>
-          </label>
-        </div>
-      </section>
-
-      {/* ─── Cover Image ───────────────────────────────────────────────────── */}
-      <section className="bg-[#161616] border border-white/[0.06] rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-medium text-white border-b border-white/[0.06] pb-3">
-          Cover Image
-        </h2>
-
-        {/* Mode toggle */}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setImageMode("url")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${
-              imageMode === "url"
-                ? "bg-[#8BA58F]/20 text-[#8BA58F] border border-[#8BA58F]/30"
-                : "text-white/40 hover:text-white/60 border border-white/[0.06]"
-            }`}
+      {/* Main Form Fields */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Main Info & Image */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* General Information Card */}
+          <div
+            className="rounded-2xl border p-6 space-y-4"
+            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
           >
-            <LinkIcon className="w-3 h-3" />
-            External URL
-          </button>
-          <button
-            type="button"
-            onClick={() => setImageMode("upload")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${
-              imageMode === "upload"
-                ? "bg-[#8BA58F]/20 text-[#8BA58F] border border-[#8BA58F]/30"
-                : "text-white/40 hover:text-white/60 border border-white/[0.06]"
-            }`}
-          >
-            <Upload className="w-3 h-3" />
-            Upload file
-          </button>
-        </div>
+            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
+              General Information
+            </h2>
 
-        <div className="grid grid-cols-[1fr_200px] gap-4 items-start">
-          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Journey ID *
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={isEditing}
+                  value={id}
+                  onChange={(e) => setId(e.target.value)}
+                  placeholder="e.g. inner-peace"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-mono transition-colors disabled:opacity-50"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+                <p className="text-[10px] mt-1" style={{ color: "var(--admin-text-muted)" }}>ID cannot be changed after creation</p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Time Required
+                </label>
+                <input
+                  type="text"
+                  value={timeRequired}
+                  onChange={(e) => setTimeRequired(e.target.value)}
+                  placeholder="About 7 minutes a day"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                Title *
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Becoming More Human"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-medium transition-colors"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-input-border)",
+                  color: "var(--admin-text)",
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                Tagline
+              </label>
+              <input
+                type="text"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                placeholder="A short subtitle shown on cards"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-input-border)",
+                  color: "var(--admin-text)",
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="e.g. Human Soul Foundations"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Realm
+                </label>
+                <input
+                  type="text"
+                  value={realm}
+                  onChange={(e) => setRealm(e.target.value)}
+                  placeholder="e.g. Human Soul Foundations"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-6 pt-2">
+              <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: "var(--admin-text-secondary)" }}>
+                <input
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="w-4 h-4 rounded accent-[var(--admin-accent)]"
+                />
+                Featured
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: "var(--admin-text-secondary)" }}>
+                <input
+                  type="checkbox"
+                  checked={premium}
+                  onChange={(e) => setPremium(e.target.checked)}
+                  className="w-4 h-4 rounded accent-[var(--admin-accent)]"
+                />
+                Premium only
+              </label>
+            </div>
+          </div>
+
+          {/* Cover Image Card */}
+          <div
+            className="rounded-2xl border p-6 space-y-4"
+            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+          >
+            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
+              Cover Image
+            </h2>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setImageMode("url")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors`}
+                style={{
+                  background: imageMode === "url" ? "var(--admin-accent)" : "var(--admin-surface-2)",
+                  color: imageMode === "url" ? "#FFFFFF" : "var(--admin-text-secondary)",
+                }}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                External URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageMode("upload")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors`}
+                style={{
+                  background: imageMode === "upload" ? "var(--admin-accent)" : "var(--admin-surface-2)",
+                  color: imageMode === "upload" ? "#FFFFFF" : "var(--admin-text-secondary)",
+                }}
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload file
+              </button>
+            </div>
+
             {imageMode === "url" ? (
               <div>
-                <label className={labelClass}>Image URL</label>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Image URL
+                </label>
                 <input
-                  id="journey-image-url"
                   type="url"
                   value={imageUrl}
-                  onChange={(e) => handleUrlChange(e.target.value)}
-                  placeholder="https://images.unsplash.com/…"
-                  className={inputClass}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm border font-mono transition-colors"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
                 />
               </div>
             ) : (
               <div>
-                <label className={labelClass}>Upload image</label>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                  Upload Cover Image to Supabase Storage
+                </label>
                 <input
-                  ref={fileRef}
-                  id="journey-image-file"
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={uploadingImage}
+                  className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-medium file:bg-[var(--admin-accent)] file:text-white hover:file:opacity-90 cursor-pointer disabled:opacity-50"
+                  style={{ color: "var(--admin-text-muted)" }}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full px-4 py-2.5 bg-[#0F0F0F] border border-white/[0.08] border-dashed rounded-xl text-sm text-white/40 hover:text-white/60 hover:border-white/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Upload className="w-4 h-4" />
-                  {uploading ? "Uploading…" : "Choose JPG, PNG or WebP"}
-                </button>
-                {imageUrl && imageMode === "upload" && (
-                  <p className="text-white/30 text-xs mt-2 truncate">{imageUrl}</p>
+                {uploadingImage && (
+                  <p className="text-xs mt-2 text-[var(--admin-accent)]">Uploading image...</p>
                 )}
               </div>
             )}
-          </div>
 
-          {/* Preview */}
-          <div className="h-32 rounded-xl overflow-hidden bg-[#0F0F0F] border border-white/[0.06] flex items-center justify-center">
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-full object-cover"
-                onError={() => setImagePreview("")}
-              />
-            ) : (
-              <ImageIcon className="w-8 h-8 text-white/10" />
+            {imageUrl && (
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--admin-text-muted)" }}>Preview</p>
+                <div className="relative h-40 w-full max-w-sm rounded-xl overflow-hidden border" style={{ borderColor: "var(--admin-border)" }}>
+                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              </div>
             )}
           </div>
         </div>
-      </section>
 
-      {/* ─── Long-form content ─────────────────────────────────────────────── */}
-      <section className="bg-[#161616] border border-white/[0.06] rounded-2xl p-6 space-y-5">
-        <h2 className="text-sm font-medium text-white border-b border-white/[0.06] pb-3">
-          Content
-        </h2>
+        {/* Right 1 Col: Descriptions */}
+        <div className="space-y-6">
+          <div
+            className="rounded-2xl border p-6 space-y-4"
+            style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+          >
+            <h2 className="text-sm font-semibold border-b pb-3" style={{ color: "var(--admin-text)", borderColor: "var(--admin-border)" }}>
+              Detailed Texts
+            </h2>
 
-        <div>
-          <label className={labelClass}>Purpose / Description</label>
-          <textarea
-            id="journey-purpose"
-            rows={6}
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            placeholder="Describe the purpose of this journey…"
-            className={textareaClass}
-          />
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                Purpose / Short Intro
+              </label>
+              <textarea
+                rows={4}
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                placeholder="What is the intention behind this journey?"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-input-border)",
+                  color: "var(--admin-text)",
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                Full Introduction
+              </label>
+              <textarea
+                rows={6}
+                value={intro}
+                onChange={(e) => setIntro(e.target.value)}
+                placeholder="Detailed text shown on the journey landing page..."
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-input-border)",
+                  color: "var(--admin-text)",
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-medium mb-1.5" style={{ color: "var(--admin-text-muted)" }}>
+                Completion Message
+              </label>
+              <textarea
+                rows={4}
+                value={completionMessage}
+                onChange={(e) => setCompletionMessage(e.target.value)}
+                placeholder="Shown when a user finishes all days..."
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm border transition-colors resize-none"
+                style={{
+                  background: "var(--admin-input-bg)",
+                  borderColor: "var(--admin-input-border)",
+                  color: "var(--admin-text)",
+                }}
+              />
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div>
-          <label className={labelClass}>Intro (shown before starting)</label>
-          <textarea
-            id="journey-intro"
-            rows={4}
-            value={intro}
-            onChange={(e) => setIntro(e.target.value)}
-            placeholder="Optional intro text shown when the user opens the journey…"
-            className={textareaClass}
-          />
-        </div>
+      {/* Days Section */}
+      <div
+        className="rounded-2xl border p-6 space-y-6"
+        style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+      >
+        <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--admin-border)" }}>
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: "var(--admin-text)" }}>
+              Journey Days ({days.length})
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+              Configure the daily reflection prompts and guidance for this journey.
+            </p>
+          </div>
 
-        <div>
-          <label className={labelClass}>Completion Message</label>
-          <textarea
-            id="journey-completion"
-            rows={4}
-            value={completionMessage}
-            onChange={(e) => setCompletionMessage(e.target.value)}
-            placeholder="Message shown when the user completes all days…"
-            className={textareaClass}
-          />
-        </div>
-      </section>
-
-      {/* ─── Days Editor ───────────────────────────────────────────────────── */}
-      <section className="bg-[#161616] border border-white/[0.06] rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-          <h2 className="text-sm font-medium text-white">
-            Days{" "}
-            <span className="ml-1 text-white/30 font-normal">({days.length})</span>
-          </h2>
           <button
             type="button"
-            onClick={addDay}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#8BA58F] hover:text-white bg-[#8BA58F]/10 hover:bg-[#8BA58F]/20 rounded-lg transition-all"
+            onClick={handleAddDay}
+            className="px-4 py-2 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-colors"
+            style={{
+              background: "var(--admin-surface-2)",
+              borderColor: "var(--admin-border)",
+              color: "var(--admin-text)",
+            }}
           >
-            <Plus className="w-3 h-3" />
-            Add Day
+            <Plus className="w-4 h-4 text-[var(--admin-accent)]" />
+            Add Day {days.length + 1}
           </button>
         </div>
 
-        <div className="space-y-2">
-          {days.map((day, idx) => (
+        <div className="space-y-6">
+          {days.map((dayItem, index) => (
             <div
-              key={idx}
-              className="border border-white/[0.06] rounded-xl overflow-hidden"
+              key={index}
+              className="rounded-xl border p-5 space-y-4 relative"
+              style={{
+                background: "var(--admin-surface-2)",
+                borderColor: "var(--admin-border)",
+              }}
             >
-              {/* Day Header */}
-              <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                onClick={() => setExpandedDay(expandedDay === idx ? -1 : idx)}
-              >
-                <GripVertical className="w-4 h-4 text-white/20 flex-shrink-0" />
-                <span className="text-xs font-medium text-[#8BA58F] w-12 flex-shrink-0">
-                  Day {day.day}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ background: "var(--admin-accent)", color: "#FFFFFF" }}>
+                  Day {dayItem.day}
                 </span>
-                <span className="text-sm text-white/60 flex-1 truncate">
-                  {day.title || <span className="text-white/25 italic">No title yet</span>}
-                </span>
-                <div className="flex items-center gap-1 flex-shrink-0">
+
+                {days.length > 1 && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); moveDay(idx, "up"); }}
-                    disabled={idx === 0}
-                    className="p-1 text-white/25 hover:text-white/60 disabled:opacity-20 transition-colors"
+                    onClick={() => handleRemoveDay(index)}
+                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--admin-danger-bg)] text-[var(--admin-danger)]"
+                    title="Remove Day"
                   >
-                    <ChevronUp className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); moveDay(idx, "down"); }}
-                    disabled={idx === days.length - 1}
-                    className="p-1 text-white/25 hover:text-white/60 disabled:opacity-20 transition-colors"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); removeDay(idx); }}
-                    disabled={days.length === 1}
-                    className="p-1 text-white/25 hover:text-red-400 disabled:opacity-20 transition-colors ml-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
+                    Day Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={dayItem.title}
+                    onChange={(e) => handleDayChange(index, "title", e.target.value)}
+                    placeholder="e.g. Beginning Where You Are"
+                    className="w-full px-3 py-2 rounded-lg text-sm border font-medium transition-colors"
+                    style={{
+                      background: "var(--admin-input-bg)",
+                      borderColor: "var(--admin-input-border)",
+                      color: "var(--admin-text)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
+                    Short Purpose / Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={dayItem.purpose}
+                    onChange={(e) => handleDayChange(index, "purpose", e.target.value)}
+                    placeholder="Brief intention for today..."
+                    className="w-full px-3 py-2 rounded-lg text-sm border transition-colors"
+                    style={{
+                      background: "var(--admin-input-bg)",
+                      borderColor: "var(--admin-input-border)",
+                      color: "var(--admin-text)",
+                    }}
+                  />
                 </div>
               </div>
 
-              {/* Day Body */}
-              {expandedDay === idx && (
-                <div className="px-4 pb-4 space-y-4 border-t border-white/[0.06] pt-4">
-                  <div>
-                    <label className={labelClass}>Title</label>
-                    <input
-                      id={`day-${idx}-title`}
-                      type="text"
-                      value={day.title}
-                      onChange={(e) => updateDay(idx, "title", e.target.value)}
-                      placeholder={`Day ${day.day} title`}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Prompt</label>
-                    <textarea
-                      id={`day-${idx}-prompt`}
-                      rows={5}
-                      value={day.prompt}
-                      onChange={(e) => updateDay(idx, "prompt", e.target.value)}
-                      placeholder="The main reflection prompt for this day…"
-                      className={textareaClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Purpose (italic note)</label>
-                    <textarea
-                      id={`day-${idx}-purpose`}
-                      rows={2}
-                      value={day.purpose}
-                      onChange={(e) => updateDay(idx, "purpose", e.target.value)}
-                      placeholder="Why this day matters…"
-                      className={textareaClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Deeper question (optional)</label>
-                    <input
-                      id={`day-${idx}-deeper`}
-                      type="text"
-                      value={day.deeper}
-                      onChange={(e) => updateDay(idx, "deeper", e.target.value)}
-                      placeholder="A follow-up question to go deeper…"
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-              )}
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--admin-text-muted)" }}>
+                  Daily Prompt Text
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={dayItem.prompt}
+                  onChange={(e) => handleDayChange(index, "prompt", e.target.value)}
+                  placeholder="The main reflection text for this day..."
+                  className="w-full px-3 py-2 rounded-lg text-sm border transition-colors resize-none"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-medium mb-1 flex items-center gap-1" style={{ color: "var(--admin-text-muted)" }}>
+                  <Sparkles className="w-3 h-3 text-[var(--admin-accent)]" />
+                  Deeper Reflection Question (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={dayItem.deeper ?? ""}
+                  onChange={(e) => handleDayChange(index, "deeper", e.target.value)}
+                  placeholder="What did you almost overlook today?"
+                  className="w-full px-3 py-2 rounded-lg text-sm border transition-colors"
+                  style={{
+                    background: "var(--admin-input-bg)",
+                    borderColor: "var(--admin-input-border)",
+                    color: "var(--admin-text)",
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* ─── Submit ────────────────────────────────────────────────────────── */}
-      <div className="flex gap-3 pb-4">
-        <button
-          type="button"
-          onClick={() => router.push("/admin/journeys")}
-          className="px-6 py-3 text-sm text-white/50 hover:text-white/70 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl transition-all"
-        >
-          Cancel
-        </button>
+      {/* Submit Bottom Bar */}
+      <div className="flex justify-end pt-4">
         <button
           type="submit"
-          disabled={isPending || uploading}
-          className="px-8 py-3 text-sm font-medium text-white bg-[#8BA58F] hover:bg-[#78937C] rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+          disabled={isPending}
+          className="px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-sm disabled:opacity-50"
+          style={{
+            background: "var(--admin-accent)",
+            color: "#FFFFFF",
+          }}
         >
-          {isPending ? "Saving…" : isEdit ? "Save Changes" : "Create Journey"}
+          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Journey"}
         </button>
       </div>
     </form>
