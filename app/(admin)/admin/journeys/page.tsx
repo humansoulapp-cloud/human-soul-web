@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
-import { Plus, Compass, Clock, Star, Edit, Layers, Calendar, Globe, FileText, Send } from "lucide-react";
+import { Plus, Compass, Clock, Star, Edit, Layers, Calendar, Globe, FileText, Send, Archive, Eye } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import DeleteJourneyButton from "@/components/admin/DeleteJourneyButton";
 import PublishNowButton from "@/components/admin/PublishNowButton";
+import ArchiveJourneyButton from "@/components/admin/ArchiveJourneyButton";
 
 export default async function AdminJourneysPage({
   searchParams,
@@ -29,6 +30,9 @@ export default async function AdminJourneysPage({
     if (currentTab === "draft") {
       return status === "draft";
     }
+    if (currentTab === "archived") {
+      return status === "archived";
+    }
     return true;
   });
 
@@ -41,6 +45,7 @@ export default async function AdminJourneysPage({
   ).length;
 
   const countDrafts = allJourneys.filter((j) => j.status === "draft").length;
+  const countArchived = allJourneys.filter((j) => j.status === "archived").length;
 
   return (
     <div className="space-y-6 w-full">
@@ -51,7 +56,7 @@ export default async function AdminJourneysPage({
             Journeys
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--admin-text-muted)" }}>
-            {allJourneys.length} total guided experiences · {countPublished} live · {countScheduled} scheduled · {countDrafts} drafts
+            {allJourneys.length} total guided experiences · {countPublished} live · {countScheduled} scheduled · {countDrafts} drafts · {countArchived} archived
           </p>
         </div>
 
@@ -128,6 +133,21 @@ export default async function AdminJourneysPage({
             {countDrafts}
           </span>
         </Link>
+
+        <Link
+          href="/admin/journeys?status=archived"
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            currentTab === "archived"
+              ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold border border-purple-500/30"
+              : "text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+          }`}
+        >
+          <Archive className="w-3.5 h-3.5" />
+          <span>Archived</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-500/20">
+            {countArchived}
+          </span>
+        </Link>
       </div>
 
       {/* Journeys Grid — full width */}
@@ -140,7 +160,8 @@ export default async function AdminJourneysPage({
             journey.scheduled_publish_at &&
             new Date(journey.scheduled_publish_at) > now;
           const isDraft = status === "draft";
-          const isLive = !isScheduledFuture && !isDraft;
+          const isArchived = status === "archived";
+          const isLive = !isScheduledFuture && !isDraft && !isArchived;
 
           return (
             <div
@@ -180,6 +201,11 @@ export default async function AdminJourneysPage({
                   {isDraft && (
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-zinc-600 text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
                       <FileText className="w-2.5 h-2.5" /> Draft
+                    </span>
+                  )}
+                  {isArchived && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-purple-600 text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
+                      <Archive className="w-2.5 h-2.5" /> Archived
                     </span>
                   )}
 
@@ -259,23 +285,41 @@ export default async function AdminJourneysPage({
                   borderColor: "var(--admin-border)",
                 }}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Link
                     href={`/admin/journeys/${journey.id}`}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors"
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1 transition-colors"
                     style={{
                       background: "var(--admin-surface)",
                       borderColor: "var(--admin-border)",
                       color: "var(--admin-text)",
                     }}
+                    title="Edit journey details"
                   >
                     <Edit className="w-3.5 h-3.5" />
                     <span>Edit</span>
                   </Link>
 
-                  {(!isLive) && (
+                  <Link
+                    href={`/journeys/${journey.id}`}
+                    target="_blank"
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1 transition-colors hover:border-[#8BA58F]"
+                    style={{
+                      background: "var(--admin-surface)",
+                      borderColor: "var(--admin-border)",
+                      color: "var(--admin-text-secondary)",
+                    }}
+                    title="Preview as user in new tab"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#8BA58F]" />
+                    <span>Preview</span>
+                  </Link>
+
+                  {(!isLive && !isArchived) && (
                     <PublishNowButton id={journey.id} title={journey.title} />
                   )}
+
+                  <ArchiveJourneyButton id={journey.id} title={journey.title} isArchived={isArchived} />
                 </div>
 
                 <DeleteJourneyButton id={journey.id} title={journey.title} />
@@ -301,6 +345,8 @@ export default async function AdminJourneysPage({
                 ? "You have no upcoming scheduled journeys at the moment."
                 : currentTab === "draft"
                 ? "No drafts found."
+                : currentTab === "archived"
+                ? "No archived journeys."
                 : "Get started by creating your first guided experience."}
             </p>
             <Link

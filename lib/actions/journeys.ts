@@ -7,7 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type JourneyStatus = "published" | "scheduled" | "draft";
+export type JourneyStatus = "published" | "scheduled" | "draft" | "archived";
 
 export type JourneyDayInput = {
   day: number;
@@ -78,6 +78,27 @@ async function requireAdmin() {
   return serviceClient;
 }
 
+export async function checkIsAdmin(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const serviceClient = createServiceClient();
+    const { data: profile } = await serviceClient
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    return profile?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+
 // ─── Read ──────────────────────────────────────────────────────────────────────
 
 export async function getJourneys(options?: { includeAll?: boolean }): Promise<JourneyRow[]> {
@@ -136,11 +157,15 @@ export async function getJourney(
   const scheduledAt = data.scheduled_publish_at;
   const now = new Date();
 
+  // If not explicitly allowed, verify if published or if current user is admin
   if (!options?.allowUnpublished) {
     const isLive =
       status === "published" ||
       (status === "scheduled" && scheduledAt && new Date(scheduledAt) <= now);
-    if (!isLive) return null;
+    if (!isLive) {
+      const isAdmin = await checkIsAdmin();
+      if (!isAdmin) return null;
+    }
   }
 
   // Sort days by day number
@@ -264,6 +289,46 @@ export async function publishJourneyNow(id: string) {
     .update({
       status: "published",
       scheduled_publish_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/journeys");
+  revalidatePath(`/journeys/${id}`);
+  revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function archiveJourney(id: string) {
+  const supabase = await requireAdmin();
+
+  const { error } = await supabase
+    .from("journeys")
+    .update({
+      status: "archived",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/journeys");
+  revalidatePath(`/journeys/${id}`);
+  revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function unarchiveJourney(id: string, targetStatus: JourneyStatus = "draft") {
+  const supabase = await requireAdmin();
+
+  const { error } = await supabase
+    .from("journeys")
+    .update({
+      status: targetStatus,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

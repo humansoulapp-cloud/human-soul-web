@@ -80,6 +80,7 @@ export async function getStats() {
     (j) => j.status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) > new Date()
   );
   const drafts = journeys.filter((j) => j.status === "draft");
+  const archived = journeys.filter((j) => j.status === "archived");
 
   return {
     totalJourneys: journeys.length,
@@ -88,7 +89,8 @@ export async function getStats() {
     premiumJourneys: journeys.filter((j) => j.premium).length,
     scheduledJourneys: scheduled.length,
     draftJourneys: drafts.length,
-    publishedJourneys: journeys.length - scheduled.length - drafts.length,
+    archivedJourneys: archived.length,
+    publishedJourneys: journeys.length - scheduled.length - drafts.length - archived.length,
   };
 }
 

@@ -13,7 +13,10 @@ import {
   Globe,
   FileText,
   Sparkles,
+  Archive,
+  Eye,
 } from "lucide-react";
+import JourneyPreviewModal from "@/components/admin/JourneyPreviewModal";
 import {
   createJourney,
   updateJourney,
@@ -42,6 +45,8 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
 
   // Publishing & Scheduling state
   const [status, setStatus] = useState<JourneyStatus>(journey?.status ?? "published");
+  // Preview modal state
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Format initial ISO date for datetime-local input (YYYY-MM-DDTHH:mm)
   const formatForInput = (isoDate?: string | null) => {
@@ -238,6 +243,20 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           <span className="text-xs" style={{ color: "var(--admin-text-muted)" }}>
             {saved ? "Saved" : dirty ? "Unsaved changes" : ""}
           </span>
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 transition-colors border"
+            style={{
+              background: "var(--admin-surface)",
+              borderColor: "var(--admin-border)",
+              color: "var(--admin-text)",
+            }}
+            title="Preview how users experience this journey"
+          >
+            <Eye className="w-4 h-4 text-[#8BA58F]" />
+            <span>Preview as User</span>
+          </button>
           <button
             type="submit"
             disabled={isPending}
@@ -621,6 +640,32 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                 Hidden from users. Only administrators can view or edit this.
               </p>
             </button>
+
+            {/* Option 4: Archived */}
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("archived");
+                markDirty();
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                status === "archived"
+                  ? "ring-2 ring-[var(--admin-accent)] border-[var(--admin-accent)] bg-[var(--admin-surface-2)]"
+                  : "hover:border-[var(--admin-border-hover)]"
+              }`}
+              style={{
+                background: status === "archived" ? "var(--admin-surface-2)" : "var(--admin-input-bg)",
+                borderColor: status === "archived" ? "var(--admin-accent)" : "var(--admin-border)",
+              }}
+            >
+              <div className="flex items-center gap-2 font-medium text-xs mb-1" style={{ color: "var(--admin-text)" }}>
+                <Archive className="w-4 h-4 text-purple-400" />
+                Archive Journey
+              </div>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--admin-text-muted)" }}>
+                Hidden from public app. Retained safely for record keeping.
+              </p>
+            </button>
           </div>
 
           {/* DateTime Picker if Scheduled */}
@@ -844,6 +889,29 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           </div>
         </section>
       </div>
+
+      {/* Live User Experience Preview Modal */}
+      <JourneyPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        journey={{
+          id,
+          title,
+          category,
+          realm,
+          tagline,
+          purpose,
+          intro,
+          time_required: timeRequired,
+          image_url: imageUrl,
+          premium,
+          featured,
+          completion_message: completionMessage,
+          status,
+          scheduled_publish_at: scheduledPublishAt,
+          days,
+        }}
+      />
     </form>
   );
 }
