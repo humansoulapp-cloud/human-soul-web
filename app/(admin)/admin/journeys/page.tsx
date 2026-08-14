@@ -1,11 +1,46 @@
 import React from "react";
 import Link from "next/link";
-import { Plus, Compass, Clock, Star, Edit, Layers } from "lucide-react";
+import { Plus, Compass, Clock, Star, Edit, Layers, Calendar, Globe, FileText, Send } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import DeleteJourneyButton from "@/components/admin/DeleteJourneyButton";
+import PublishNowButton from "@/components/admin/PublishNowButton";
 
-export default async function AdminJourneysPage() {
-  const journeys = await getJourneys();
+export default async function AdminJourneysPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ status?: string }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const currentTab = resolvedParams?.status || "all";
+
+  const allJourneys = await getJourneys({ includeAll: true });
+  const now = new Date();
+
+  // Filter journeys according to selected tab
+  const journeys = allJourneys.filter((j) => {
+    const status = j.status || "published";
+    if (currentTab === "all") return true;
+    if (currentTab === "published") {
+      return status === "published" || (status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) <= now);
+    }
+    if (currentTab === "scheduled") {
+      return status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) > now;
+    }
+    if (currentTab === "draft") {
+      return status === "draft";
+    }
+    return true;
+  });
+
+  const countPublished = allJourneys.filter(
+    (j) => (j.status || "published") === "published" || (j.status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) <= now)
+  ).length;
+
+  const countScheduled = allJourneys.filter(
+    (j) => j.status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) > now
+  ).length;
+
+  const countDrafts = allJourneys.filter((j) => j.status === "draft").length;
 
   return (
     <div className="space-y-6 w-full">
@@ -16,7 +51,7 @@ export default async function AdminJourneysPage() {
             Journeys
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--admin-text-muted)" }}>
-            {journeys.length} total guided experiences
+            {allJourneys.length} total guided experiences · {countPublished} live · {countScheduled} scheduled · {countDrafts} drafts
           </p>
         </div>
 
@@ -33,10 +68,79 @@ export default async function AdminJourneysPage() {
         </Link>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: "var(--admin-border)" }}>
+        <Link
+          href="/admin/journeys"
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            currentTab === "all"
+              ? "bg-[var(--admin-surface-2)] text-[var(--admin-text)] font-semibold border border-[var(--admin-border)]"
+              : "text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+          }`}
+        >
+          <span>All</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--admin-input-bg)]">
+            {allJourneys.length}
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/journeys?status=published"
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            currentTab === "published"
+              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30"
+              : "text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>Live & Published</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20">
+            {countPublished}
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/journeys?status=scheduled"
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            currentTab === "scheduled"
+              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/30"
+              : "text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+          }`}
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          <span>Scheduled</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20">
+            {countScheduled}
+          </span>
+        </Link>
+
+        <Link
+          href="/admin/journeys?status=draft"
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+            currentTab === "draft"
+              ? "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 font-semibold border border-zinc-500/30"
+              : "text-[var(--admin-text-muted)] hover:text-[var(--admin-text)]"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Drafts</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-500/20">
+            {countDrafts}
+          </span>
+        </Link>
+      </div>
+
       {/* Journeys Grid — full width */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {journeys.map((journey) => {
           const daysCount = journey.journey_days?.length ?? 0;
+          const status = journey.status || "published";
+          const isScheduledFuture =
+            status === "scheduled" &&
+            journey.scheduled_publish_at &&
+            new Date(journey.scheduled_publish_at) > now;
+          const isDraft = status === "draft";
+          const isLive = !isScheduledFuture && !isDraft;
 
           return (
             <div
@@ -61,14 +165,31 @@ export default async function AdminJourneysPage() {
                   </div>
                 )}
 
-                <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[80%]">
+                  {/* Status badge */}
+                  {isLive && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-emerald-600 text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
+                      <Globe className="w-2.5 h-2.5" /> Live
+                    </span>
+                  )}
+                  {isScheduledFuture && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-amber-500 text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5" /> Scheduled
+                    </span>
+                  )}
+                  {isDraft && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-zinc-600 text-white backdrop-blur-sm shadow-sm flex items-center gap-1">
+                      <FileText className="w-2.5 h-2.5" /> Draft
+                    </span>
+                  )}
+
                   {journey.featured && (
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-amber-500/80 text-white backdrop-blur-sm">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-amber-500/90 text-white backdrop-blur-sm">
                       Featured
                     </span>
                   )}
                   {journey.premium && (
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-purple-500/80 text-white backdrop-blur-sm">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-purple-500/90 text-white backdrop-blur-sm">
                       Premium
                     </span>
                   )}
@@ -78,9 +199,11 @@ export default async function AdminJourneysPage() {
               {/* Card Body */}
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <span className="text-[10px] font-medium uppercase tracking-widest block mb-1" style={{ color: "var(--admin-accent)" }}>
-                    {journey.category || "Uncategorized"}
-                  </span>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[10px] font-medium uppercase tracking-widest block" style={{ color: "var(--admin-accent)" }}>
+                      {journey.category || "Uncategorized"}
+                    </span>
+                  </div>
                   <h3 className="text-base font-semibold leading-tight mb-1" style={{ color: "var(--admin-text)" }}>
                     {journey.title}
                   </h3>
@@ -89,38 +212,71 @@ export default async function AdminJourneysPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-3 border-t" style={{ color: "var(--admin-text-muted)", borderColor: "var(--admin-border)" }}>
-                  <div className="flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>{daysCount} {daysCount === 1 ? "day" : "days"}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{journey.time_required || "N/A"}</span>
+                <div className="space-y-2">
+                  {/* Scheduled release info banner */}
+                  {isScheduledFuture && journey.scheduled_publish_at && (
+                    <div
+                      className="px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5"
+                      style={{
+                        background: "var(--admin-surface-2)",
+                        borderColor: "var(--admin-border)",
+                        color: "var(--admin-text-secondary)",
+                      }}
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span className="truncate">
+                        Auto-upload:{" "}
+                        <strong>
+                          {new Date(journey.scheduled_publish_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </strong>
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs pt-2 border-t" style={{ color: "var(--admin-text-muted)", borderColor: "var(--admin-border)" }}>
+                    <div className="flex items-center gap-1">
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>{daysCount} {daysCount === 1 ? "day" : "days"}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{journey.time_required || "N/A"}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Card Actions Footer */}
               <div
-                className="px-5 py-3 border-t flex items-center justify-between gap-2"
+                className="px-4 py-3 border-t flex items-center justify-between gap-2 flex-wrap"
                 style={{
                   background: "var(--admin-surface-2)",
                   borderColor: "var(--admin-border)",
                 }}
               >
-                <Link
-                  href={`/admin/journeys/${journey.id}`}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors"
-                  style={{
-                    background: "var(--admin-surface)",
-                    borderColor: "var(--admin-border)",
-                    color: "var(--admin-text)",
-                  }}
-                >
-                  <Edit className="w-3.5 h-3.5" />
-                  <span>Edit</span>
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href={`/admin/journeys/${journey.id}`}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors"
+                    style={{
+                      background: "var(--admin-surface)",
+                      borderColor: "var(--admin-border)",
+                      color: "var(--admin-text)",
+                    }}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </Link>
+
+                  {(!isLive) && (
+                    <PublishNowButton id={journey.id} title={journey.title} />
+                  )}
+                </div>
 
                 <DeleteJourneyButton id={journey.id} title={journey.title} />
               </div>
@@ -138,10 +294,14 @@ export default async function AdminJourneysPage() {
           >
             <Compass className="w-10 h-10 mx-auto mb-3 opacity-20" style={{ color: "var(--admin-text)" }} />
             <p className="text-sm font-medium mb-1" style={{ color: "var(--admin-text)" }}>
-              No journeys found
+              No journeys found in this view
             </p>
             <p className="text-xs mb-4" style={{ color: "var(--admin-text-muted)" }}>
-              Get started by creating your first guided experience.
+              {currentTab === "scheduled"
+                ? "You have no upcoming scheduled journeys at the moment."
+                : currentTab === "draft"
+                ? "No drafts found."
+                : "Get started by creating your first guided experience."}
             </p>
             <Link
               href="/admin/journeys/new"
@@ -157,3 +317,4 @@ export default async function AdminJourneysPage() {
     </div>
   );
 }
+

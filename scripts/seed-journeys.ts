@@ -57,22 +57,25 @@ async function seed() {
   for (const journey of JOURNEYS) {
     // Upsert the journey row
     const { error: jErr } = await supabase.from("journeys").upsert(
-      {
-        id: journey.id,
-        title: journey.title,
-        category: journey.category ?? null,
-        realm: journey.realm ?? null,
-        tagline: journey.tagline ?? null,
-        purpose: journey.purpose ?? null,
-        intro: journey.intro ?? null,
-        time_required: journey.timeRequired ?? null,
-        image_url: JOURNEY_IMAGES[journey.id] ?? null,
-        premium: journey.premium ?? false,
-        featured: journey.featured ?? false,
-        completion_message: journey.completionMessage ?? null,
-      },
-      { onConflict: "id" }
-    );
+       {
+         id: journey.id,
+         title: journey.title,
+         category: journey.category ?? null,
+         realm: journey.realm ?? null,
+         tagline: journey.tagline ?? null,
+         purpose: journey.purpose ?? null,
+         intro: journey.intro ?? null,
+         time_required: journey.timeRequired ?? null,
+         image_url: JOURNEY_IMAGES[journey.id] ?? null,
+         premium: journey.premium ?? false,
+         featured: journey.featured ?? false,
+         completion_message: journey.completionMessage ?? null,
+         status: "published",
+         scheduled_publish_at: null,
+       },
+       { onConflict: "id" }
+     );
+
 
     if (jErr) {
       console.error(`❌  Error upserting journey "${journey.id}":`, jErr.message);

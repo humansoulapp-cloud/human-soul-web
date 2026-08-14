@@ -1,5 +1,5 @@
 import React from "react";
-import { Compass, Users, TrendingUp, Star } from "lucide-react";
+import { Compass, Users, TrendingUp, Star, Calendar, FileText } from "lucide-react";
 import { getStats } from "@/lib/actions/users";
 import Link from "next/link";
 
@@ -12,6 +12,13 @@ export default async function AdminDashboardPage() {
       value: stats.totalJourneys,
       icon: Compass,
       href: "/admin/journeys",
+    },
+    {
+      label: "Scheduled",
+      value: stats.scheduledJourneys,
+      icon: Calendar,
+      href: "/admin/journeys?status=scheduled",
+      highlight: stats.scheduledJourneys > 0,
     },
     {
       label: "Total Users",
@@ -33,6 +40,7 @@ export default async function AdminDashboardPage() {
     },
   ];
 
+
   return (
     <div className="space-y-8 w-full">
       {/* Header */}
@@ -46,7 +54,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats grid — fill full width */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -56,7 +64,7 @@ export default async function AdminDashboardPage() {
               className="group rounded-2xl border p-6 flex flex-col gap-4 transition-all hover:border-[var(--admin-accent)]"
               style={{
                 background: "var(--admin-surface)",
-                borderColor: "var(--admin-border)",
+                borderColor: card.highlight ? "var(--admin-accent)" : "var(--admin-border)",
               }}
             >
               <div
@@ -80,6 +88,7 @@ export default async function AdminDashboardPage() {
           );
         })}
       </div>
+
 
       {/* Quick actions */}
       <div

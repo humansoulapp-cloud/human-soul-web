@@ -8,9 +8,10 @@ export default async function EditJourneyPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const journey = await getJourney(id);
+  const journey = await getJourney(id, { allowUnpublished: true });
 
   if (!journey) notFound();
 
   return <JourneyForm journey={journey} />;
 }
+

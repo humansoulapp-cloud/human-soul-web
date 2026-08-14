@@ -69,7 +69,28 @@ Este documento es la **fuente única de verdad y progreso** del proyecto. Cualqu
 
 ---
 
+### Fase 6: Panel de Administración & Programación de Viajes (Scheduling) `[COMPLETADO]`
+- [x] Panel de administración `/admin` con estadísticas de viajes (activos, programados, borradores, usuarios).
+- [x] Gestión CRUD completa de viajes guiados con soporte de portada (URL o subida directa a Supabase Storage).
+- [x] Sistema de estados y programación de publicaciones (`published`, `scheduled`, `draft`).
+- [x] Componente de selección de fecha y hora local con presets rápidos (+1 día, +3 días, +1 semana).
+- [x] Filtros por pestañas en `/admin/journeys` (Todos, Publicados en vivo, Programados, Borradores).
+- [x] Publicación instantánea con 1 clic ("Publish Now") para viajes programados o borradores.
+- [x] Publicación automática inmediata al cumplirse la fecha/hora programada en consultas de usuario y endpoint cron `/api/cron/publish-journeys`.
+- [x] Script de migración SQL en `scripts/migration-add-scheduling.sql`.
+
+---
+
 ## 📝 Registro de Sesiones e Historial de Cambios
+
+### 📅 Sesión 2 - 2026-08-14 (Agente Antigravity)
+- **Acciones Realizadas**:
+  1. Se implementó la funcionalidad completa de **Scheduling & Automated Publishing** para Viajes en el Panel de Administración.
+  2. Se añadieron columnas `status` y `scheduled_publish_at` en la base de datos de Supabase.
+  3. Se creó el control visual en el formulario de creación/edición de viajes (`components/admin/JourneyForm.tsx`) con date-picker y presets rápidos.
+  4. Se integraron pestañas de filtrado y etiquetas de estado con badges dinámicos en el listado de administración (`app/(admin)/admin/journeys/page.tsx`).
+  5. Se implementó el endpoint `/api/cron/publish-journeys` para automatizaciones en segundo plano.
+  6. Se verificó con `npm run build` obteniendo 0 errores de compilación y tipado.
 
 ### 📅 Sesión 1 - 2026-07-30 (Agente Antigravity)
 - **Acciones Realizadas**:
@@ -83,10 +104,12 @@ Este documento es la **fuente única de verdad y progreso** del proyecto. Cualqu
 
 ## 🤖 Guía de Instrucciones para la IA (Cualquier Sesión Futura)
 
-1. **Estado Actual**: El MVP base está 100% completado y listo para ejecutar con `npm run dev` en `/Users/dariolledo/Code/apps/human-soul-web`.
+1. **Estado Actual**: El MVP y el Módulo de Administración con Programación de Viajes (Scheduling) están 100% completados y listos para producción.
 2. **Para probar localmente**:
    - Abrir terminal en `/Users/dariolledo/Code/apps/human-soul-web`.
    - Ejecutar `npm run dev`.
-   - Navegar a `http://localhost:3000`.
+   - Navegar a `http://localhost:3000/admin/journeys`.
 3. **Para despliegue**:
    - Subir el código a GitHub y conectar con Vercel. Las variables de entorno en `.env.local` deben añadirse al panel de Vercel.
+   - Ejecutar el script `scripts/migration-add-scheduling.sql` en el SQL Editor de Supabase si la tabla aún no cuenta con las columnas `status` y `scheduled_publish_at`.
+

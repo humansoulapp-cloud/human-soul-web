@@ -7,6 +7,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type JourneyStatus = "published" | "scheduled" | "draft";
+
 export type JourneyDayInput = {
   day: number;
   title: string;
@@ -28,6 +30,8 @@ export type JourneyInput = {
   premium?: boolean;
   featured?: boolean;
   completion_message?: string | null;
+  status?: JourneyStatus;
+  scheduled_publish_at?: string | null;
   days: JourneyDayInput[];
 };
 
@@ -44,6 +48,8 @@ export type JourneyRow = {
   premium: boolean;
   featured: boolean;
   completion_message: string | null;
+  status: JourneyStatus;
+  scheduled_publish_at: string | null;
   created_at: string;
   updated_at: string;
   journey_days: JourneyDayInput[];
@@ -74,18 +80,49 @@ async function requireAdmin() {
 
 // ─── Read ──────────────────────────────────────────────────────────────────────
 
-export async function getJourneys(): Promise<JourneyRow[]> {
+export async function getJourneys(options?: { includeAll?: boolean }): Promise<JourneyRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const query = supabase
     .from("journeys")
     .select("*, journey_days(*)")
     .order("created_at", { ascending: true });
 
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as JourneyRow[];
+
+  const rawList = (data ?? []) as any[];
+  const now = new Date();
+
+  // If includeAll is requested (admin area), return all journeys
+  if (options?.includeAll) {
+    return rawList.map((j) => ({
+      ...j,
+      status: j.status || "published",
+      scheduled_publish_at: j.scheduled_publish_at || null,
+    })) as JourneyRow[];
+  }
+
+  // Otherwise (public view), only return published journeys or scheduled whose time has passed
+  const visible = rawList.filter((j) => {
+    const status = j.status || "published";
+    if (status === "published") return true;
+    if (status === "scheduled" && j.scheduled_publish_at) {
+      return new Date(j.scheduled_publish_at) <= now;
+    }
+    return false;
+  });
+
+  return visible.map((j) => ({
+    ...j,
+    status: j.status || "published",
+    scheduled_publish_at: j.scheduled_publish_at || null,
+  })) as JourneyRow[];
 }
 
-export async function getJourney(id: string): Promise<JourneyRow | null> {
+export async function getJourney(
+  id: string,
+  options?: { allowUnpublished?: boolean }
+): Promise<JourneyRow | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("journeys")
@@ -93,14 +130,31 @@ export async function getJourney(id: string): Promise<JourneyRow | null> {
     .eq("id", id)
     .single();
 
-  if (error) return null;
+  if (error || !data) return null;
+
+  const status: JourneyStatus = data.status || "published";
+  const scheduledAt = data.scheduled_publish_at;
+  const now = new Date();
+
+  if (!options?.allowUnpublished) {
+    const isLive =
+      status === "published" ||
+      (status === "scheduled" && scheduledAt && new Date(scheduledAt) <= now);
+    if (!isLive) return null;
+  }
+
   // Sort days by day number
   if (data?.journey_days) {
     data.journey_days.sort(
       (a: JourneyDayInput, b: JourneyDayInput) => a.day - b.day
     );
   }
-  return data as JourneyRow;
+
+  return {
+    ...data,
+    status,
+    scheduled_publish_at: scheduledAt || null,
+  } as JourneyRow;
 }
 
 // ─── Create ────────────────────────────────────────────────────────────────────
@@ -109,6 +163,12 @@ export async function createJourney(input: JourneyInput) {
   const supabase = await requireAdmin();
 
   const { days, ...journeyData } = input;
+
+  const status = journeyData.status || "published";
+  const scheduledPublishAt =
+    status === "scheduled" && journeyData.scheduled_publish_at
+      ? new Date(journeyData.scheduled_publish_at).toISOString()
+      : null;
 
   const { error: jErr } = await supabase.from("journeys").insert({
     id: journeyData.id,
@@ -123,6 +183,8 @@ export async function createJourney(input: JourneyInput) {
     premium: journeyData.premium ?? false,
     featured: journeyData.featured ?? false,
     completion_message: journeyData.completion_message ?? null,
+    status,
+    scheduled_publish_at: scheduledPublishAt,
   });
 
   if (jErr) return { error: jErr.message };
@@ -136,6 +198,7 @@ export async function createJourney(input: JourneyInput) {
 
   revalidatePath("/journeys");
   revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
   redirect("/admin/journeys");
 }
 
@@ -145,6 +208,12 @@ export async function updateJourney(id: string, input: JourneyInput) {
   const supabase = await requireAdmin();
 
   const { days, ...journeyData } = input;
+
+  const status = journeyData.status || "published";
+  const scheduledPublishAt =
+    status === "scheduled" && journeyData.scheduled_publish_at
+      ? new Date(journeyData.scheduled_publish_at).toISOString()
+      : null;
 
   const { error: jErr } = await supabase
     .from("journeys")
@@ -160,6 +229,8 @@ export async function updateJourney(id: string, input: JourneyInput) {
       premium: journeyData.premium ?? false,
       featured: journeyData.featured ?? false,
       completion_message: journeyData.completion_message ?? null,
+      status,
+      scheduled_publish_at: scheduledPublishAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -179,7 +250,64 @@ export async function updateJourney(id: string, input: JourneyInput) {
   revalidatePath("/journeys");
   revalidatePath(`/journeys/${id}`);
   revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
   redirect("/admin/journeys");
+}
+
+// ─── Quick Actions ─────────────────────────────────────────────────────────────
+
+export async function publishJourneyNow(id: string) {
+  const supabase = await requireAdmin();
+
+  const { error } = await supabase
+    .from("journeys")
+    .update({
+      status: "published",
+      scheduled_publish_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/journeys");
+  revalidatePath(`/journeys/${id}`);
+  revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function publishOverdueJourneys() {
+  const serviceClient = createServiceClient();
+  const now = new Date().toISOString();
+
+  // Find all scheduled journeys whose scheduled_publish_at <= now
+  const { data: overdueJourneys, error: fetchErr } = await serviceClient
+    .from("journeys")
+    .select("id")
+    .eq("status", "scheduled")
+    .lte("scheduled_publish_at", now);
+
+  if (fetchErr) return { error: fetchErr.message, count: 0 };
+  if (!overdueJourneys || overdueJourneys.length === 0) return { success: true, count: 0 };
+
+  const ids = overdueJourneys.map((j) => j.id);
+
+  const { error: updateErr } = await serviceClient
+    .from("journeys")
+    .update({
+      status: "published",
+      updated_at: new Date().toISOString(),
+    })
+    .in("id", ids);
+
+  if (updateErr) return { error: updateErr.message, count: 0 };
+
+  revalidatePath("/journeys");
+  revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
+
+  return { success: true, count: ids.length };
 }
 
 // ─── Delete ────────────────────────────────────────────────────────────────────
@@ -192,6 +320,7 @@ export async function deleteJourney(id: string) {
 
   revalidatePath("/journeys");
   revalidatePath("/admin/journeys");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -221,3 +350,4 @@ export async function uploadJourneyImage(
 
   return { url: publicUrl };
 }
+

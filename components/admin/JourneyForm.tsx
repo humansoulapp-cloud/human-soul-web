@@ -8,6 +8,11 @@ import {
   Plus,
   Trash2,
   Link as LinkIcon,
+  Calendar,
+  Clock,
+  Globe,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import {
   createJourney,
@@ -16,6 +21,7 @@ import {
   type JourneyInput,
   type JourneyDayInput,
   type JourneyRow,
+  type JourneyStatus,
 } from "@/lib/actions/journeys";
 
 export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
@@ -33,6 +39,27 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const [premium, setPremium] = useState(journey?.premium ?? false);
   const [featured, setFeatured] = useState(journey?.featured ?? false);
   const [completionMessage, setCompletionMessage] = useState(journey?.completion_message ?? "");
+
+  // Publishing & Scheduling state
+  const [status, setStatus] = useState<JourneyStatus>(journey?.status ?? "published");
+  
+  // Format initial ISO date for datetime-local input (YYYY-MM-DDTHH:mm)
+  const formatForInput = (isoDate?: string | null) => {
+    if (!isoDate) return "";
+    try {
+      const d = new Date(isoDate);
+      // Offset to local timezone
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+      return localISOTime;
+    } catch {
+      return "";
+    }
+  };
+
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<string>(
+    formatForInput(journey?.scheduled_publish_at)
+  );
 
   const [days, setDays] = useState<JourneyDayInput[]>(
     journey?.journey_days ?? [
@@ -53,6 +80,19 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const markDirty = () => {
     setDirty(true);
     setSaved(false);
+  };
+
+  // Preset helper for scheduling
+  const setQuickSchedule = (hoursAhead: number) => {
+    const target = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
+    // Round to nearest 15 minutes
+    const minutes = 15 * Math.ceil(target.getMinutes() / 15);
+    target.setMinutes(minutes, 0, 0);
+    const tzOffset = target.getTimezoneOffset() * 60000;
+    const localStr = new Date(target.getTime() - tzOffset).toISOString().slice(0, 16);
+    setScheduledPublishAt(localStr);
+    setStatus("scheduled");
+    markDirty();
   };
 
   // Day handlers
@@ -101,6 +141,7 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
       setError(`Image upload failed: ${result.error}`);
     } else if (result.url) {
       setImageUrl(result.url);
+      markDirty();
     }
   };
 
@@ -111,6 +152,11 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
 
     if (!id.trim() || !title.trim()) {
       setError("Journey ID and Title are required.");
+      return;
+    }
+
+    if (status === "scheduled" && !scheduledPublishAt) {
+      setError("Please specify a publication date and time when scheduling a journey.");
       return;
     }
 
@@ -127,6 +173,11 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
       premium,
       featured,
       completion_message: completionMessage.trim(),
+      status,
+      scheduled_publish_at:
+        status === "scheduled" && scheduledPublishAt
+          ? new Date(scheduledPublishAt).toISOString()
+          : null,
       days,
     };
 
@@ -142,6 +193,7 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
       }
     });
   };
+
 
   const day = days[activeDay];
 
@@ -446,6 +498,196 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
             )}
           </div>
         </section>
+
+        {/* Publishing & Scheduling Section */}
+        <section
+          className="rounded-xl border p-5"
+          style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: "var(--admin-text)" }}>
+                <Calendar className="w-4 h-4 text-[var(--admin-accent)]" />
+                Publishing & Schedule
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+                Control when this guided journey becomes accessible to users.
+              </p>
+            </div>
+            
+            {/* Status indicator badge */}
+            <div className="flex items-center gap-2">
+              {status === "published" && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                  <Globe className="w-3 h-3" /> Live & Published
+                </span>
+              )}
+              {status === "scheduled" && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" /> Scheduled Release
+                </span>
+              )}
+              {status === "draft" && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-500/30 flex items-center gap-1.5">
+                  <FileText className="w-3 h-3" /> Draft Only
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            {/* Option 1: Published */}
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("published");
+                markDirty();
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                status === "published"
+                  ? "ring-2 ring-[var(--admin-accent)] border-[var(--admin-accent)] bg-[var(--admin-surface-2)]"
+                  : "hover:border-[var(--admin-border-hover)]"
+              }`}
+              style={{
+                background: status === "published" ? "var(--admin-surface-2)" : "var(--admin-input-bg)",
+                borderColor: status === "published" ? "var(--admin-accent)" : "var(--admin-border)",
+              }}
+            >
+              <div className="flex items-center gap-2 font-medium text-xs mb-1" style={{ color: "var(--admin-text)" }}>
+                <Globe className="w-4 h-4 text-emerald-500" />
+                Publish Immediately
+              </div>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--admin-text-muted)" }}>
+                Live right now and immediately visible to all app users.
+              </p>
+            </button>
+
+            {/* Option 2: Scheduled */}
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("scheduled");
+                if (!scheduledPublishAt) {
+                  // Default to tomorrow 9am if not set
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  tomorrow.setHours(9, 0, 0, 0);
+                  const tzOffset = tomorrow.getTimezoneOffset() * 60000;
+                  setScheduledPublishAt(new Date(tomorrow.getTime() - tzOffset).toISOString().slice(0, 16));
+                }
+                markDirty();
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                status === "scheduled"
+                  ? "ring-2 ring-[var(--admin-accent)] border-[var(--admin-accent)] bg-[var(--admin-surface-2)]"
+                  : "hover:border-[var(--admin-border-hover)]"
+              }`}
+              style={{
+                background: status === "scheduled" ? "var(--admin-surface-2)" : "var(--admin-input-bg)",
+                borderColor: status === "scheduled" ? "var(--admin-accent)" : "var(--admin-border)",
+              }}
+            >
+              <div className="flex items-center gap-2 font-medium text-xs mb-1" style={{ color: "var(--admin-text)" }}>
+                <Clock className="w-4 h-4 text-amber-500" />
+                Schedule for Future Date
+              </div>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--admin-text-muted)" }}>
+                Automatically uploads & unlocks on your specified date and time.
+              </p>
+            </button>
+
+            {/* Option 3: Draft */}
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("draft");
+                markDirty();
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                status === "draft"
+                  ? "ring-2 ring-[var(--admin-accent)] border-[var(--admin-accent)] bg-[var(--admin-surface-2)]"
+                  : "hover:border-[var(--admin-border-hover)]"
+              }`}
+              style={{
+                background: status === "draft" ? "var(--admin-surface-2)" : "var(--admin-input-bg)",
+                borderColor: status === "draft" ? "var(--admin-accent)" : "var(--admin-border)",
+              }}
+            >
+              <div className="flex items-center gap-2 font-medium text-xs mb-1" style={{ color: "var(--admin-text)" }}>
+                <FileText className="w-4 h-4 text-zinc-400" />
+                Save as Draft
+              </div>
+              <p className="text-[11px] leading-relaxed" style={{ color: "var(--admin-text-muted)" }}>
+                Hidden from users. Only administrators can view or edit this.
+              </p>
+            </button>
+          </div>
+
+          {/* DateTime Picker if Scheduled */}
+          {status === "scheduled" && (
+            <div
+              className="p-4 rounded-xl border mt-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+              style={{
+                background: "var(--admin-surface-2)",
+                borderColor: "var(--admin-border)",
+              }}
+            >
+              <div className="flex-1">
+                <label className="block text-xs font-semibold mb-1" style={{ color: "var(--admin-text)" }}>
+                  Scheduled Release Date & Time
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="datetime-local"
+                    value={scheduledPublishAt}
+                    onChange={(e) => {
+                      setScheduledPublishAt(e.target.value);
+                      markDirty();
+                    }}
+                    required={status === "scheduled"}
+                    className="px-3 py-2 rounded-lg text-sm border font-sans"
+                    style={inputStyle}
+                  />
+                  <span className="text-xs" style={{ color: "var(--admin-text-muted)" }}>
+                    (in your local time)
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick schedule presets */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-medium mr-1" style={{ color: "var(--admin-text-muted)" }}>
+                  Presets:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuickSchedule(24)}
+                  className="px-2.5 py-1 rounded-md text-xs border transition-colors hover:border-[var(--admin-accent)]"
+                  style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)", color: "var(--admin-text)" }}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickSchedule(72)}
+                  className="px-2.5 py-1 rounded-md text-xs border transition-colors hover:border-[var(--admin-accent)]"
+                  style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)", color: "var(--admin-text)" }}
+                >
+                  +3 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickSchedule(168)}
+                  className="px-2.5 py-1 rounded-md text-xs border transition-colors hover:border-[var(--admin-accent)]"
+                  style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)", color: "var(--admin-text)" }}
+                >
+                  +1 Week
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
 
         {/* Days: master-detail */}
         <section
