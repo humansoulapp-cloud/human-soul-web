@@ -42,6 +42,11 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const [premium, setPremium] = useState(journey?.premium ?? false);
   const [featured, setFeatured] = useState(journey?.featured ?? false);
   const [completionMessage, setCompletionMessage] = useState(journey?.completion_message ?? "");
+  const [reflectionQuestions, setReflectionQuestions] = useState<string[]>(
+    journey?.reflection_questions && journey.reflection_questions.length > 0
+      ? [...journey.reflection_questions, "", "", ""].slice(0, 3)
+      : ["", "", ""]
+  );
 
   // Publishing & Scheduling state
   const [status, setStatus] = useState<JourneyStatus>(journey?.status ?? "published");
@@ -128,6 +133,13 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
     markDirty();
   };
 
+  const handleReflectionQuestionChange = (index: number, value: string) => {
+    const updated = [...reflectionQuestions];
+    updated[index] = value;
+    setReflectionQuestions(updated);
+    markDirty();
+  };
+
   // Image upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,6 +190,9 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
       premium,
       featured,
       completion_message: completionMessage.trim(),
+      reflection_questions: reflectionQuestions
+        .map((q) => q.trim())
+        .filter((q) => q.length > 0),
       status,
       scheduled_publish_at:
         status === "scheduled" && scheduledPublishAt
@@ -468,12 +483,12 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
               />
               Detailed texts
               <span className="font-normal text-xs" style={{ color: "var(--admin-text-muted)" }}>
-                purpose, full introduction, completion message
+                purpose, full introduction
               </span>
             </button>
 
             {textsOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3">
                 <label className="flex flex-col gap-1">
                   <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
                     Purpose / short intro
@@ -496,19 +511,6 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                     value={intro}
                     onChange={(e) => setIntro(e.target.value)}
                     placeholder="Detailed text shown on the journey landing page..."
-                    className="px-2.5 py-2 rounded-lg text-[12.5px] leading-relaxed border resize-y"
-                    style={inputStyle}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
-                    Completion message
-                  </span>
-                  <textarea
-                    rows={7}
-                    value={completionMessage}
-                    onChange={(e) => setCompletionMessage(e.target.value)}
-                    placeholder="Shown when a user finishes all days..."
                     className="px-2.5 py-2 rounded-lg text-[12.5px] leading-relaxed border resize-y"
                     style={inputStyle}
                   />
@@ -888,6 +890,59 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
             )}
           </div>
         </section>
+
+        {/* Journey Completion: reflection questions + completion message */}
+        <section
+          className="rounded-xl border p-5"
+          style={{ background: "var(--admin-surface)", borderColor: "var(--admin-border)" }}
+        >
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: "var(--admin-text)" }}>
+              <Sparkles className="w-4 h-4 text-[var(--admin-accent)]" />
+              Journey Completion
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+              Shown to users after they finish all {days.length} day{days.length === 1 ? "" : "s"}.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3.5">
+            <div>
+              <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                Reflection questions
+              </span>
+              <div className="flex flex-col gap-2.5 mt-1">
+                {reflectionQuestions.map((question, index) => (
+                  <input
+                    key={index}
+                    value={question}
+                    onChange={(e) => handleReflectionQuestionChange(index, e.target.value)}
+                    placeholder={`Reflection question ${index + 1}...`}
+                    className="px-3 py-2 rounded-lg text-sm border"
+                    style={inputStyle}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <label className="flex flex-col gap-1">
+              <span className={labelClass} style={{ color: "var(--admin-text-muted)" }}>
+                Completion message
+              </span>
+              <textarea
+                rows={5}
+                value={completionMessage}
+                onChange={(e) => {
+                  setCompletionMessage(e.target.value);
+                  markDirty();
+                }}
+                placeholder="Shown when a user finishes all days..."
+                className="px-3 py-2.5 rounded-lg text-sm leading-relaxed border resize-y"
+                style={inputStyle}
+              />
+            </label>
+          </div>
+        </section>
       </div>
 
       {/* Live User Experience Preview Modal */}
@@ -907,6 +962,7 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           premium,
           featured,
           completion_message: completionMessage,
+          reflection_questions: reflectionQuestions.filter((q) => q.trim().length > 0),
           status,
           scheduled_publish_at: scheduledPublishAt,
           days,

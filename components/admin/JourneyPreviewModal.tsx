@@ -239,6 +239,48 @@ export default function JourneyPreviewModal({
                   </button>
                 </div>
               </div>
+
+              {/* Completion Preview */}
+              {(() => {
+                const reflectionQuestions =
+                  (journey as JourneyRow).reflection_questions ??
+                  (journey as JourneyInput).reflection_questions ??
+                  [];
+                const completionMessage = journey.completion_message;
+                if (
+                  (!reflectionQuestions || reflectionQuestions.length === 0) &&
+                  !completionMessage
+                ) {
+                  return null;
+                }
+                return (
+                  <div className="bg-[#8BA58F]/10 border border-[#8BA58F]/20 rounded-3xl p-5 sm:p-6 space-y-4">
+                    <h2 className="font-serif-editorial text-lg text-[var(--text-primary,#f3f4f3)] flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#8BA58F]" />
+                      Journey Completion
+                    </h2>
+
+                    {reflectionQuestions && reflectionQuestions.length > 0 && (
+                      <div className="space-y-2">
+                        {reflectionQuestions.map((q, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 bg-[var(--bg-surface-secondary,rgba(255,255,255,0.04))] rounded-2xl border border-[var(--border-subtle,rgba(255,255,255,0.08))] text-xs text-[var(--text-secondary,#9ba39d)] italic"
+                          >
+                            {q}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {completionMessage && (
+                      <p className="text-sm text-[var(--text-primary,#f3f4f3)] font-light leading-relaxed whitespace-pre-line">
+                        {completionMessage}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

@@ -30,6 +30,7 @@ export type JourneyInput = {
   premium?: boolean;
   featured?: boolean;
   completion_message?: string | null;
+  reflection_questions?: string[] | null;
   status?: JourneyStatus;
   scheduled_publish_at?: string | null;
   days: JourneyDayInput[];
@@ -48,6 +49,7 @@ export type JourneyRow = {
   premium: boolean;
   featured: boolean;
   completion_message: string | null;
+  reflection_questions: string[] | null;
   status: JourneyStatus;
   scheduled_publish_at: string | null;
   created_at: string;
@@ -208,6 +210,7 @@ export async function createJourney(input: JourneyInput) {
     premium: journeyData.premium ?? false,
     featured: journeyData.featured ?? false,
     completion_message: journeyData.completion_message ?? null,
+    reflection_questions: journeyData.reflection_questions ?? null,
     status,
     scheduled_publish_at: scheduledPublishAt,
   });
@@ -254,6 +257,7 @@ export async function updateJourney(id: string, input: JourneyInput) {
       premium: journeyData.premium ?? false,
       featured: journeyData.featured ?? false,
       completion_message: journeyData.completion_message ?? null,
+      reflection_questions: journeyData.reflection_questions ?? null,
       status,
       scheduled_publish_at: scheduledPublishAt,
       updated_at: new Date().toISOString(),
