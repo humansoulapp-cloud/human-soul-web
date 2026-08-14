@@ -11,6 +11,7 @@ import {
   Shield,
   Sun,
   Moon,
+  ArrowLeft,
 } from "lucide-react";
 import { useAdminTheme } from "./AdminThemeProvider";
 import { createClient } from "@/lib/supabase/client";
@@ -118,6 +119,24 @@ export default function AdminSidebar({ userEmail }: { userEmail: string }) {
             {userEmail}
           </p>
         </div>
+
+        {/* Return to user app */}
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all"
+          style={{ color: "var(--admin-text-secondary)" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "var(--admin-surface-2)";
+            (e.currentTarget as HTMLElement).style.color = "var(--admin-text)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "var(--admin-text-secondary)";
+          }}
+        >
+          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+          <span>Exit to App</span>
+        </Link>
 
         {/* Theme toggle */}
         <button
