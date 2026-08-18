@@ -117,7 +117,7 @@ export function Navigation() {
               className="flex items-center gap-3.5 px-4 py-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-2xl transition-colors"
             >
               <PenTool className="w-5 h-5 flex-shrink-0" />
-              <span>Write</span>
+              <span>Reflect</span>
             </Link>
 
             <button

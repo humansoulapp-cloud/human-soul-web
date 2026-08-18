@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Sparkles, PenTool, Compass, BookOpen, Plus, Flame, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { Sparkles, PenTool, BookOpen, Plus, CheckCircle2, ChevronRight, Compass } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { JOURNEYS } from "@/lib/content";
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80";
 
 const JOURNEY_IMAGES: Record<string, string> = {
   "becoming-more-human": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80",
@@ -19,6 +21,10 @@ const JOURNEY_IMAGES: Record<string, string> = {
   "living-with-curiosity": "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?auto=format&fit=crop&w=1200&q=80"
 };
 
+function journeyImage(j: { id: string; image_url?: string | null }) {
+  return j.image_url || JOURNEY_IMAGES[j.id] || FALLBACK_IMAGE;
+}
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good Morning";
@@ -26,10 +32,73 @@ function getGreeting() {
   return "Good Evening";
 }
 
+type JourneyDay = { day: number; title: string; prompt: string };
+type Journey = {
+  id: string;
+  title: string;
+  category: string | null;
+  tagline: string | null;
+  image_url: string | null;
+  status?: string | null;
+  scheduled_publish_at?: string | null;
+  featured?: boolean | null;
+  journey_days: JourneyDay[];
+};
+
+type ActiveJourney = {
+  journey: Journey;
+  completedDays: number;
+  totalDays: number;
+  nextDay: JourneyDay;
+};
+
+const DAY_TAG = /^Day (\d+)$/;
+
+/**
+ * Progress lives implicitly in `reflections`: each journey reflection is tagged
+ * with the journey title and `Day N` (see JourneyDetailClient). We derive the
+ * furthest day reached per journey, and how recently it was touched.
+ */
+type ReflectionTags = { tags: string[] | null };
+
+function findActiveJourney(journeys: Journey[], reflections: ReflectionTags[]): ActiveJourney | null {
+  const byTitle = new Map(journeys.map((j) => [j.title, j]));
+  const seen = new Set<string>();
+
+  // reflections arrive newest-first, so the first match is the latest activity
+  for (const r of reflections) {
+    const tags: string[] = r.tags ?? [];
+    const journey = tags.map((t) => byTitle.get(t)).find(Boolean);
+    if (!journey || seen.has(journey.id)) continue;
+    seen.add(journey.id);
+
+    const days = [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day);
+    if (days.length === 0) continue;
+
+    const daysDone = reflections
+      .filter((x) => (x.tags ?? []).includes(journey.title))
+      .map((x) => {
+        const tag = (x.tags ?? []).map((t) => DAY_TAG.exec(t)).find(Boolean);
+        return tag ? Number(tag[1]) : 0;
+      });
+
+    const completedDays = Math.max(0, ...daysDone);
+    const nextDay = days.find((d) => d.day > completedDays);
+
+    // finished journeys are no longer "in progress" — keep looking
+    if (!nextDay) continue;
+
+    return { journey, completedDays, totalDays: days.length, nextDay };
+  }
+
+  return null;
+}
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string>("");
-  const [reflectionsCount, setReflectionsCount] = useState<number>(0);
   const [journals, setJournals] = useState<any[]>([]);
+  const [journeys, setJourneys] = useState<Journey[]>([]);
+  const [active, setActive] = useState<ActiveJourney | null>(null);
   const [newJournalTitle, setNewJournalTitle] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,17 +108,34 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Journeys are public content — load them whether or not there's a session
+      const { data: journeysData } = await supabase
+        .from("journeys")
+        .select("*, journey_days(*)")
+        .order("created_at", { ascending: true });
+
+      const now = new Date();
+      const visible = ((journeysData ?? []) as Journey[]).filter((j) => {
+        const status = j.status || "published";
+        if (status === "published") return true;
+        if (status === "scheduled" && j.scheduled_publish_at) {
+          return new Date(j.scheduled_publish_at) <= now;
+        }
+        return false;
+      });
+      setJourneys(visible);
+
       if (user) {
         const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
         setUserName(name);
 
-        // Fetch reflections count
-        const { count } = await supabase
+        const { data: reflectionsData } = await supabase
           .from("reflections")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
+          .select("id, tags, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        setReflectionsCount(count || 0);
+        setActive(findActiveJourney(visible, reflectionsData ?? []));
 
         // Fetch journals
         const { data: journalsData } = await supabase
@@ -90,7 +176,15 @@ export default function DashboardPage() {
     }
   };
 
-  const featuredJourney = JOURNEYS[0];
+  // Showcase a journey the user isn't already working through
+  const showcaseJourney = useMemo(() => {
+    const pool = journeys.filter((j) => j.id !== active?.journey.id);
+    return pool.find((j) => j.featured) || pool[0] || null;
+  }, [journeys, active]);
+
+  const progressPct = active
+    ? Math.round((active.completedDays / active.totalDays) * 100)
+    : 0;
 
   return (
     <div className="space-y-8">
@@ -127,21 +221,72 @@ export default function DashboardPage() {
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap"
         >
           <PenTool className="w-4 h-4" />
-          <span>Write Now</span>
+          <span>Reflect</span>
         </Link>
       </div>
 
-      {/* Featured Journey Banner */}
-      {featuredJourney && (
+      {/* Continue where you left off */}
+      {active && (
+        <div className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--brand-primary)]/15 rounded-full text-xs text-[var(--brand-primary)] font-medium">
+              <Compass className="w-3.5 h-3.5" />
+              <span>Current Journey</span>
+            </div>
+            <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">
+              Day {active.completedDays} of {active.totalDays}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-5">
+            <img
+              src={journeyImage(active.journey)}
+              alt={active.journey.title}
+              className="w-full sm:w-40 h-32 sm:h-28 object-cover rounded-2xl border border-[var(--border-subtle)]"
+            />
+
+            <div className="flex-1 space-y-2 min-w-0">
+              <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
+                {active.journey.title}
+              </h3>
+              <p className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-medium">
+                Up next — Day {active.nextDay.day}: {active.nextDay.title}
+              </p>
+              <p className="text-sm text-[var(--text-secondary)] font-light leading-relaxed line-clamp-2">
+                {active.nextDay.prompt}
+              </p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-1.5 w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--brand-primary)] rounded-full transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+
+          <Link
+            href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm"
+          >
+            <span>Continue Journey</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Journey showcase → Journey Library */}
+      {showcaseJourney && (
         <Link
-          href={`/journeys/${featuredJourney.id}`}
+          href="/journeys"
           className="group relative overflow-hidden rounded-3xl border border-[var(--border-subtle)] flex flex-col justify-between min-h-[360px] transition-all hover:border-[var(--brand-primary)] hover:shadow-lg shadow-sm block w-full"
         >
           {/* Background Image */}
           <div className="absolute inset-0 z-0 bg-[var(--bg-surface)] dark:bg-[#1F1D1B]">
-            <img 
-              src={JOURNEY_IMAGES[featuredJourney.id] || "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80"}
-              alt={featuredJourney.title}
+            <img
+              src={journeyImage(showcaseJourney)}
+              alt={showcaseJourney.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-30 dark:opacity-70"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-surface)] via-[var(--bg-surface)]/80 dark:from-[#1F1D1B] dark:via-[#1F1D1B]/70 to-transparent" />
@@ -150,7 +295,7 @@ export default function DashboardPage() {
           {/* Top Badge */}
           <div className="relative z-10 p-8 md:p-10">
             <span className="inline-block px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold bg-[var(--bg-surface)]/60 dark:bg-black/30 backdrop-blur-md rounded-full border border-[var(--border-subtle)] dark:border-white/20 text-[var(--text-primary)] dark:text-white shadow-sm">
-              {featuredJourney.category}
+              {showcaseJourney.category}
             </span>
           </div>
 
@@ -159,10 +304,10 @@ export default function DashboardPage() {
             {/* Title & Description */}
             <div className="max-w-2xl">
               <h3 className="font-serif-editorial text-4xl sm:text-5xl mb-3 leading-tight">
-                {featuredJourney.title}
+                {showcaseJourney.title}
               </h3>
               <p className="text-base font-light text-[var(--text-secondary)] dark:text-white/80">
-                {featuredJourney.tagline}
+                {showcaseJourney.tagline}
               </p>
             </div>
 
@@ -170,10 +315,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between pt-6 mt-6 border-t border-[var(--border-subtle)] dark:border-white/20">
               <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] dark:text-white/90">
                 <CheckCircle2 className="w-4 h-4 text-[var(--text-secondary)] dark:opacity-80" />
-                <span>{featuredJourney.days.length} days</span>
+                <span>{(showcaseJourney.journey_days ?? []).length} days</span>
               </div>
               <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] group-hover:text-[var(--text-secondary)] dark:text-white dark:group-hover:text-white/80 transition-colors">
-                <span>Begin Journey</span>
+                <span>Browse Journeys</span>
                 <ChevronRight className="w-4 h-4" />
               </span>
             </div>
@@ -185,14 +330,14 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-            Your Notebooks
+            Your Journals
           </h3>
           <button
             onClick={() => setShowModal(true)}
             className="inline-flex items-center gap-1.5 text-xs text-[var(--brand-primary)] hover:text-[var(--brand-primary-hover)] font-medium"
           >
             <Plus className="w-4 h-4" />
-            <span>New Notebook</span>
+            <span>New Journal</span>
           </button>
         </div>
 
@@ -200,13 +345,13 @@ export default function DashboardPage() {
           <div className="bg-[var(--bg-surface-secondary)]/60 border border-dashed border-[var(--border-subtle)] rounded-2xl p-8 text-center space-y-3">
             <BookOpen className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
             <p className="text-sm text-[var(--text-secondary)]">
-              You don't have any custom notebooks yet.
+              You don't have any custom journals yet.
             </p>
             <button
               onClick={() => setShowModal(true)}
               className="py-2 px-4 bg-[var(--brand-primary)]/20 text-[var(--text-primary)] text-xs font-medium rounded-xl hover:bg-[var(--brand-primary)]/30 transition-colors"
             >
-              Create your first notebook
+              Create Your First Journal
             </button>
           </div>
         ) : (
@@ -237,10 +382,10 @@ export default function DashboardPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
             <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-              New Notebook
+              New Journal
             </h3>
             <p className="text-xs text-[var(--text-secondary)]">
-              Give your notebook a name to organize your reflections.
+              Give your journal a name to organize your reflections.
             </p>
 
             <form onSubmit={handleCreateJournal} className="space-y-4">

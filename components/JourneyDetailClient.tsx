@@ -6,9 +6,17 @@ import { ArrowLeft, Clock, Check, Sparkles, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { JourneyRow } from "@/lib/actions/journeys";
 
-export default function JourneyDetailClient({ journey }: { journey: JourneyRow }) {
-  const days = journey.journey_days ?? [];
-  const [activeDayIndex, setActiveDayIndex] = useState(0);
+export default function JourneyDetailClient({
+  journey,
+  initialDay,
+}: {
+  journey: JourneyRow;
+  initialDay?: number;
+}) {
+  const days = [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day);
+  // `?day=N` lets the dashboard drop the user back where they left off
+  const initialIndex = Math.max(0, days.findIndex((d) => d.day === initialDay));
+  const [activeDayIndex, setActiveDayIndex] = useState(initialIndex);
   const [answer, setAnswer] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
