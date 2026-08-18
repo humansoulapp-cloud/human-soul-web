@@ -1,67 +1,127 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Bernstein";
-  src: url("/fonts/BernsteinSerial-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* ═══════════════════════════════════════════════════════════════
+   Design system — Human Soul
+   Canonical palette from the Claude Design project. Every screen
+   reads these `--ds-*` tokens; the older `--bg-*` / `--text-*` /
+   `--brand-*` names below are kept as aliases so pages that have
+   not been migrated yet still pick up the new colours.
+   ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
   :root {
-    --bg-surface: #F8F6F2;
-    --bg-surface-secondary: #F2EEE8;
-    --bg-surface-tertiary: #E4DED5;
-    --text-primary: #2F2F2F;
-    --text-secondary: #6E6A65;
-    --text-muted: #9E9A93;
-    --brand-primary: #8BA58F;
-    --brand-primary-hover: #78937C;
-    --border-subtle: #E4DED5;
-    --border-strong: #8BA58F;
-    --logo-color: #131312;
+    /* Surfaces */
+    --ds-bg:          #f4f2ec;
+    --ds-side:        #efece4;
+    --ds-surface:     #fbfaf6;
+    --ds-surface-2:   #f0ede4;
+
+    /* Lines */
+    --ds-line:        #e2ded2;
+    --ds-line-strong: #d5d0c2;
+
+    /* Text */
+    --ds-text:        #22261f;
+    --ds-text-mid:    #4f544a;
+    --ds-text-muted:  #82806f;
+
+    /* Accent */
+    --ds-accent:      #6f8d6e;
+    --ds-accent-hover:#57724f;
+    --ds-accent-soft: #e4ebe1;
+    --ds-on-accent:   #fbfaf6;
+
+    /* Gold — Plus / premium / scheduled */
+    --ds-gold:        #9a7b3f;
+    --ds-gold-soft:   #f2ebdb;
+    --ds-on-gold:     #fdfbf6;
+
+    /* Feedback */
+    --ds-danger:      #a35a4c;
+
+    /* ── Legacy aliases ─────────────────────────────────────── */
+    --bg-surface:           var(--ds-bg);
+    --bg-surface-secondary: var(--ds-surface);
+    --bg-surface-tertiary:  var(--ds-surface-2);
+    --text-primary:         var(--ds-text);
+    --text-secondary:       var(--ds-text-mid);
+    --text-muted:           var(--ds-text-muted);
+    --brand-primary:        var(--ds-accent);
+    --brand-primary-hover:  var(--ds-accent-hover);
+    --border-subtle:        var(--ds-line);
+    --border-strong:        var(--ds-line-strong);
+    --logo-color:           var(--ds-text);
   }
 
   .dark {
-    --bg-surface: #141312; /* Deep warm charcoal */
-    --bg-surface-secondary: #1C1A19;
-    --bg-surface-tertiary: #262423;
-    --text-primary: #F8F6F2;
-    --text-secondary: #9E9A93;
-    --text-muted: #6E6A65;
-    --brand-primary: #8BA58F;
-    --brand-primary-hover: #78937C;
-    --border-subtle: #2A2826;
-    --border-strong: #8BA58F;
-    --logo-color: #FFFFFF;
+    --ds-bg:          #151814;
+    --ds-side:        #191d18;
+    --ds-surface:     #1e221d;
+    --ds-surface-2:   #232720;
+
+    --ds-line:        #2e332c;
+    --ds-line-strong: #3b4139;
+
+    --ds-text:        #e9e7dc;
+    --ds-text-mid:    #c3c2b6;
+    --ds-text-muted:  #8f9285;
+
+    --ds-accent:      #93b190;
+    --ds-accent-hover:#a8c2a5;
+    --ds-accent-soft: #283226;
+    --ds-on-accent:   #14180f;
+
+    --ds-gold:        #cdae74;
+    --ds-gold-soft:   #2b271d;
+    --ds-on-gold:     #14180f;
+
+    --ds-danger:      #d19183;
   }
 
   body {
-    background-color: var(--bg-surface);
-    color: var(--text-primary);
-    font-family: var(--font-inter), sans-serif;
+    background-color: var(--ds-bg);
+    color: var(--ds-text);
+    font-family: var(--font-public-sans), system-ui, sans-serif;
+    font-size: 14px;
     -webkit-font-smoothing: antialiased;
   }
 
+  /* The redesign drops the serif display face: headings are
+     Public Sans 600 with tight tracking. `.font-serif-editorial`
+     is kept as a name so unmigrated pages inherit the new look. */
   h1,
   h2,
   h3,
   .font-serif-editorial {
-    font-family: "Bernstein", Georgia, serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-family: var(--font-public-sans), system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
 
-  .font-dm-sans {
-    font-family: var(--font-dm-sans), sans-serif;
+  a {
+    color: var(--ds-accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--ds-accent-hover);
+  }
+
+  ::placeholder {
+    color: inherit;
+    opacity: 0.42;
+  }
+
+  input:focus,
+  textarea:focus {
+    outline: none;
   }
 }
 
-/* Custom scrollbars and transitions */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -69,43 +129,55 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D4CED5;
+  background: rgba(120, 120, 110, 0.26);
   border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
 
-/* ── Admin Panel Themes ──────────────────────────────────────── */
+/* ── Admin panel ─────────────────────────────────────────────────
+   Same palette, but the admin shell carries its own light/dark
+   switch and defaults to dark, so both sets are spelled out. */
 .admin-panel {
-  --admin-bg:            #0C0B0A;
-  --admin-sidebar:       #111110;
-  --admin-surface:       #1A1917;
-  --admin-surface-2:     #222120;
-  --admin-border:        rgba(255,255,255,0.07);
-  --admin-border-hover:  rgba(255,255,255,0.13);
-  --admin-text:          #F5F4F2;
-  --admin-text-muted:    rgba(245,244,242,0.35);
-  --admin-text-secondary:rgba(245,244,242,0.58);
-  --admin-input-bg:      #0F0E0D;
-  --admin-input-border:  rgba(255,255,255,0.09);
-  --admin-accent:        #8BA58F;
-  --admin-accent-hover:  #78937C;
-  --admin-danger:        #E57373;
-  --admin-danger-bg:     rgba(229,115,115,0.1);
+  --admin-bg:            #151814;
+  --admin-sidebar:       #191d18;
+  --admin-surface:       #1e221d;
+  --admin-surface-2:     #232720;
+  --admin-border:        #2e332c;
+  --admin-border-hover:  #3b4139;
+  --admin-text:          #e9e7dc;
+  --admin-text-secondary:#c3c2b6;
+  --admin-text-muted:    #8f9285;
+  --admin-input-bg:      #232720;
+  --admin-input-border:  #3b4139;
+  --admin-accent:        #93b190;
+  --admin-accent-hover:  #a8c2a5;
+  --admin-accent-soft:   #283226;
+  --admin-on-accent:     #14180f;
+  --admin-gold:          #cdae74;
+  --admin-gold-soft:     #2b271d;
+  --admin-danger:        #d19183;
+  --admin-danger-bg:     rgba(209, 145, 131, 0.12);
 }
 
 .admin-panel.light {
-  --admin-bg:            #EDEAE5;
-  --admin-sidebar:       #FAFAF8;
-  --admin-surface:       #FFFFFF;
-  --admin-surface-2:     #F5F3EF;
-  --admin-border:        #E2DED8;
-  --admin-border-hover:  #C8C4BE;
-  --admin-text:          #1C1A18;
-  --admin-text-muted:    #948E88;
-  --admin-text-secondary:#5C5A56;
-  --admin-input-bg:      #F5F3EF;
-  --admin-input-border:  #D8D4CE;
-  --admin-accent:        #8BA58F;
-  --admin-accent-hover:  #78937C;
-  --admin-danger:        #D32F2F;
-  --admin-danger-bg:     rgba(211,47,47,0.08);
+  --admin-bg:            #f4f2ec;
+  --admin-sidebar:       #efece4;
+  --admin-surface:       #fbfaf6;
+  --admin-surface-2:     #f0ede4;
+  --admin-border:        #e2ded2;
+  --admin-border-hover:  #d5d0c2;
+  --admin-text:          #22261f;
+  --admin-text-secondary:#4f544a;
+  --admin-text-muted:    #82806f;
+  --admin-input-bg:      #f0ede4;
+  --admin-input-border:  #d5d0c2;
+  --admin-accent:        #6f8d6e;
+  --admin-accent-hover:  #57724f;
+  --admin-accent-soft:   #e4ebe1;
+  --admin-on-accent:     #fbfaf6;
+  --admin-gold:          #9a7b3f;
+  --admin-gold-soft:     #f2ebdb;
+  --admin-danger:        #a35a4c;
+  --admin-danger-bg:     rgba(163, 90, 76, 0.1);
 }
