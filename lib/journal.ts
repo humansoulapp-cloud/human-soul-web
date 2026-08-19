@@ -9,6 +9,7 @@ export type ReflectionRow = {
   content: string | null;
   tags: string[] | null;
   mood?: string | null;
+  photo?: string | null;
   favorite?: boolean | null;
   created_at: string;
 };
