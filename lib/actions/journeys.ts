@@ -184,6 +184,22 @@ export async function getJourney(
   } as JourneyRow;
 }
 
+/**
+ * `journey_days.id` is NOT NULL with no default, so each row carries an id we
+ * generate. Kept in one place so create and update cannot drift.
+ */
+function dayRows(days: JourneyDayInput[], journeyId: string) {
+  return days.map((d) => ({
+    id: crypto.randomUUID(),
+    journey_id: journeyId,
+    day: d.day,
+    title: d.title,
+    prompt: d.prompt,
+    purpose: d.purpose,
+    deeper: d.deeper ?? null,
+  }));
+}
+
 // ─── Create ────────────────────────────────────────────────────────────────────
 
 export async function createJourney(input: JourneyInput) {
@@ -218,9 +234,9 @@ export async function createJourney(input: JourneyInput) {
   if (jErr) return { error: jErr.message };
 
   if (days.length > 0) {
-    const { error: dErr } = await supabase.from("journey_days").insert(
-      days.map((d) => ({ ...d, journey_id: input.id }))
-    );
+    const { error: dErr } = await supabase
+      .from("journey_days")
+      .insert(dayRows(days, input.id));
     if (dErr) return { error: dErr.message };
   }
 
@@ -266,14 +282,26 @@ export async function updateJourney(id: string, input: JourneyInput) {
 
   if (jErr) return { error: jErr.message };
 
-  // Replace all days: delete then re-insert
+  // Days are replaced wholesale. Keep a copy first: if the insert fails, the
+  // old days go back, so a failed save never leaves a journey empty.
+  const { data: previousDays } = await supabase
+    .from("journey_days")
+    .select("*")
+    .eq("journey_id", id);
+
   await supabase.from("journey_days").delete().eq("journey_id", id);
 
   if (days.length > 0) {
     const { error: dErr } = await supabase
       .from("journey_days")
-      .insert(days.map((d) => ({ ...d, journey_id: id })));
-    if (dErr) return { error: dErr.message };
+      .insert(dayRows(days, id));
+
+    if (dErr) {
+      if (previousDays?.length) {
+        await supabase.from("journey_days").insert(previousDays);
+      }
+      return { error: dErr.message };
+    }
   }
 
   revalidatePath("/journeys");

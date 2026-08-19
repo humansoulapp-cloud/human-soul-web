@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useTransition } from "react";
+import React, { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -26,6 +26,27 @@ import {
   type JourneyRow,
   type JourneyStatus,
 } from "@/lib/actions/journeys";
+
+type DraftValues = {
+  id: string;
+  title: string;
+  category: string;
+  realm: string;
+  tagline: string;
+  purpose: string;
+  intro: string;
+  timeRequired: string;
+  imageUrl: string;
+  premium: boolean;
+  featured: boolean;
+  completionMessage: string;
+  reflectionQuestions: string[];
+  status: JourneyStatus;
+  scheduledPublishAt: string;
+  days: JourneyDayInput[];
+};
+
+type StoredDraft = { savedAt: string; values: DraftValues };
 
 export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const isEditing = !!journey;
@@ -86,11 +107,77 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const [textsOpen, setTextsOpen] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recovered, setRecovered] = useState<StoredDraft | null>(null);
 
   const markDirty = () => {
     setDirty(true);
     setSaved(false);
   };
+
+  /**
+   * Writing a journey is long work and a failed save used to throw it away.
+   * The form keeps a draft in the browser and offers it back on the next visit.
+   */
+  const draftKey = `humansoul:journey-draft:${journey?.id ?? "new"}`;
+
+  const snapshot = (): DraftValues => ({
+    id, title, category, realm, tagline, purpose, intro, timeRequired, imageUrl,
+    premium, featured, completionMessage, reflectionQuestions, status,
+    scheduledPublishAt, days,
+  });
+
+  const applySnapshot = (d: DraftValues) => {
+    setId(d.id ?? "");
+    setTitle(d.title ?? "");
+    setCategory(d.category ?? "");
+    setRealm(d.realm ?? "");
+    setTagline(d.tagline ?? "");
+    setPurpose(d.purpose ?? "");
+    setIntro(d.intro ?? "");
+    setTimeRequired(d.timeRequired ?? "");
+    setImageUrl(d.imageUrl ?? "");
+    setPremium(Boolean(d.premium));
+    setFeatured(Boolean(d.featured));
+    setCompletionMessage(d.completionMessage ?? "");
+    setReflectionQuestions(d.reflectionQuestions ?? []);
+    setStatus(d.status ?? "published");
+    setScheduledPublishAt(d.scheduledPublishAt ?? "");
+    setDays(d.days ?? []);
+    setActiveDay(0);
+    markDirty();
+  };
+
+  useEffect(() => {
+    const stored = localStorage.getItem(draftKey);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      // Already saved: what is on screen matches the draft, so drop it
+      if (JSON.stringify(parsed.values) === JSON.stringify(snapshot())) {
+        localStorage.removeItem(draftKey);
+        return;
+      }
+      // localStorage is only readable after mount, which is exactly what this
+      // effect is for.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRecovered(parsed);
+    } catch {
+      localStorage.removeItem(draftKey);
+    }
+    // only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!dirty) return;
+    localStorage.setItem(
+      draftKey,
+      JSON.stringify({ savedAt: new Date().toISOString(), values: snapshot() })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, id, title, category, realm, tagline, purpose, intro, timeRequired,
+      imageUrl, premium, featured, completionMessage, reflectionQuestions,
+      status, scheduledPublishAt, days]);
 
   // Preset helper for scheduling
   const setQuickSchedule = (hoursAhead: number) => {
@@ -323,6 +410,44 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           </button>
         </div>
       </div>
+
+      {recovered && (
+        <div
+          className="flex items-center gap-3 flex-wrap p-4 rounded-xl border text-sm mb-6"
+          style={{
+            background: "var(--admin-gold-soft)",
+            borderColor: "var(--admin-gold)",
+            color: "var(--admin-text)",
+          }}
+        >
+          <span className="flex-1 min-w-[240px]">
+            You have unsaved changes from{" "}
+            {new Date(recovered.savedAt).toLocaleString("en-GB")}.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              applySnapshot(recovered.values);
+              setRecovered(null);
+            }}
+            className="px-3.5 py-2 rounded-lg text-[13px] font-semibold"
+            style={{ background: "var(--admin-accent)", color: "var(--admin-on-accent)" }}
+          >
+            Restore them
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem(draftKey);
+              setRecovered(null);
+            }}
+            className="px-3.5 py-2 rounded-lg text-[13px] border"
+            style={{ borderColor: "var(--admin-border-hover)", color: "var(--admin-text-secondary)" }}
+          >
+            Discard
+          </button>
+        </div>
+      )}
 
       {error && (
         <div
