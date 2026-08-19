@@ -167,8 +167,25 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
     e.preventDefault();
     setError(null);
 
-    if (!id.trim() || !title.trim()) {
-      setError("Journey ID and Title are required.");
+    if (!title.trim()) {
+      setError("A title is the one thing a journey needs. Everything else can wait.");
+      return;
+    }
+
+    // The id is the primary key, so a new journey still needs one — derive it
+    // from the title rather than making it another field to fill in.
+    const slug =
+      id.trim() ||
+      title
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    if (!slug) {
+      setError("Give the journey a title with letters or numbers, or set an id by hand.");
       return;
     }
 
@@ -178,7 +195,7 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
     }
 
     const payload: JourneyInput = {
-      id: id.trim(),
+      id: slug,
       title: title.trim(),
       category: category.trim(),
       realm: realm.trim(),
@@ -413,7 +430,6 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                   Title
                 </span>
                 <input
-                  required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Becoming More Human"
@@ -477,11 +493,10 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                   </span>
                 </span>
                 <input
-                  required
                   disabled={isEditing}
                   value={id}
                   onChange={(e) => setId(e.target.value)}
-                  placeholder="e.g. inner-peace"
+                  placeholder={title.trim() ? "Left blank: from the title" : "e.g. inner-peace"}
                   className="px-3 py-2 rounded-lg text-sm border font-mono disabled:opacity-50"
                   style={
                     isEditing
@@ -715,7 +730,6 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                       setScheduledPublishAt(e.target.value);
                       markDirty();
                     }}
-                    required={status === "scheduled"}
                     className="px-3 py-2 rounded-lg text-sm border font-sans"
                     style={inputStyle}
                   />
@@ -864,7 +878,6 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                       Day title
                     </span>
                     <input
-                      required
                       value={day.title}
                       onChange={(e) => handleDayChange(activeDay, "title", e.target.value)}
                       placeholder="e.g. Beginning Where You Are"
@@ -892,7 +905,6 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                   </span>
                   <textarea
                     rows={9}
-                    required
                     value={day.prompt}
                     onChange={(e) => handleDayChange(activeDay, "prompt", e.target.value)}
                     placeholder="The main reflection text for this day..."
