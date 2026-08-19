@@ -32,6 +32,22 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const host = request.headers.get('host') ?? '';
+
+  // ─── Hostname routing ─────────────────────────────────────────────────────
+  // humansoul.app serves the landing at "/", my.humansoul.app is the app and
+  // sends "/" straight to the dashboard. Anything that is not the app host
+  // (including localhost) keeps the landing, so it stays previewable.
+  const isAppHost = host.startsWith('my.');
+
+  if (pathname === '/') {
+    if (isAppHost || user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
 
   // ─── Auth pages ───────────────────────────────────────────────────────────
   const isAuthPage =
@@ -39,7 +55,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/sign-up') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/reset-password');
-  const isPublicPage = isAuthPage || pathname === '/onboarding';
+  const isPublicPage = isAuthPage || pathname === '/onboarding' || pathname === '/';
 
   if (!user && !isPublicPage) {
     const url = request.nextUrl.clone();
