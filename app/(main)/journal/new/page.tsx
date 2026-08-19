@@ -1,192 +1,220 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Camera, X, Check, Tag } from "lucide-react";
+import { ArrowLeft, Check, RefreshCw, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { EMOTION_TAGS, REFLECT_PROMPTS, wordCount } from "@/lib/journal";
 
-const EMOTION_TAGS = [
-  "Gratitude",
-  "Calm",
-  "Clarity",
-  "Tired",
-  "Hopeful",
-  "Uncertain",
-  "Peaceful",
-  "Reflective",
-];
+const DRAFT_KEY = "humansoul:reflect-draft";
 
-export default function NewReflectionPage() {
-  const router = useRouter();
-  const [content, setContent] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+const PRIMARY_BTN =
+  "px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors disabled:opacity-60";
+const GHOST_BTN =
+  "px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] whitespace-nowrap transition-colors cursor-pointer";
+const MICRO = "text-[10.5px] font-semibold tracking-[0.11em] text-[var(--ds-text-muted)]";
+
+export default function ReflectPage() {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [draft, setDraft] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
-  const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter((t) => t !== tag));
-    } else {
-      setSelectedTags([...selectedTags, tag]);
-    }
-  };
+  // "Draft kept as you type" — it survives a reload until the entry is saved
+  useEffect(() => {
+    const stored = localStorage.getItem(DRAFT_KEY);
+    if (stored) setDraft(stored);
+  }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (saved) return;
+    if (draft) localStorage.setItem(DRAFT_KEY, draft);
+    else localStorage.removeItem(DRAFT_KEY);
+  }, [draft, saved]);
+
+  const words = wordCount(draft);
+
+  const toggleTag = (tag: string) =>
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setPhoto(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) {
-      setErrorMsg("Write something in your reflection before saving.");
+  const handleSave = async () => {
+    if (!draft.trim()) {
+      setError("Write something before saving.");
       return;
     }
-
     setSaving(true);
-    setErrorMsg("");
+    setError("");
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) {
-      setErrorMsg("You must be signed in to save your reflection.");
       setSaving(false);
+      setError("You must be signed in to save your reflection.");
       return;
     }
 
-    const { error } = await supabase.from("reflections").insert([
+    const { error: insertError } = await supabase.from("reflections").insert([
       {
         user_id: user.id,
-        content: content.trim(),
-        tags: selectedTags,
-        photo: photoBase64,
+        content: draft.trim(),
+        tags,
+        photo,
         favorite: false,
       },
     ]);
 
     setSaving(false);
-
-    if (error) {
-      setErrorMsg(error.message);
+    if (insertError) {
+      setError(insertError.message);
       return;
     }
 
-    router.push("/journal");
-    router.refresh();
+    localStorage.removeItem(DRAFT_KEY);
+    setSaved(true);
   };
 
+  const today = new Date();
+
+  if (saved) {
+    const tagNote = tags.length ? `, tagged ${tags.join(", ").toLowerCase()}` : "";
+    return (
+      <div className="w-full max-w-[760px] mx-auto py-20 text-center">
+        <span className="w-[52px] h-[52px] mx-auto rounded-full grid place-items-center bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] border border-[var(--ds-accent)]">
+          <Check className="w-5 h-5" strokeWidth={2.2} />
+        </span>
+        <h1 className="text-[28px] font-semibold mt-5 mb-2.5">
+          Saved to{" "}
+          {today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+        </h1>
+        <p className="text-[15px] leading-[1.7] opacity-80 max-w-[40ch] mx-auto mb-[26px]">
+          {words} words{tagNote}. It is in your journal whenever you want to reread it.
+        </p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Link href="/journal" className={PRIMARY_BTN}>
+            Open journal
+          </Link>
+          <button
+            onClick={() => {
+              setSaved(false);
+              setDraft("");
+              setTags([]);
+              setPhoto(null);
+              setPromptIndex((i) => (i + 1) % REFLECT_PROMPTS.length);
+            }}
+            className={GHOST_BTN}
+          >
+            Write another
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="w-full max-w-[760px] mx-auto">
+      <div className="flex items-center gap-3">
         <Link
           href="/journal"
-          className="inline-flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center gap-[7px] text-[12.5px] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to journal</span>
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
+          Back to journal
         </Link>
-        <span className="text-xs uppercase tracking-wider text-[var(--text-secondary)]">
-          New Entry
+        <span className="flex-1" />
+        <span className={MICRO}>
+          {today
+            .toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+            .toUpperCase()}
         </span>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
-        {errorMsg && (
-          <div className="p-3 bg-[#D4A3A3]/20 border border-[#D4A3A3] text-[var(--text-primary)] text-xs rounded-xl">
-            {errorMsg}
-          </div>
-        )}
+      <div className="flex items-start gap-3.5 mt-[26px]">
+        <h1 className="flex-1 text-[22px] md:text-[27px] font-semibold leading-[1.3] tracking-[-0.012em] m-0 max-w-[32ch]">
+          {REFLECT_PROMPTS[promptIndex]}
+        </h1>
+        <button
+          onClick={() => setPromptIndex((i) => (i + 1) % REFLECT_PROMPTS.length)}
+          className="inline-flex items-center gap-1.5 flex-shrink-0 mt-1 px-[11px] py-1.5 rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] text-[11.5px] transition-colors"
+        >
+          <RefreshCw className="w-[13px] h-[13px]" strokeWidth={1.9} />
+          Change
+        </button>
+      </div>
 
-        {/* Text Area */}
-        <div className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-3xl p-6 shadow-sm space-y-4">
-          <textarea
-            required
-            rows={8}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What caught your attention today? Take your time..."
-            className="w-full bg-transparent text-base text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none resize-none leading-relaxed font-light"
-          />
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Write as it comes. No one else reads this."
+        className="w-full min-h-[44vh] my-[22px] mb-2 px-[22px] py-5 rounded-[14px] border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text)] text-[17px] leading-[1.85] resize-none"
+      />
 
-          {/* Photo Preview if attached */}
-          {photoBase64 && (
-            <div className="relative rounded-2xl overflow-hidden max-h-64 border border-[var(--border-subtle)]">
-              <img
-                src={photoBase64}
-                alt="Attached image"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setPhotoBase64(null)}
-                className="absolute top-3 right-3 p-1.5 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Tags Selection */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
-            <span>Tags or emotions (optional)</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {EMOTION_TAGS.map((tag) => {
-              const selected = selectedTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    selected
-                      ? "bg-[var(--brand-primary)] text-[var(--bg-surface)]"
-                      : "bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--brand-primary)]"
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)]">
-          <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--bg-surface-secondary)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] text-xs font-medium rounded-xl cursor-pointer transition-colors border border-[var(--border-subtle)]">
-            <Camera className="w-4 h-4 text-[var(--brand-primary)]" />
-            <span>{photoBase64 ? "Change photo" : "Attach photo"}</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-          </label>
-
+      {photo && (
+        <div className="relative inline-block mb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt="" className="max-h-40 rounded-xl border border-[var(--ds-line)]" />
           <button
-            type="submit"
-            disabled={saving}
-            className="py-3 px-6 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-50 inline-flex items-center gap-2"
+            onClick={() => setPhoto(null)}
+            aria-label="Remove photo"
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full grid place-items-center bg-[var(--ds-surface)] border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)]"
           >
-            <Check className="w-4 h-4" />
-            <span>{saving ? "Saving..." : "Save Reflection"}</span>
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
-      </form>
+      )}
+
+      <div className="flex items-center gap-2.5 flex-wrap pt-5 border-t border-[var(--ds-line)]">
+        {EMOTION_TAGS.map((tag) => {
+          const on = tags.includes(tag);
+          return (
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              className={`px-3 py-[7px] rounded-full text-[12.5px] transition-colors ${
+                on
+                  ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
+                  : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+              }`}
+            >
+              {tag}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-3.5 mt-[22px] flex-wrap">
+        <span className={MICRO}>{words} WORDS</span>
+        <span className="text-[12.5px] text-[var(--ds-text-muted)]">
+          {words ? "Draft kept as you type" : "Nothing saved yet"}
+        </span>
+        <span className="flex-1" />
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          onChange={handlePhoto}
+          className="hidden"
+        />
+        <button onClick={() => fileInput.current?.click()} className={GHOST_BTN}>
+          Attach photo
+        </button>
+        <button onClick={handleSave} disabled={saving || !draft.trim()} className={PRIMARY_BTN}>
+          {saving ? "Saving…" : "Save reflection"}
+        </button>
+      </div>
+
+      {error && <p className="mt-3 text-[12.5px] text-[var(--ds-danger)]">{error}</p>}
     </div>
   );
 }

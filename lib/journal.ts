@@ -21,6 +21,26 @@ export const PROMPTS = [
   "When did you feel most like yourself today?",
 ];
 
+/** Reflect offers its own set, including an opt-out of the question. */
+export const REFLECT_PROMPTS = [
+  "What caught your attention today?",
+  "What did you almost overlook today?",
+  "When did you feel most like yourself today?",
+  "What are you carrying that is not yours to carry?",
+  "Write freely. No question today.",
+];
+
+export const EMOTION_TAGS = [
+  "Gratitude",
+  "Calm",
+  "Clarity",
+  "Tired",
+  "Hopeful",
+  "Uncertain",
+  "Peaceful",
+  "Reflective",
+];
+
 export const MOODS = ["Calm", "Steady", "Grateful", "Restless", "Heavy", "Unsettled"];
 
 /** Local-calendar day key, so a 23:50 entry counts for that day, not UTC's. */
