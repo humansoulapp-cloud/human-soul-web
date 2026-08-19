@@ -11,14 +11,14 @@
 @layer base {
   :root {
     /* Surfaces */
-    --ds-bg:          #f4f2ec;
-    --ds-side:        #efece4;
-    --ds-surface:     #fbfaf6;
+    --ds-bg:          #f7f6f1;
+    --ds-side:        #efede6;
+    --ds-surface:     #ffffff;
     --ds-surface-2:   #f0ede4;
 
     /* Lines */
-    --ds-line:        #e2ded2;
-    --ds-line-strong: #d5d0c2;
+    --ds-line:        #ddd8cc;
+    --ds-line-strong: #c9c4b6;
 
     /* Text */
     --ds-text:        #22261f;
@@ -28,12 +28,14 @@
     /* Accent */
     --ds-accent:      #6f8d6e;
     --ds-accent-hover:#57724f;
-    --ds-accent-soft: #e4ebe1;
-    --ds-on-accent:   #fbfaf6;
+    --ds-accent-soft: #e7eae1;
+    --ds-on-accent:   #fdfbf6;
 
-    /* Gold — Plus / premium / scheduled */
-    --ds-gold:        #9a7b3f;
-    --ds-gold-soft:   #f2ebdb;
+    /* "Gold" — Plus / premium / scheduled. The redesign dropped the
+       real gold: these now resolve to the accent green. The names are
+       kept so Admin can still tell "Scheduled" apart semantically. */
+    --ds-gold:        #57724f;
+    --ds-gold-soft:   #e7eae1;
     --ds-on-gold:     #fdfbf6;
 
     /* Feedback */
@@ -71,8 +73,8 @@
     --ds-accent-soft: #283226;
     --ds-on-accent:   #14180f;
 
-    --ds-gold:        #cdae74;
-    --ds-gold-soft:   #2b271d;
+    --ds-gold:        #93b190;
+    --ds-gold-soft:   #1a1f1a;
     --ds-on-gold:     #14180f;
 
     --ds-danger:      #d19183;
@@ -154,30 +156,30 @@
   --admin-accent-hover:  #a8c2a5;
   --admin-accent-soft:   #283226;
   --admin-on-accent:     #14180f;
-  --admin-gold:          #cdae74;
-  --admin-gold-soft:     #2b271d;
+  --admin-gold:          #93b190;
+  --admin-gold-soft:     #1a1f1a;
   --admin-danger:        #d19183;
   --admin-danger-bg:     rgba(209, 145, 131, 0.12);
 }
 
 .admin-panel.light {
-  --admin-bg:            #f4f2ec;
-  --admin-sidebar:       #efece4;
-  --admin-surface:       #fbfaf6;
+  --admin-bg:            #f7f6f1;
+  --admin-sidebar:       #efede6;
+  --admin-surface:       #ffffff;
   --admin-surface-2:     #f0ede4;
-  --admin-border:        #e2ded2;
-  --admin-border-hover:  #d5d0c2;
+  --admin-border:        #ddd8cc;
+  --admin-border-hover:  #c9c4b6;
   --admin-text:          #22261f;
   --admin-text-secondary:#4f544a;
   --admin-text-muted:    #82806f;
   --admin-input-bg:      #f0ede4;
-  --admin-input-border:  #d5d0c2;
+  --admin-input-border:  #c9c4b6;
   --admin-accent:        #6f8d6e;
   --admin-accent-hover:  #57724f;
-  --admin-accent-soft:   #e4ebe1;
-  --admin-on-accent:     #fbfaf6;
-  --admin-gold:          #9a7b3f;
-  --admin-gold-soft:     #f2ebdb;
+  --admin-accent-soft:   #e7eae1;
+  --admin-on-accent:     #fdfbf6;
+  --admin-gold:          #57724f;
+  --admin-gold-soft:     #e7eae1;
   --admin-danger:        #a35a4c;
   --admin-danger-bg:     rgba(163, 90, 76, 0.1);
 }
