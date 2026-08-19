@@ -94,3 +94,109 @@ export async function getStats() {
   };
 }
 
+
+export type JourneyPerformance = {
+  id: string;
+  title: string;
+  category: string | null;
+  status: string;
+  starts: number;
+  finished: number;
+  dropOff: string;
+};
+
+/**
+ * Journey performance without a progress table: journey reflections are
+ * tagged [journey title, "Day N"], so a person who wrote day 1 started it,
+ * one who wrote every day finished it, and the day where the number of
+ * people falls the most is where the journey loses them.
+ */
+export async function getJourneyPerformance(): Promise<JourneyPerformance[]> {
+  const serviceClient = createServiceClient();
+
+  const [{ data: journeys }, { data: reflections }] = await Promise.all([
+    serviceClient.from("journeys").select("id, title, category, status, journey_days(day)"),
+    serviceClient.from("reflections").select("user_id, tags"),
+  ]);
+
+  const rows = (reflections ?? []) as { user_id: string; tags: string[] | null }[];
+
+  return ((journeys ?? []) as {
+    id: string;
+    title: string;
+    category: string | null;
+    status: string | null;
+    journey_days: { day: number }[];
+  }[]).map((journey) => {
+    const totalDays = (journey.journey_days ?? []).length;
+
+    // day number → the people who wrote it
+    const perDay = new Map<number, Set<string>>();
+    for (const r of rows) {
+      const tags = r.tags ?? [];
+      if (!tags.includes(journey.title)) continue;
+      for (const tag of tags) {
+        const match = /^Day (\d+)$/.exec(tag);
+        if (!match) continue;
+        const day = Number(match[1]);
+        if (!perDay.has(day)) perDay.set(day, new Set());
+        perDay.get(day)!.add(r.user_id);
+      }
+    }
+
+    const countFor = (day: number) => perDay.get(day)?.size ?? 0;
+    const starts = countFor(1);
+    const finished = totalDays > 0 ? countFor(totalDays) : 0;
+
+    let dropOff = "—";
+    let worstLoss = 0;
+    for (let day = 2; day <= totalDays; day += 1) {
+      const loss = countFor(day - 1) - countFor(day);
+      if (loss > worstLoss) {
+        worstLoss = loss;
+        dropOff = `Day ${day}`;
+      }
+    }
+
+    return {
+      id: journey.id,
+      title: journey.title,
+      category: journey.category,
+      status: journey.status || "published",
+      starts,
+      finished,
+      dropOff,
+    };
+  });
+}
+
+export async function getWritingStats() {
+  const serviceClient = createServiceClient();
+
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+
+  const [entries, recentEntries, profiles] = await Promise.all([
+    serviceClient.from("reflections").select("id", { count: "exact", head: true }),
+    serviceClient
+      .from("reflections")
+      .select("user_id")
+      .gte("created_at", since.toISOString()),
+    serviceClient.from("profiles").select("plan"),
+  ]);
+
+  const activeWriters = new Set(
+    ((recentEntries.data ?? []) as { user_id: string }[]).map((r) => r.user_id)
+  ).size;
+
+  const plus = ((profiles.data ?? []) as { plan?: string | null }[]).filter(
+    (p) => p.plan && p.plan !== "free"
+  ).length;
+
+  return {
+    totalEntries: entries.count ?? 0,
+    entriesLast30: (recentEntries.data ?? []).length,
+    activeWriters,
+    plusSubscribers: plus,
+  };
+}
