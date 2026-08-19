@@ -1,9 +1,24 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Sparkles, PenTool, BookOpen, Plus, CheckCircle2, ChevronRight, Compass } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Flame, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  MOODS,
+  PROMPTS,
+  currentStreak,
+  dayKey,
+  journeysTouched,
+  longestStreak,
+  oneYearAgo,
+  titleAndSnippet,
+  weekDots,
+  wordCount,
+  writtenDays,
+  type ReflectionRow,
+} from "@/lib/journal";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80";
@@ -18,18 +33,16 @@ const JOURNEY_IMAGES: Record<string, string> = {
   "art-of-reflection": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80",
   "everyday-wonder": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
   "everyday-sacred": "https://images.unsplash.com/photo-1444464666168-49b626f11c0e?auto=format&fit=crop&w=1200&q=80",
-  "living-with-curiosity": "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?auto=format&fit=crop&w=1200&q=80"
+  "living-with-curiosity": "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?auto=format&fit=crop&w=1200&q=80",
 };
 
 function journeyImage(j: { id: string; image_url?: string | null }) {
   return j.image_url || JOURNEY_IMAGES[j.id] || FALLBACK_IMAGE;
 }
 
-function getGreeting() {
+function greetingPart() {
   const h = new Date().getHours();
-  if (h < 12) return "Good Morning";
-  if (h < 18) return "Good Afternoon";
-  return "Good Evening";
+  return h < 12 ? "Morning" : h < 19 ? "Afternoon" : "Evening";
 }
 
 type JourneyDay = { day: number; title: string; prompt: string };
@@ -55,13 +68,10 @@ type ActiveJourney = {
 const DAY_TAG = /^Day (\d+)$/;
 
 /**
- * Progress lives implicitly in `reflections`: each journey reflection is tagged
- * with the journey title and `Day N` (see JourneyDetailClient). We derive the
- * furthest day reached per journey, and how recently it was touched.
+ * Progress lives implicitly in `reflections`: each journey reflection is
+ * tagged with the journey title and `Day N` (see JourneyDetailClient).
  */
-type ReflectionTags = { tags: string[] | null };
-
-function findActiveJourney(journeys: Journey[], reflections: ReflectionTags[]): ActiveJourney | null {
+function findActiveJourney(journeys: Journey[], reflections: ReflectionRow[]): ActiveJourney | null {
   const byTitle = new Map(journeys.map((j) => [j.title, j]));
   const seen = new Set<string>();
 
@@ -94,21 +104,36 @@ function findActiveJourney(journeys: Journey[], reflections: ReflectionTags[]): 
   return null;
 }
 
+const CARD = "rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]";
+const PRIMARY_BTN =
+  "px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors disabled:opacity-60";
+const GHOST_BTN =
+  "px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] text-[13px] whitespace-nowrap hover:text-[var(--ds-text)] transition-colors";
+const MICRO = "text-[10.5px] font-semibold tracking-[0.11em] text-[var(--ds-text-muted)]";
+const RAIL_TITLE = "text-[15px] font-semibold text-[var(--ds-text)]";
+const LINK_BTN = "text-[12.5px] font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)]";
+
 export default function DashboardPage() {
-  const [userName, setUserName] = useState<string>("");
-  const [journals, setJournals] = useState<any[]>([]);
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState("");
   const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [active, setActive] = useState<ActiveJourney | null>(null);
-  const [newJournalTitle, setNewJournalTitle] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [reflections, setReflections] = useState<ReflectionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [writing, setWriting] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [pendingMood, setPendingMood] = useState<string | null>(null);
+
   useEffect(() => {
-    async function loadData() {
+    async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Journeys are public content — load them whether or not there's a session
+      // Journeys are public content — load them with or without a session
       const { data: journeysData } = await supabase
         .from("journeys")
         .select("*, journey_days(*)")
@@ -126,298 +151,427 @@ export default function DashboardPage() {
       setJourneys(visible);
 
       if (user) {
-        const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
-        setUserName(name);
+        setUserId(user.id);
+        setUserName(user.user_metadata?.display_name || user.email?.split("@")[0] || "");
 
-        const { data: reflectionsData } = await supabase
+        // `select("*")` so this keeps working before `mood` exists
+        const { data } = await supabase
           .from("reflections")
-          .select("id, tags, created_at")
+          .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
-        setActive(findActiveJourney(visible, reflectionsData ?? []));
-
-        // Fetch journals
-        const { data: journalsData } = await supabase
-          .from("journals")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        setJournals(journalsData || []);
+        setReflections((data ?? []) as ReflectionRow[]);
       }
       setLoading(false);
     }
-
-    loadData();
+    load();
   }, []);
 
-  const handleCreateJournal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newJournalTitle.trim()) return;
+  const days = useMemo(() => writtenDays(reflections), [reflections]);
+  const week = useMemo(() => weekDots(days), [days]);
+  const streak = useMemo(() => currentStreak(days), [days]);
+  const active = useMemo(() => findActiveJourney(journeys, reflections), [journeys, reflections]);
+  const todayEntry = useMemo(
+    () => reflections.find((r) => dayKey(r.created_at) === dayKey(new Date())) ?? null,
+    [reflections]
+  );
+  const memory = useMemo(() => oneYearAgo(reflections), [reflections]);
+  const recents = useMemo(() => reflections.slice(0, 3), [reflections]);
+  const mood = todayEntry?.mood ?? pendingMood;
+
+  const stats = useMemo(
+    () => [
+      { label: "Entries", value: String(reflections.length) },
+      { label: "Longest", value: `${longestStreak(days)} d` },
+      {
+        label: "Journeys",
+        value: String(journeysTouched(reflections, journeys.map((j) => j.title))),
+      },
+    ],
+    [reflections, days, journeys]
+  );
+
+  /**
+   * Nothing in the data says which journey follows which, so "suggested"
+   * is the first published journey the person has not written in yet,
+   * preferring a featured one.
+   */
+  const suggested = useMemo(() => {
+    const started = new Set<string>();
+    for (const r of reflections) for (const t of r.tags ?? []) started.add(t);
+    const pool = journeys.filter((j) => !started.has(j.title) && j.id !== active?.journey.id);
+    return pool.find((j) => j.featured) || pool[0] || null;
+  }, [journeys, reflections, active]);
+
+  const saveEntry = useCallback(async () => {
+    if (!userId || !draft.trim()) return;
+    setSaving(true);
+    setError("");
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("journals")
+    const { data, error: insertError } = await supabase
+      .from("reflections")
       .insert([
         {
-          title: newJournalTitle.trim(),
-          user_id: user.id,
+          user_id: userId,
+          content: draft.trim(),
+          tags: ["Daily Reflection"],
+          mood: pendingMood,
+          favorite: false,
         },
       ])
       .select();
 
-    if (!error && data) {
-      setJournals((prev) => [data[0], ...prev]);
-      setNewJournalTitle("");
-      setShowModal(false);
+    setSaving(false);
+    if (insertError || !data?.[0]) {
+      setError(insertError?.message ?? "Could not save this entry.");
+      return;
     }
-  };
 
-  // Showcase a journey the user isn't already working through
-  const showcaseJourney = useMemo(() => {
-    const pool = journeys.filter((j) => j.id !== active?.journey.id);
-    return pool.find((j) => j.featured) || pool[0] || null;
-  }, [journeys, active]);
+    setReflections((prev) => [data[0] as ReflectionRow, ...prev]);
+    setDraft("");
+    setWriting(false);
+    setPendingMood(null);
+  }, [userId, draft, pendingMood]);
 
-  const progressPct = active
-    ? Math.round((active.completedDays / active.totalDays) * 100)
-    : 0;
+  const selectMood = useCallback(
+    async (value: string) => {
+      const next = mood === value ? null : value;
+      setPendingMood(next);
+      if (!todayEntry) return;
+
+      // There is already an entry for today — the mood belongs to it
+      setReflections((prev) =>
+        prev.map((r) => (r.id === todayEntry.id ? { ...r, mood: next } : r))
+      );
+      const supabase = createClient();
+      await supabase.from("reflections").update({ mood: next }).eq("id", todayEntry.id);
+    },
+    [mood, todayEntry]
+  );
+
+  const subline = todayEntry
+    ? "You have written today. The day is yours from here."
+    : mood
+      ? `Noted as ${mood.toLowerCase()}. Take a few minutes when you are ready.`
+      : "Two questions are waiting: one from your journey, one from today.";
+
+  const progressPct = active ? Math.round((active.completedDays / active.totalDays) * 100) : 0;
+  const savedPreview = titleAndSnippet(todayEntry?.content ?? null);
+
+  if (loading) {
+    return <div className="py-20 text-center text-[13px] text-[var(--ds-text-muted)]">Loading…</div>;
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Header Greeting */}
-      <div className="space-y-1">
-        <span className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-medium">
-          {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
-        </span>
-        <h1 className="font-serif-editorial text-4xl sm:text-5xl font-normal text-[var(--text-primary)]">
-          {getGreeting()}{userName ? `, ${userName}` : ""}
-        </h1>
-        <p className="text-base text-[var(--text-secondary)] font-light">
-          What's on your mind today?
-        </p>
+    <div>
+      {/* ── Header ── */}
+      <div className="flex items-end gap-6 flex-wrap">
+        <div className="flex-1 min-w-[280px]">
+          <div className={MICRO}>
+            {new Date()
+              .toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+              .toUpperCase()}
+          </div>
+          <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] mt-[7px] mb-1.5">
+            Good {greetingPart()}
+            {userName ? `, ${userName}` : ""}
+          </h1>
+          <p className="text-sm text-[var(--ds-text-muted)] m-0">{subline}</p>
+        </div>
+        <div className="flex items-center gap-2.5 px-[15px] py-2.5 rounded-full border border-[var(--ds-line)] bg-[var(--ds-surface)] text-[var(--ds-text-mid)] text-[13px]">
+          <Flame className="w-[15px] h-[15px]" strokeWidth={1.8} />
+          <span>
+            <strong className="font-semibold">{streak}</strong> {streak === 1 ? "day" : "days"} in a row
+          </span>
+        </div>
       </div>
 
-      {/* Quick Reflection Card */}
-      <div className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:border-[var(--brand-primary)]/50 transition-colors shadow-sm">
-        <div className="space-y-2 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--brand-primary)]/15 rounded-full text-xs text-[var(--brand-primary)] font-medium">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Daily Reflection</span>
-          </div>
-          <h2 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-            "A quiet space to pause and listen to your thoughts."
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Write a few lines about what you've noticed today.
-          </p>
-        </div>
-
-        <Link
-          href="/journal/new"
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm whitespace-nowrap"
-        >
-          <PenTool className="w-4 h-4" />
-          <span>Reflect</span>
-        </Link>
-      </div>
-
-      {/* Continue where you left off */}
-      {active && (
-        <div className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--brand-primary)]/15 rounded-full text-xs text-[var(--brand-primary)] font-medium">
-              <Compass className="w-3.5 h-3.5" />
-              <span>Current Journey</span>
-            </div>
-            <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">
-              Day {active.completedDays} of {active.totalDays}
-            </span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-5">
-            <img
-              src={journeyImage(active.journey)}
-              alt={active.journey.title}
-              className="w-full sm:w-40 h-32 sm:h-28 object-cover rounded-2xl border border-[var(--border-subtle)]"
-            />
-
-            <div className="flex-1 space-y-2 min-w-0">
-              <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-                {active.journey.title}
-              </h3>
-              <p className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-medium">
-                Up next — Day {active.nextDay.day}: {active.nextDay.title}
-              </p>
-              <p className="text-sm text-[var(--text-secondary)] font-light leading-relaxed line-clamp-2">
-                {active.nextDay.prompt}
-              </p>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1.5 w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--brand-primary)] rounded-full transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-
-          <Link
-            href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm"
-          >
-            <span>Continue Journey</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
-
-      {/* Journey showcase → Journey Library */}
-      {showcaseJourney && (
-        <Link
-          href="/journeys"
-          className="group relative overflow-hidden rounded-3xl border border-[var(--border-subtle)] flex flex-col justify-between min-h-[360px] transition-all hover:border-[var(--brand-primary)] hover:shadow-lg shadow-sm block w-full"
-        >
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0 bg-[var(--bg-surface)] dark:bg-[#1F1D1B]">
-            <img
-              src={journeyImage(showcaseJourney)}
-              alt={showcaseJourney.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-30 dark:opacity-70"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-surface)] via-[var(--bg-surface)]/80 dark:from-[#1F1D1B] dark:via-[#1F1D1B]/70 to-transparent" />
-          </div>
-
-          {/* Top Badge */}
-          <div className="relative z-10 p-8 md:p-10">
-            <span className="inline-block px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold bg-[var(--bg-surface)]/60 dark:bg-black/30 backdrop-blur-md rounded-full border border-[var(--border-subtle)] dark:border-white/20 text-[var(--text-primary)] dark:text-white shadow-sm">
-              {showcaseJourney.category}
-            </span>
-          </div>
-
-          {/* Content overlay */}
-          <div className="relative z-10 p-8 md:p-10 pt-0 space-y-4 text-[var(--text-primary)] dark:text-white mt-auto">
-            {/* Title & Description */}
-            <div className="max-w-2xl">
-              <h3 className="font-serif-editorial text-4xl sm:text-5xl mb-3 leading-tight">
-                {showcaseJourney.title}
-              </h3>
-              <p className="text-base font-light text-[var(--text-secondary)] dark:text-white/80">
-                {showcaseJourney.tagline}
-              </p>
-            </div>
-
-            {/* Footer info */}
-            <div className="flex items-center justify-between pt-6 mt-6 border-t border-[var(--border-subtle)] dark:border-white/20">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] dark:text-white/90">
-                <CheckCircle2 className="w-4 h-4 text-[var(--text-secondary)] dark:opacity-80" />
-                <span>{(showcaseJourney.journey_days ?? []).length} days</span>
-              </div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] group-hover:text-[var(--text-secondary)] dark:text-white dark:group-hover:text-white/80 transition-colors">
-                <span>Browse Journeys</span>
-                <ChevronRight className="w-4 h-4" />
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-[18px] mt-6 items-start">
+        {/* ── Today + current journey ── */}
+        <div className="contents md:flex md:flex-col md:gap-[18px] md:min-w-0">
+          <div className={`${CARD} p-5 md:p-6`}>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="px-[11px] py-[5px] rounded-full bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] text-[10px] font-bold tracking-[0.12em]">
+                TODAY&apos;S REFLECTION
               </span>
+              <span className="flex-1" />
+              <button
+                onClick={() => setPromptIndex((i) => (i + 1) % PROMPTS.length)}
+                className="inline-flex items-center gap-1.5 px-[11px] py-1.5 rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] text-[11.5px] hover:text-[var(--ds-text)] transition-colors"
+              >
+                <RefreshCw className="w-[13px] h-[13px]" strokeWidth={1.9} />
+                Another prompt
+              </button>
+            </div>
+
+            <h2 className="text-[22px] md:text-[26px] font-semibold leading-[1.3] tracking-[-0.012em] mt-[15px] max-w-[34ch]">
+              {PROMPTS[promptIndex]}
+            </h2>
+
+            {writing ? (
+              <div>
+                <textarea
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Write as it comes. No one else reads this."
+                  className="w-full min-h-[200px] my-[18px] mb-3.5 bg-transparent border-none text-[16.5px] leading-[1.8] text-[var(--ds-text)] resize-none"
+                />
+                <div className="flex items-center gap-3 pt-3 border-t border-[var(--ds-line)] flex-wrap">
+                  <span className={MICRO}>{wordCount(draft)} WORDS</span>
+                  <span className="text-[12.5px] text-[var(--ds-text-muted)]">
+                    Saved to today · {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  </span>
+                  <span className="flex-1" />
+                  <button
+                    onClick={() => {
+                      setWriting(false);
+                      setDraft("");
+                      setError("");
+                    }}
+                    className={GHOST_BTN}
+                  >
+                    Discard
+                  </button>
+                  <button onClick={saveEntry} disabled={saving || !draft.trim()} className={PRIMARY_BTN}>
+                    {saving ? "Saving…" : "Save entry"}
+                  </button>
+                </div>
+                {error && <p className="mt-3 text-[12.5px] text-[var(--ds-danger)]">{error}</p>}
+              </div>
+            ) : todayEntry ? (
+              <div className="flex items-center gap-3 mt-5 px-4 py-3.5 rounded-xl bg-[var(--ds-accent-soft)] border border-[var(--ds-line)]">
+                <span className="w-[26px] h-[26px] flex-shrink-0 rounded-full grid place-items-center bg-[var(--ds-accent)] text-[var(--ds-on-accent)]">
+                  <Check className="w-[13px] h-[13px]" strokeWidth={2.4} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px] font-semibold">Today&apos;s entry is saved</div>
+                  <div className="text-[12.5px] text-[var(--ds-text-muted)] truncate">
+                    {savedPreview.title}
+                  </div>
+                </div>
+                <Link href="/journal/new" className={GHOST_BTN}>
+                  Add more
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 mt-5 flex-wrap">
+                <button onClick={() => setWriting(true)} className={PRIMARY_BTN}>
+                  Start writing
+                </button>
+                <span className="text-[12.5px] text-[var(--ds-text-muted)]">About 5 minutes</span>
+              </div>
+            )}
+          </div>
+
+          {active && (
+            <div className={`${CARD} flex flex-col sm:flex-row gap-5 p-4`}>
+              <span
+                className="w-full h-32 sm:w-[150px] sm:h-auto flex-shrink-0 rounded-xl bg-cover bg-center"
+                style={{ backgroundImage: `url("${journeyImage(active.journey)}")` }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className={MICRO}>
+                  CURRENT JOURNEY · DAY {active.nextDay.day} OF {active.totalDays}
+                </div>
+                <div className="text-[22px] font-semibold leading-[1.2] mt-1.5 mb-[3px]">
+                  {active.journey.title}
+                </div>
+                <div className="text-[12.5px] text-[var(--ds-text-muted)]">
+                  Today · {active.nextDay.title}
+                </div>
+                <span className="block h-1 rounded-full bg-[var(--ds-line-strong)] mt-3 max-w-[340px]">
+                  <span
+                    className="block h-full rounded-full bg-[var(--ds-accent)] transition-all"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </span>
+                <div className="flex gap-2.5 mt-3.5 flex-wrap">
+                  <Link
+                    href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
+                    className={`${PRIMARY_BTN} inline-block`}
+                  >
+                    Open today
+                  </Link>
+                  <Link href={`/journeys/${active.journey.id}`} className={`${GHOST_BTN} inline-block`}>
+                    Journey overview
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent entries — after the rail on mobile, as in M. Mobile */}
+          <div className="order-3 md:order-none">
+            <div className="flex items-baseline gap-2.5 mt-2 mb-2.5">
+              <h2 className="text-[19px] font-semibold m-0">Recent entries</h2>
+              <span className="flex-1" />
+              <Link href="/journal" className={LINK_BTN}>
+                Open journal →
+              </Link>
+            </div>
+
+            {recents.length === 0 ? (
+              <div className={`${CARD} p-6 text-center text-[13px] text-[var(--ds-text-muted)]`}>
+                Nothing written yet. Today&apos;s prompt is a good place to start.
+              </div>
+            ) : (
+              <div className={`${CARD} overflow-hidden`}>
+                {recents.map((r, i) => {
+                  const date = new Date(r.created_at);
+                  const { title, snippet } = titleAndSnippet(r.content);
+                  return (
+                    <Link
+                      key={r.id}
+                      href={`/journal?entry=${r.id}`}
+                      className={`flex items-center gap-4 px-4 py-[15px] text-[var(--ds-text)] hover:bg-[var(--ds-surface-2)] transition-colors ${
+                        i < recents.length - 1 ? "border-b border-[var(--ds-line)]" : ""
+                      }`}
+                    >
+                      <span className="flex-shrink-0 w-11 text-center text-[19px] font-semibold leading-[1.05]">
+                        {date.getDate()}
+                        <span className="block text-[9.5px] font-semibold tracking-[0.1em] text-[var(--ds-text-muted)] mt-0.5">
+                          {date.toLocaleDateString("en-GB", { month: "short" }).toUpperCase()}
+                        </span>
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[15px] font-semibold truncate">{title}</span>
+                        <span className="block text-[12.5px] text-[var(--ds-text-muted)] mt-[3px] truncate">
+                          {snippet}
+                        </span>
+                      </span>
+                      {r.mood && (
+                        <span className="flex-shrink-0 px-2.5 py-1 rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] text-[11px]">
+                          {r.mood}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right rail ── */}
+        <div className="order-2 md:order-none flex flex-col gap-[18px] min-w-0 md:row-span-2">
+          <div className={`${CARD} p-[18px]`}>
+            <div className={RAIL_TITLE}>This week</div>
+            <div className="flex gap-1.5 mt-3.5">
+              {week.map((d) => (
+                <span key={d.key} className="flex-1 flex flex-col items-center gap-[7px]">
+                  <span
+                    className={`w-full aspect-square max-w-[30px] rounded-full grid place-items-center text-[11px] font-bold ${
+                      d.done
+                        ? "bg-[var(--ds-accent)] text-[var(--ds-on-accent)]"
+                        : d.isToday
+                          ? "border border-[var(--ds-accent)] bg-[var(--ds-accent-soft)]"
+                          : "border border-dashed border-[var(--ds-line-strong)]"
+                    }`}
+                  >
+                    {d.done ? "✓" : ""}
+                  </span>
+                  <span
+                    className={`text-[10.5px] font-semibold ${
+                      d.isToday ? "text-[var(--ds-accent)]" : "text-[var(--ds-text-muted)]"
+                    }`}
+                  >
+                    {d.label}
+                  </span>
+                </span>
+              ))}
+            </div>
+            <div className="flex mt-[18px] pt-4 border-t border-[var(--ds-line)]">
+              {stats.map((s) => (
+                <span key={s.label} className="flex-1">
+                  <span className="block text-xl font-semibold tracking-[-0.01em]">{s.value}</span>
+                  <span className="block text-[10.5px] font-semibold tracking-[0.1em] text-[var(--ds-text-muted)] mt-0.5 uppercase">
+                    {s.label}
+                  </span>
+                </span>
+              ))}
             </div>
           </div>
-        </Link>
-      )}
 
-      {/* User Journals Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-            Your Journals
-          </h3>
-          <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-[var(--brand-primary)] hover:text-[var(--brand-primary-hover)] font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Journal</span>
-          </button>
-        </div>
-
-        {journals.length === 0 ? (
-          <div className="bg-[var(--bg-surface-secondary)]/60 border border-dashed border-[var(--border-subtle)] rounded-2xl p-8 text-center space-y-3">
-            <BookOpen className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
-            <p className="text-sm text-[var(--text-secondary)]">
-              You don't have any custom journals yet.
+          <div className={`${CARD} p-[18px]`}>
+            <div className={RAIL_TITLE}>How is today feeling?</div>
+            <div className="flex flex-wrap gap-[7px] mt-3">
+              {MOODS.map((m) => {
+                const on = mood === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => selectMood(m)}
+                    className={`px-3 py-[7px] rounded-full text-[12.5px] transition-colors ${
+                      on
+                        ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
+                        : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-3 leading-relaxed">
+              {mood
+                ? "Added to today. You can change it any time."
+                : "One word is enough. It becomes part of the entry."}
             </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="py-2 px-4 bg-[var(--brand-primary)]/20 text-[var(--text-primary)] text-xs font-medium rounded-xl hover:bg-[var(--brand-primary)]/30 transition-colors"
-            >
-              Create Your First Journal
-            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {journals.map((j) => (
-              <Link
-                key={j.id}
-                href={`/journal?journal_id=${j.id}`}
-                className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] p-5 rounded-2xl hover:border-[var(--brand-primary)] transition-colors flex items-center justify-between"
-              >
-                <div className="space-y-1">
-                  <h4 className="font-serif-editorial text-lg text-[var(--text-primary)]">
-                    {j.title}
-                  </h4>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    {new Date(j.created_at).toLocaleDateString("en-US")}
-                  </p>
-                </div>
-                <BookOpen className="w-5 h-5 text-[var(--brand-primary)]" />
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Create Journal Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
-            <h3 className="font-serif-editorial text-2xl text-[var(--text-primary)]">
-              New Journal
-            </h3>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Give your journal a name to organize your reflections.
-            </p>
-
-            <form onSubmit={handleCreateJournal} className="space-y-4">
-              <input
-                type="text"
-                required
-                autoFocus
-                value={newJournalTitle}
-                onChange={(e) => setNewJournalTitle(e.target.value)}
-                placeholder="e.g. Morning Thoughts, Gratitude..."
-                className="w-full px-4 py-3 bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-primary)]"
-              />
-
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="py-2.5 px-4 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="py-2.5 px-5 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-xs font-medium rounded-xl"
-                >
-                  Create
-                </button>
+          {memory && (
+            <div className={`${CARD} p-[18px]`}>
+              <div className="flex items-center gap-2">
+                <div className={RAIL_TITLE}>One year ago</div>
+                <span className="flex-1" />
+                <span className="text-[12.5px] text-[var(--ds-text-muted)]">
+                  {new Date(memory.created_at).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
               </div>
-            </form>
-          </div>
+              <p className="text-sm leading-[1.7] text-[var(--ds-text-mid)] italic my-3 line-clamp-4">
+                “{(memory.content ?? "").trim()}”
+              </p>
+              <button onClick={() => router.push(`/journal?entry=${memory.id}`)} className={LINK_BTN}>
+                Read that entry →
+              </button>
+            </div>
+          )}
+
+          {suggested && (
+            <div className={`${CARD} overflow-hidden`}>
+              <span
+                className="block aspect-[16/8] bg-cover bg-center"
+                style={{ backgroundImage: `url("${journeyImage(suggested)}")` }}
+              />
+              <div className="px-4 pt-4 pb-4">
+                <div className="text-[10px] font-bold tracking-[0.12em] text-[var(--ds-accent)]">
+                  SUGGESTED FOR YOU
+                </div>
+                <div className="text-[17px] font-semibold leading-[1.25] mt-[7px] mb-1">
+                  {suggested.title}
+                </div>
+                <div className="text-[12.5px] text-[var(--ds-text-muted)]">
+                  {(suggested.journey_days ?? []).length} days
+                  {suggested.category ? ` · ${suggested.category}` : ""}
+                </div>
+                <Link
+                  href={`/journeys/${suggested.id}`}
+                  className={`${GHOST_BTN} block w-full text-center mt-3.5`}
+                >
+                  Start journey
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
