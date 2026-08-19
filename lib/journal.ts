@@ -137,3 +137,63 @@ export function oneYearAgo(reflections: ReflectionRow[], today = new Date(), win
   }
   return closest;
 }
+
+export type JourneyDay = { day: number; title: string; prompt: string };
+export type Journey = {
+  id: string;
+  title: string;
+  category: string | null;
+  tagline: string | null;
+  image_url: string | null;
+  status?: string | null;
+  scheduled_publish_at?: string | null;
+  featured?: boolean | null;
+  premium?: boolean | null;
+  journey_days: JourneyDay[];
+};
+
+export type ActiveJourney = {
+  journey: Journey;
+  completedDays: number;
+  totalDays: number;
+  nextDay: JourneyDay;
+};
+
+const DAY_TAG = /^Day (\d+)$/;
+
+/**
+ * Progress lives implicitly in `reflections`: each journey reflection is
+ * tagged with the journey title and `Day N` (see JourneyDetailClient).
+ */
+export function findActiveJourney(journeys: Journey[], reflections: ReflectionRow[]): ActiveJourney | null {
+  const byTitle = new Map(journeys.map((j) => [j.title, j]));
+  const seen = new Set<string>();
+
+  // reflections arrive newest-first, so the first match is the latest activity
+  for (const r of reflections) {
+    const tags: string[] = r.tags ?? [];
+    const journey = tags.map((t) => byTitle.get(t)).find(Boolean);
+    if (!journey || seen.has(journey.id)) continue;
+    seen.add(journey.id);
+
+    const days = [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day);
+    if (days.length === 0) continue;
+
+    const daysDone = reflections
+      .filter((x) => (x.tags ?? []).includes(journey.title))
+      .map((x) => {
+        const tag = (x.tags ?? []).map((t) => DAY_TAG.exec(t)).find(Boolean);
+        return tag ? Number(tag[1]) : 0;
+      });
+
+    const completedDays = Math.max(0, ...daysDone);
+    const nextDay = days.find((d) => d.day > completedDays);
+
+    // finished journeys are no longer "in progress" — keep looking
+    if (!nextDay) continue;
+
+    return { journey, completedDays, totalDays: days.length, nextDay };
+  }
+
+  return null;
+}

@@ -17,91 +17,15 @@ import {
   weekDots,
   wordCount,
   writtenDays,
+  findActiveJourney,
+  type Journey,
   type ReflectionRow,
 } from "@/lib/journal";
-
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80";
-
-const JOURNEY_IMAGES: Record<string, string> = {
-  "becoming-more-human": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80",
-  "art-of-paying-attention": "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=1200&q=80",
-  "meeting-yourself": "https://images.unsplash.com/photo-1508226068252-0f5ba68cfa36?auto=format&fit=crop&w=1200&q=80",
-  "questions-that-matter": "https://images.unsplash.com/photo-1434458994784-eb5c7f8a7e0c?auto=format&fit=crop&w=1200&q=80",
-  "beginning-again": "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1200&q=80",
-  "becoming-present": "https://images.unsplash.com/photo-1499244571948-7cc805844d18?auto=format&fit=crop&w=1200&q=80",
-  "art-of-reflection": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80",
-  "everyday-wonder": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
-  "everyday-sacred": "https://images.unsplash.com/photo-1444464666168-49b626f11c0e?auto=format&fit=crop&w=1200&q=80",
-  "living-with-curiosity": "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?auto=format&fit=crop&w=1200&q=80",
-};
-
-function journeyImage(j: { id: string; image_url?: string | null }) {
-  return j.image_url || JOURNEY_IMAGES[j.id] || FALLBACK_IMAGE;
-}
+import { journeyImage } from "@/lib/journey-images";
 
 function greetingPart() {
   const h = new Date().getHours();
   return h < 12 ? "Morning" : h < 19 ? "Afternoon" : "Evening";
-}
-
-type JourneyDay = { day: number; title: string; prompt: string };
-type Journey = {
-  id: string;
-  title: string;
-  category: string | null;
-  tagline: string | null;
-  image_url: string | null;
-  status?: string | null;
-  scheduled_publish_at?: string | null;
-  featured?: boolean | null;
-  journey_days: JourneyDay[];
-};
-
-type ActiveJourney = {
-  journey: Journey;
-  completedDays: number;
-  totalDays: number;
-  nextDay: JourneyDay;
-};
-
-const DAY_TAG = /^Day (\d+)$/;
-
-/**
- * Progress lives implicitly in `reflections`: each journey reflection is
- * tagged with the journey title and `Day N` (see JourneyDetailClient).
- */
-function findActiveJourney(journeys: Journey[], reflections: ReflectionRow[]): ActiveJourney | null {
-  const byTitle = new Map(journeys.map((j) => [j.title, j]));
-  const seen = new Set<string>();
-
-  // reflections arrive newest-first, so the first match is the latest activity
-  for (const r of reflections) {
-    const tags: string[] = r.tags ?? [];
-    const journey = tags.map((t) => byTitle.get(t)).find(Boolean);
-    if (!journey || seen.has(journey.id)) continue;
-    seen.add(journey.id);
-
-    const days = [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day);
-    if (days.length === 0) continue;
-
-    const daysDone = reflections
-      .filter((x) => (x.tags ?? []).includes(journey.title))
-      .map((x) => {
-        const tag = (x.tags ?? []).map((t) => DAY_TAG.exec(t)).find(Boolean);
-        return tag ? Number(tag[1]) : 0;
-      });
-
-    const completedDays = Math.max(0, ...daysDone);
-    const nextDay = days.find((d) => d.day > completedDays);
-
-    // finished journeys are no longer "in progress" — keep looking
-    if (!nextDay) continue;
-
-    return { journey, completedDays, totalDays: days.length, nextDay };
-  }
-
-  return null;
 }
 
 const CARD = "rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]";

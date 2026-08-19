@@ -2,108 +2,101 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import { Lock } from "lucide-react";
 import type { JourneyRow } from "@/lib/actions/journeys";
+import { journeyImage } from "@/lib/journey-images";
 
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80";
+const ALL = "All journeys";
 
 export default function JourneysFilter({
   journeys,
   categories,
+  activeJourneyId = null,
+  subscribed = false,
 }: {
   journeys: JourneyRow[];
   categories: string[];
+  activeJourneyId?: string | null;
+  subscribed?: boolean;
 }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selected, setSelected] = useState(ALL);
 
-  const filteredJourneys = journeys.filter((j) => {
-    if (selectedCategory === "All") return true;
-    return j.category === selectedCategory;
-  });
+  // The journey in progress already has its own card above the grid
+  const visible = journeys
+    .filter((j) => j.id !== activeJourneyId)
+    .filter((j) => selected === ALL || j.category === selected);
 
   return (
     <>
-      {/* Category Pills */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <button
-          onClick={() => setSelectedCategory("All")}
-          className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-            selectedCategory === "All"
-              ? "bg-[var(--brand-primary)] text-[var(--bg-surface)]"
-              : "bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--brand-primary)]"
-          }`}
-        >
-          All journeys
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-              selectedCategory === cat
-                ? "bg-[var(--brand-primary)] text-[var(--bg-surface)]"
-                : "bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--brand-primary)]"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 mt-9 mb-4 flex-wrap">
+        <h2 className="text-[19px] font-semibold m-0">Explore</h2>
+        <span className="flex-1" />
+        <div className="flex gap-2 overflow-x-auto max-w-full pb-1">
+          {[ALL, ...categories].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelected(cat)}
+              className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
+                selected === cat
+                  ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
+                  : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Journey Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredJourneys.map((journey) => (
-          <Link
-            key={journey.id}
-            href={`/journeys/${journey.id}`}
-            className="group relative overflow-hidden rounded-3xl border border-[var(--border-subtle)] flex flex-col justify-between min-h-[340px] transition-all hover:border-[var(--brand-primary)] hover:shadow-lg shadow-sm"
-          >
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0 bg-[var(--bg-surface)] dark:bg-[#1F1D1B]">
-              <img
-                src={
-                  journey.image_url ||
-                  FALLBACK_IMAGE
-                }
-                alt={journey.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-30 dark:opacity-70"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-surface)] via-[var(--bg-surface)]/80 dark:from-[#1F1D1B] dark:via-[#1F1D1B]/70 to-transparent" />
-            </div>
-
-            {/* Top Badge */}
-            <div className="relative z-10 p-6">
-              <span className="inline-block px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold bg-[var(--bg-surface)]/60 dark:bg-black/30 backdrop-blur-md rounded-full border border-[var(--border-subtle)] dark:border-white/20 text-[var(--text-primary)] dark:text-white shadow-sm">
-                {journey.category}
-              </span>
-            </div>
-
-            {/* Content overlay */}
-            <div className="relative z-10 p-6 pt-0 space-y-4 text-[var(--text-primary)] dark:text-white mt-auto">
-              <div>
-                <h3 className="font-serif-editorial text-3xl mb-2 leading-tight">
-                  {journey.title}
-                </h3>
-                <p className="text-sm font-light text-[var(--text-secondary)] dark:text-white/80 line-clamp-2">
-                  {journey.tagline}
-                </p>
-              </div>
-
-              {/* Footer info */}
-              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-subtle)] dark:border-white/20">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-primary)] dark:text-white/90">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[var(--text-secondary)] dark:text-white/80" />
-                  <span>{journey.journey_days?.length ?? 0} days</span>
-                </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] group-hover:text-[var(--text-secondary)] dark:text-white dark:group-hover:text-white/80 transition-colors">
-                  Begin <ChevronRight className="w-4 h-4" />
+      {visible.length === 0 ? (
+        <div className="rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)] p-8 text-center text-[13px] text-[var(--ds-text-muted)]">
+          No journeys in this category yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {visible.map((journey) => {
+            const locked = journey.premium && !subscribed;
+            return (
+              <Link
+                key={journey.id}
+                href={`/journeys/${journey.id}`}
+                className="flex flex-col overflow-hidden rounded-[14px] border border-[var(--ds-line)] bg-[var(--ds-surface)] text-[var(--ds-text)] hover:text-[var(--ds-text)] hover:border-[var(--ds-line-strong)] transition-colors"
+              >
+                <span className="block relative aspect-video">
+                  <span
+                    className={`block w-full h-full bg-cover bg-center ${
+                      locked ? "saturate-50 brightness-90" : ""
+                    }`}
+                    style={{ backgroundImage: `url("${journeyImage(journey)}")` }}
+                  />
+                  <span className="absolute left-2.5 bottom-2.5 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10.5px] font-semibold whitespace-nowrap">
+                    {(journey.journey_days ?? []).length} days
+                  </span>
+                  {locked && (
+                    <span className="absolute right-2.5 top-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--ds-gold)] text-[var(--ds-on-gold)] text-[9.5px] font-bold tracking-[0.1em]">
+                      <Lock className="w-[11px] h-[11px]" strokeWidth={2.2} />
+                      PLUS
+                    </span>
+                  )}
                 </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+                <span className="flex flex-col gap-[5px] px-[15px] pt-3.5 pb-[15px] flex-1">
+                  <span
+                    className={`text-[10px] font-semibold tracking-[0.11em] uppercase ${
+                      locked ? "text-[var(--ds-gold)]" : "text-[var(--ds-accent)]"
+                    }`}
+                  >
+                    {journey.category}
+                  </span>
+                  <span className="text-[19px] font-semibold leading-[1.2]">{journey.title}</span>
+                  <span className="text-[12.5px] leading-[1.45] text-[var(--ds-text-muted)]">
+                    {journey.tagline}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
