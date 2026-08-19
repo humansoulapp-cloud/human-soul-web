@@ -7,7 +7,12 @@ import { revalidatePath } from "next/cache";
 export type UserRow = {
   id: string;
   email: string;
+  name: string;
   role: string;
+  plan: string;
+  entries: number;
+  streak: number;
+  lastActive: string | null;
   created_at: string;
 };
 
@@ -29,21 +34,76 @@ async function requireAdmin() {
   return serviceClient;
 }
 
+/**
+ * The admin list joins three sources: the auth users (email, name, last sign
+ * in), their profile (role and plan) and their reflections (entries, streak,
+ * last written).
+ */
 export async function getUsers(): Promise<UserRow[]> {
   const serviceClient = await requireAdmin();
 
-  const { data, error } = await serviceClient
-    .from("profiles")
-    .select("user_id, role, created_at");
+  const [{ data: profiles }, { data: authData }, { data: reflections }] = await Promise.all([
+    serviceClient.from("profiles").select("*"),
+    serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    serviceClient.from("reflections").select("user_id, created_at"),
+  ]);
 
-  if (error) throw new Error(error.message);
+  const byUser = new Map<string, string[]>();
+  for (const r of (reflections ?? []) as { user_id: string; created_at: string }[]) {
+    byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r.created_at]);
+  }
 
-  return (data ?? []).map((p: { user_id: string; role: string; created_at: string }) => ({
-    id: p.user_id,
-    email: "—",
-    role: p.role ?? "user",
-    created_at: p.created_at,
-  }));
+  const authUsers = new Map(
+    (authData?.users ?? []).map((u) => [
+      u.id,
+      {
+        email: u.email ?? "—",
+        name: (u.user_metadata?.display_name as string) || u.email?.split("@")[0] || "—",
+        lastSignIn: u.last_sign_in_at ?? null,
+      },
+    ])
+  );
+
+  return ((profiles ?? []) as { user_id: string; role?: string | null; plan?: string | null; created_at: string }[]).map(
+    (p) => {
+      const dates = byUser.get(p.user_id) ?? [];
+      const auth = authUsers.get(p.user_id);
+      const days = new Set(dates.map((d) => new Date(d).toISOString().slice(0, 10)));
+
+      // days in a row, counting back from today
+      let streak = 0;
+      const cursor = new Date();
+      if (!days.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+      while (days.has(cursor.toISOString().slice(0, 10))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      const lastWritten = dates.sort().at(-1) ?? null;
+
+      return {
+        id: p.user_id,
+        email: auth?.email ?? "—",
+        name: auth?.name ?? "—",
+        role: p.role ?? "user",
+        plan: p.plan && p.plan !== "free" ? "Plus" : "Free",
+        entries: dates.length,
+        streak,
+        lastActive: lastWritten ?? auth?.lastSignIn ?? null,
+        created_at: p.created_at,
+      };
+    }
+  );
+}
+
+export async function updateUserPlan(userId: string, plan: "free" | "plus") {
+  const serviceClient = await requireAdmin();
+
+  const { error } = await serviceClient.from("profiles").update({ plan }).eq("user_id", userId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/users");
+  return { success: true };
 }
 
 export async function updateUserRole(userId: string, role: "admin" | "user") {
