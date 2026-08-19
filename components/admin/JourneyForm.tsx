@@ -255,6 +255,30 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2.5 flex-shrink-0">
+          {/* Quick status, mirroring the detailed publishing section below */}
+          <div className="hidden lg:flex items-center gap-1.5">
+            {([
+              ["draft", "Draft"],
+              ["scheduled", "Scheduled"],
+              ["published", "Live"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  setStatus(value);
+                  markDirty();
+                }}
+                className={`px-3 py-1.5 rounded-full text-[11.5px] font-semibold tracking-[0.04em] border ${
+                  status === value
+                    ? "border-transparent bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]"
+                    : "border-[var(--admin-border-hover)] text-[var(--admin-text-muted)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <span className="text-xs" style={{ color: "var(--admin-text-muted)" }}>
             {saved ? "Saved" : dirty ? "Unsaved changes" : ""}
           </span>
@@ -772,7 +796,7 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                   className="flex items-center gap-2.5 w-full text-left px-2.5 py-2 rounded-lg"
                   style={{
                     color: "var(--admin-text)",
-                    background: index === activeDay ? "var(--admin-surface-2)" : "transparent",
+                    background: index === activeDay ? "var(--admin-accent-soft)" : "transparent",
                   }}
                 >
                   <span
@@ -794,9 +818,17 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
                       {dayItem.title || "Untitled day"}
                     </span>
                     <span className="block text-[11px] mt-0.5 truncate" style={{ color: "var(--admin-text-muted)" }}>
-                      {dayItem.purpose || "—"}
+                      {dayItem.purpose || "No purpose yet"}
                     </span>
                   </span>
+                  {!dayItem.prompt?.trim() && (
+                    <span
+                      className="flex-shrink-0 ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-[0.08em]"
+                      style={{ background: "var(--admin-gold-soft)", color: "var(--admin-gold)" }}
+                    >
+                      EMPTY
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
