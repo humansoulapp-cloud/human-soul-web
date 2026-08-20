@@ -82,7 +82,13 @@ export default function SignInPage() {
           </label>
 
           <label className={AUTH_FIELD}>
-            <span className={AUTH_LABEL}>PASSWORD</span>
+            <span className="flex items-center gap-2.5">
+              <span className={AUTH_LABEL}>PASSWORD</span>
+              <span className="flex-1" />
+              <Link href="/forgot-password" className={AUTH_SMALL_LINK}>
+                Forgot it?
+              </Link>
+            </span>
             <input
               type={show ? "text" : "password"}
               value={password}

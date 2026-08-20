@@ -64,7 +64,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  // A recovery link signs the person in before they choose a new password, so
+  // /reset-password must stay reachable with a session.
+  const isEntryPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
+
+  if (user && isEntryPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
