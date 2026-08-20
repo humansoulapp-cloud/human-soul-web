@@ -35,9 +35,10 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') ?? '';
 
   // ─── Hostname routing ─────────────────────────────────────────────────────
-  // humansoul.app serves the landing at "/", my.humansoul.app is the app and
-  // sends "/" straight to the dashboard. Anything that is not the app host
-  // (including localhost) keeps the landing, so it stays previewable.
+  // humansoul.co serves the landing at "/", my.humansoul.co is the app and
+  // sends "/" straight to the dashboard. The check is on the `my.` subdomain
+  // rather than the domain itself, so localhost and Vercel preview URLs keep
+  // the landing and stay previewable.
   const isAppHost = host.startsWith('my.');
 
   if (pathname === '/') {
