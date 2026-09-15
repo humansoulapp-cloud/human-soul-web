@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowDownUp, Heart, Search } from "lucide-react";
+import { ArrowDownUp, BookOpen, Heart, Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   dayKey,
@@ -16,7 +16,7 @@ import {
 const CARD = "rounded-[14px] border border-[var(--ds-line)] bg-[var(--ds-surface)]";
 const RAIL_TITLE = "text-[15px] font-semibold";
 const GHOST_SMALL =
-  "flex-1 px-3 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[12.5px] text-center transition-colors";
+  "flex-1 px-3 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[12.5px] text-center transition-colors cursor-pointer";
 
 const FILTERS = ["All", "Journeys", "Free writing", "Favorites"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -45,7 +45,7 @@ function entryText(content: string | null) {
 }
 
 function chip(on: boolean) {
-  return `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors ${
+  return `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors cursor-pointer ${
     on
       ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
       : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
@@ -55,8 +55,10 @@ function chip(on: boolean) {
 function JournalFeed() {
   const searchParams = useSearchParams();
   const focusEntry = searchParams.get("entry");
+  const selectedJournalId = searchParams.get("journal_id");
 
   const [entries, setEntries] = useState<ReflectionRow[]>([]);
+  const [journalTitle, setJournalTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
@@ -78,10 +80,24 @@ function JournalFeed() {
         .order("created_at", { ascending: false });
 
       setEntries((data ?? []) as ReflectionRow[]);
+
+      if (selectedJournalId) {
+        const { data: jData } = await supabase
+          .from("journals")
+          .select("title")
+          .eq("id", selectedJournalId)
+          .single();
+        if (jData) {
+          setJournalTitle(jData.title);
+        }
+      } else {
+        setJournalTitle("");
+      }
+
       setLoading(false);
     }
     load();
-  }, []);
+  }, [selectedJournalId]);
 
   // An entry linked from Home opens expanded and scrolls into view
   useEffect(() => {
@@ -117,6 +133,11 @@ function JournalFeed() {
     const q = query.trim().toLowerCase();
     const list = entries.filter((e) => {
       const { kind, source } = entryMeta(e);
+      if (selectedJournalId) {
+        const matchesJournalId = e.journal_id === selectedJournalId;
+        const matchesTag = journalTitle && (e.tags ?? []).includes(journalTitle);
+        if (!matchesJournalId && !matchesTag) return false;
+      }
       if (filter === "Journeys" && kind !== "journey") return false;
       if (filter === "Free writing" && kind !== "free") return false;
       if (filter === "Favorites" && !e.favorite) return false;
@@ -128,7 +149,7 @@ function JournalFeed() {
         .includes(q);
     });
     return sortNewest ? list : [...list].reverse();
-  }, [entries, query, filter, tag, day, sortNewest]);
+  }, [entries, selectedJournalId, journalTitle, query, filter, tag, day, sortNewest]);
 
   const groups = useMemo(() => {
     const map = new Map<string, ReflectionRow[]>();
@@ -208,13 +229,15 @@ function JournalFeed() {
       <div className="flex items-end gap-5 flex-wrap">
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
-            Journal
+            {journalTitle ? journalTitle : "Journal"}
           </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">{countLabel}</p>
+          <p className="text-sm text-[var(--ds-text-muted)] m-0">
+            {journalTitle ? `Viewing reflections saved in "${journalTitle}".` : countLabel}
+          </p>
         </div>
         <Link
-          href="/journal/new"
-          className="px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors"
+          href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
+          className="px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors cursor-pointer"
         >
           New entry
         </Link>
@@ -222,6 +245,25 @@ function JournalFeed() {
 
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-[18px] mt-6 items-start">
         <div className="min-w-0">
+          {/* Active Journal Filter Banner */}
+          {selectedJournalId && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]">
+              <div className="flex items-center gap-2 text-[12.5px]">
+                <BookOpen className="w-4 h-4 text-[var(--ds-accent)] flex-shrink-0" />
+                <span>
+                  Filtered by journal: <strong className="font-semibold">{journalTitle || "Selected Journal"}</strong>
+                </span>
+              </div>
+              <Link
+                href="/journal"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[11.5px] transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Show all</span>
+              </Link>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 px-4 h-12 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
             <Search className="w-4 h-4 flex-shrink-0 text-[var(--ds-text-muted)]" strokeWidth={1.8} />
             <input
@@ -233,7 +275,7 @@ function JournalFeed() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="text-[12.5px] font-semibold text-[var(--ds-accent)]"
+                className="text-[12.5px] font-semibold text-[var(--ds-accent)] cursor-pointer"
               >
                 Clear
               </button>
@@ -268,24 +310,32 @@ function JournalFeed() {
           {groups.length === 0 ? (
             <div className="mt-[22px] px-6 py-11 rounded-[14px] border border-dashed border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-center flex flex-col items-center">
               <div className="text-[17px] font-semibold">
-                {entries.length === 0 ? "Your journal is empty" : "Nothing matches that yet"}
+                {selectedJournalId
+                  ? `No entries in "${journalTitle || "this journal"}" yet`
+                  : entries.length === 0
+                    ? "Your journal is empty"
+                    : "Nothing matches that yet"}
               </div>
               <p className="text-sm text-[var(--ds-text-muted)] mt-2 max-w-[40ch]">
-                {entries.length === 0
-                  ? "Everything you write, on your own or inside a journey, is kept here."
-                  : "Try a shorter word, or clear the filters to see every entry again."}
+                {selectedJournalId
+                  ? "Write reflections and save them to this journal to view them here."
+                  : entries.length === 0
+                    ? "Everything you write, on your own or inside a journey, is kept here."
+                    : "Try a shorter word, or clear the filters to see every entry again."}
               </p>
-              {entries.length === 0 ? (
+              {selectedJournalId || entries.length === 0 ? (
                 <Link
-                  href="/journal/new"
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px]"
+                  href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
+                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
                 >
-                  Write your first entry
+                  {selectedJournalId
+                    ? `Write reflection in ${journalTitle || "this journal"}`
+                    : "Write your first entry"}
                 </Link>
               ) : (
                 <button
                   onClick={resetAll}
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px]"
+                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
                 >
                   Reset filters
                 </button>

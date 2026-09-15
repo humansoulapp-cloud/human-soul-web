@@ -4,6 +4,13 @@
  * These helpers keep that derivation in one place.
  */
 
+export type UserJournal = {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+};
+
 export type ReflectionRow = {
   id: string;
   content: string | null;
@@ -11,6 +18,7 @@ export type ReflectionRow = {
   mood?: string | null;
   photo?: string | null;
   favorite?: boolean | null;
+  journal_id?: string | null;
   created_at: string;
 };
 
