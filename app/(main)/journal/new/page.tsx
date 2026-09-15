@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Camera, X, Check, Tag } from "lucide-react";
+import { ArrowLeft, Camera, X, Check, Tag, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const EMOTION_TAGS = [
@@ -17,13 +17,37 @@ const EMOTION_TAGS = [
   "Reflective",
 ];
 
-export default function NewReflectionPage() {
+function NewReflectionForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialJournalId = searchParams.get("journal_id") || "";
+
   const [content, setContent] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [selectedJournalId, setSelectedJournalId] = useState<string>(initialJournalId);
+  const [journals, setJournals] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    async function fetchJournals() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("journals")
+        .select("id, title")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        setJournals(data);
+      }
+    }
+    fetchJournals();
+  }, []);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -69,6 +93,7 @@ export default function NewReflectionPage() {
         content: content.trim(),
         tags: selectedTags,
         photo: photoBase64,
+        journal_id: selectedJournalId || null,
         favorite: false,
       },
     ]);
@@ -80,23 +105,29 @@ export default function NewReflectionPage() {
       return;
     }
 
-    router.push("/journal");
+    if (selectedJournalId) {
+      router.push(`/journal?journal_id=${selectedJournalId}`);
+    } else {
+      router.push("/journal");
+    }
     router.refresh();
   };
+
+  const currentJournal = journals.find((j) => j.id === selectedJournalId);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <Link
-          href="/journal"
+          href={selectedJournalId ? `/journal?journal_id=${selectedJournalId}` : "/journal"}
           className="inline-flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to journal</span>
         </Link>
-        <span className="text-xs uppercase tracking-wider text-[var(--text-secondary)]">
-          New Entry
+        <span className="text-xs uppercase tracking-wider text-[var(--text-secondary)] font-medium">
+          New Reflection
         </span>
       </div>
 
@@ -107,6 +138,28 @@ export default function NewReflectionPage() {
           </div>
         )}
 
+        {/* Journal Selector */}
+        {journals.length > 0 && (
+          <div className="flex items-center gap-3 bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] px-4 py-2.5 rounded-2xl">
+            <BookOpen className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
+            <div className="flex-1 flex items-center justify-between gap-2 text-xs">
+              <span className="text-[var(--text-secondary)] font-medium">Save to Journal:</span>
+              <select
+                value={selectedJournalId}
+                onChange={(e) => setSelectedJournalId(e.target.value)}
+                className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--brand-primary)]"
+              >
+                <option value="">General (No Journal)</option>
+                {journals.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* Text Area */}
         <div className="bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] rounded-3xl p-6 shadow-sm space-y-4">
           <textarea
@@ -114,7 +167,11 @@ export default function NewReflectionPage() {
             rows={8}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="What caught your attention today? Take your time..."
+            placeholder={
+              currentJournal
+                ? `Writing in "${currentJournal.title}"... What caught your attention today?`
+                : "What caught your attention today? Take your time..."
+            }
             className="w-full bg-transparent text-base text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none resize-none leading-relaxed font-light"
           />
 
@@ -190,3 +247,12 @@ export default function NewReflectionPage() {
     </div>
   );
 }
+
+export default function NewReflectionPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12 text-sm text-[var(--text-secondary)]">Loading editor...</div>}>
+      <NewReflectionForm />
+    </Suspense>
+  );
+}
+

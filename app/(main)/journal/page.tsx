@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { PenTool, Search, Heart, Tag, Calendar } from "lucide-react";
+import { PenTool, Search, Heart, Tag, Calendar, BookOpen, X, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 function JournalFeed() {
@@ -11,6 +11,7 @@ function JournalFeed() {
   const selectedJournalId = searchParams.get("journal_id");
 
   const [reflections, setReflections] = useState<any[]>([]);
+  const [journalTitle, setJournalTitle] = useState<string>("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +29,19 @@ function JournalFeed() {
 
       if (selectedJournalId) {
         query = query.eq("journal_id", selectedJournalId);
+
+        // Fetch journal title
+        const { data: jData } = await supabase
+          .from("journals")
+          .select("title")
+          .eq("id", selectedJournalId)
+          .single();
+
+        if (jData) {
+          setJournalTitle(jData.title);
+        }
+      } else {
+        setJournalTitle("");
       }
 
       const { data, error } = await query;
@@ -68,21 +82,43 @@ function JournalFeed() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-serif-editorial text-4xl text-[var(--text-primary)]">
-            Your Reflections
+            {journalTitle ? journalTitle : "Your Reflections"}
           </h1>
           <p className="text-sm text-[var(--text-secondary)] font-light mt-1">
-            A record of your thoughts and saved moments.
+            {journalTitle
+              ? `Viewing all reflections saved inside "${journalTitle}".`
+              : "A record of your thoughts and saved moments."}
           </p>
         </div>
 
         <Link
-          href="/journal/new"
+          href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
           className="inline-flex items-center justify-center gap-2 py-3 px-5 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-[var(--bg-surface)] text-sm font-medium rounded-xl transition-colors shadow-sm self-start sm:self-auto"
         >
           <PenTool className="w-4 h-4" />
           <span>New Reflection</span>
         </Link>
       </div>
+
+      {/* Active Journal Filter Banner */}
+      {selectedJournalId && (
+        <div className="flex items-center justify-between bg-[var(--bg-surface-secondary)] border border-[var(--border-subtle)] px-4 py-3 rounded-2xl">
+          <div className="flex items-center gap-2.5 text-xs text-[var(--text-primary)]">
+            <BookOpen className="w-4 h-4 text-[var(--brand-primary)]" />
+            <span>
+              Filtered by: <strong className="font-semibold">{journalTitle || "Selected Journal"}</strong>
+            </span>
+          </div>
+
+          <Link
+            href="/journal"
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-surface)] hover:bg-[var(--border-subtle)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs rounded-lg transition-colors border border-[var(--border-subtle)]"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Show all reflections</span>
+          </Link>
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="relative">
@@ -111,11 +147,13 @@ function JournalFeed() {
               No reflections yet
             </h3>
             <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto font-light">
-              Take a few minutes today to write what's on your mind.
+              {journalTitle
+                ? `You haven't written any reflections in "${journalTitle}" yet.`
+                : "Take a few minutes today to write what's on your mind."}
             </p>
           </div>
           <Link
-            href="/journal/new"
+            href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
             className="inline-flex items-center gap-2 py-2.5 px-5 bg-[var(--brand-primary)] text-[var(--bg-surface)] text-xs font-medium rounded-xl hover:bg-[var(--brand-primary-hover)] transition-colors"
           >
             <span>Write your first reflection</span>
@@ -200,3 +238,4 @@ export default function JournalPage() {
     </Suspense>
   );
 }
+
