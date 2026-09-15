@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, BookOpen, Check, Flame, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { ArrowUpRight, BookOpen, Check, Flame, PenTool, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   MOODS,
