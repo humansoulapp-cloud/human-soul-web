@@ -13,21 +13,29 @@ alter table public.reflections
 -- Row Level Security
 alter table public.journals enable row level security;
 
+-- Drop existing policies first to ensure clean idempotent execution
+drop policy if exists "Users can view their own journals" on public.journals;
 create policy "Users can view their own journals"
   on public.journals for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own journals" on public.journals;
 create policy "Users can insert their own journals"
   on public.journals for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own journals" on public.journals;
 create policy "Users can update their own journals"
   on public.journals for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own journals" on public.journals;
 create policy "Users can delete their own journals"
   on public.journals for delete
   using (auth.uid() = user_id);
 
+-- Permissions
 grant select, insert, update, delete on public.journals to authenticated;
+grant select, insert, update, delete on public.journals to anon;
+grant select, insert, update, delete on public.reflections to authenticated;
 grant usage, select on all sequences in schema public to authenticated;

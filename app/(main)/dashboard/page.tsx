@@ -480,6 +480,8 @@ export default function DashboardPage() {
                 })}
               </div>
             )}
+          </div>
+
           {/* ── Your Journals — Below recent entries ── */}
           <div className="order-4 md:order-none">
             <div className="flex items-baseline gap-2.5 mt-2 mb-2.5">
