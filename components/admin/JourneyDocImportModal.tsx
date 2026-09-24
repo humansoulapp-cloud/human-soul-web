@@ -1,25 +1,21 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import {
   X,
   UploadCloud,
-  FileText,
   Link as LinkIcon,
   Clipboard,
   CheckCircle2,
   AlertTriangle,
   ChevronDown,
-  ChevronRight,
   Sparkles,
   Download,
   Copy,
   Check,
   ArrowRight,
-  FileCode,
   BookOpen,
   Calendar,
-  Layers,
   HelpCircle,
   RefreshCw,
 } from "lucide-react";
@@ -56,7 +52,6 @@ export default function JourneyDocImportModal({
   const [copiedTemplate, setCopiedTemplate] = useState(false);
   const [parsedResult, setParsedResult] = useState<ParsedJourneyResult | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(1);
-  const [showFullText, setShowFullText] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 

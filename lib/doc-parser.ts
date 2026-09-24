@@ -87,7 +87,7 @@ async function extractFileFromZip(bytes: Uint8Array, targetPath: string): Promis
           if (typeof DecompressionStream !== "undefined") {
             const ds = new DecompressionStream("deflate-raw");
             const writer = ds.writable.getWriter();
-            writer.write(compressedData);
+            writer.write(compressedData as any);
             writer.close();
             const decompressedBuffer = await new Response(ds.readable).arrayBuffer();
             return new TextDecoder("utf-8").decode(decompressedBuffer);
