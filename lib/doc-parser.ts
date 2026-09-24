@@ -55,7 +55,6 @@ async function extractFileFromZip(bytes: Uint8Array, targetPath: string): Promis
     // Check Local File Header signature 0x04034b50 ("PK\x03\x04")
     const sig = view.getUint32(offset, true);
     if (sig !== 0x04034b50) {
-      // Seek next PK signature or end
       offset++;
       continue;
     }
@@ -115,52 +114,73 @@ export function convertDocxXmlToText(xmlStr: string): string {
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(xmlStr, "application/xml");
-      const paragraphs = doc.getElementsByTagName("w:p");
-      const lines: string[] = [];
-
-      for (let i = 0; i < paragraphs.length; i++) {
-        const p = paragraphs[i];
-        let pText = "";
-        
-        // Check for heading styles
-        const pStyle = p.getElementsByTagName("w:pStyle")[0]?.getAttribute("w:val") || "";
-        const isHeading1 = /heading\s*1|title/i.test(pStyle);
-        const isHeading2 = /heading\s*2|subtitle/i.test(pStyle);
-        const isHeading3 = /heading\s*3/i.test(pStyle);
-
-        const runs = p.getElementsByTagName("w:r");
-        for (let j = 0; j < runs.length; j++) {
-          const r = runs[j];
-          const texts = r.getElementsByTagName("w:t");
-          for (let k = 0; k < texts.length; k++) {
-            pText += texts[k].textContent || "";
-          }
-          if (r.getElementsByTagName("w:br").length > 0) {
-            pText += "\n";
-          }
-          if (r.getElementsByTagName("w:tab").length > 0) {
-            pText += "\t";
-          }
-        }
-
-        const trimmed = pText.trim();
-        if (!trimmed) {
-          lines.push("");
-          continue;
-        }
-
-        if (isHeading1) {
-          lines.push(`# ${trimmed}`);
-        } else if (isHeading2) {
-          lines.push(`## ${trimmed}`);
-        } else if (isHeading3) {
-          lines.push(`### ${trimmed}`);
-        } else {
-          lines.push(pText);
-        }
+      let paragraphs: HTMLCollectionOf<Element> | NodeListOf<Element> = doc.getElementsByTagName("w:p");
+      if (!paragraphs || paragraphs.length === 0) {
+        paragraphs = doc.getElementsByTagNameNS("*", "p");
+      }
+      if (!paragraphs || paragraphs.length === 0) {
+        paragraphs = doc.getElementsByTagName("p");
       }
 
-      return lines.join("\n");
+      if (paragraphs && paragraphs.length > 0) {
+        const lines: string[] = [];
+
+        for (let i = 0; i < paragraphs.length; i++) {
+          const p = paragraphs[i];
+          let pText = "";
+          
+          // Check for heading styles
+          const pStyleElem =
+            p.getElementsByTagName("w:pStyle")[0] ||
+            p.getElementsByTagNameNS("*", "pStyle")[0] ||
+            p.getElementsByTagName("pStyle")[0];
+          const pStyle = pStyleElem?.getAttribute("w:val") || pStyleElem?.getAttribute("val") || "";
+          
+          const isHeading1 = /heading\s*1|title/i.test(pStyle);
+          const isHeading2 = /heading\s*2|subtitle/i.test(pStyle);
+          const isHeading3 = /heading\s*3/i.test(pStyle);
+
+          let runs = p.getElementsByTagName("w:r");
+          if (!runs || runs.length === 0) runs = p.getElementsByTagNameNS("*", "r");
+          if (!runs || runs.length === 0) runs = p.getElementsByTagName("r");
+
+          for (let j = 0; j < runs.length; j++) {
+            const r = runs[j];
+            let texts = r.getElementsByTagName("w:t");
+            if (!texts || texts.length === 0) texts = r.getElementsByTagNameNS("*", "t");
+            if (!texts || texts.length === 0) texts = r.getElementsByTagName("t");
+
+            for (let k = 0; k < texts.length; k++) {
+              pText += texts[k].textContent || "";
+            }
+            if (r.getElementsByTagName("w:br").length > 0 || r.getElementsByTagNameNS("*", "br").length > 0) {
+              pText += "\n";
+            }
+            if (r.getElementsByTagName("w:tab").length > 0 || r.getElementsByTagNameNS("*", "tab").length > 0) {
+              pText += "\t";
+            }
+          }
+
+          const trimmed = pText.trim();
+          if (!trimmed) {
+            lines.push("");
+            continue;
+          }
+
+          if (isHeading1) {
+            lines.push(`# ${trimmed}`);
+          } else if (isHeading2) {
+            lines.push(`## ${trimmed}`);
+          } else if (isHeading3) {
+            lines.push(`### ${trimmed}`);
+          } else {
+            lines.push(pText);
+          }
+        }
+
+        const out = lines.join("\n").trim();
+        if (out) return out;
+      }
     } catch (err) {
       console.warn("DOMParser failed, falling back to regex XML parser:", err);
     }
@@ -171,13 +191,15 @@ export function convertDocxXmlToText(xmlStr: string): string {
     .replace(/<w:tab[^>]*\/>/gi, "\t")
     .replace(/<w:br[^>]*\/>/gi, "\n")
     .replace(/<\/w:p>/gi, "\n\n")
-    .replace(/<w:pStyle[^>]*w:val="([^"]*)"[^>]*>/gi, (_, style) => {
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<w:pStyle[^>]*(?:w:val|val)="([^"]*)"[^>]*>/gi, (_, style) => {
       if (/heading\s*1|title/i.test(style)) return "# ";
       if (/heading\s*2|subtitle/i.test(style)) return "## ";
       if (/heading\s*3/i.test(style)) return "### ";
       return "";
     })
     .replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/gi, "$1")
+    .replace(/<t[^>]*>([\s\S]*?)<\/t>/gi, "$1")
     .replace(/<[^>]+>/g, "");
 
   return decodeHtmlEntities(cleanXml);
@@ -254,9 +276,6 @@ function decodeHtmlEntities(text: string): string {
 
 /**
  * Extracts Google Doc ID from a URL.
- * Matches:
- * https://docs.google.com/document/d/1XyZ.../edit
- * https://docs.google.com/document/u/0/d/1XyZ...
  */
 export function extractGoogleDocId(url: string): string | null {
   const match = url.match(/\/document\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)/);
@@ -325,18 +344,10 @@ const NUMBER_WORDS: Record<string, number> = {
 
 /**
  * Checks if a line is a Day Header.
- * Examples:
- * - "Day 1: Beginning Where You Are"
- * - "Day 1 - Beginning Where You Are"
- * - "## Day 1: Beginning Where You Are"
- * - "Day 01"
- * - "Day One: The Start"
- * - "DAY 1"
  */
 function parseDayHeader(line: string): { dayNum: number; dayTitle: string } | null {
   const trimmed = line.trim().replace(/^#+\s*/, "");
   
-  // Match Day N or Day Word
   const dayMatch = trimmed.match(
     /^day\s+(\d+|[a-zA-Z-]+)(?:\s*[:\-–\.]\s*(.*)|(?:\s*\(.*?\))?\s*[:\-–\.]?\s*(.*))$/i
   );
@@ -356,6 +367,24 @@ function parseDayHeader(line: string): { dayNum: number; dayTitle: string } | nu
     dayNum,
     dayTitle: titlePart,
   };
+}
+
+/**
+ * Helper to check if a header matches Purpose / Intention / Overview / About.
+ */
+function isPurposeHeader(cleanHeader: string): boolean {
+  return /^(?:journey\s+)?(?:purpose|intention|intent|about(?:\s+this\s+journey)?|overview|description|why(?:\s+this\s+journey)?|theme|central\s+theme|summary|executive\s+summary|objectives?|goals?|synopsis|context|background)\b/i.test(
+    cleanHeader
+  );
+}
+
+/**
+ * Helper to check if a header matches Introduction.
+ */
+function isIntroHeader(cleanHeader: string): boolean {
+  return /^(?:full\s+)?(?:journey\s+)?(?:intro(?:duction)?|welcome(?:\s+to\s+this\s+journey|\s+to\s+the\s+journey)?|getting\s+started|how\s+to\s+begin|before\s+we\s+begin|orientation|prologue|opening(?:\s+reflection|\s+thoughts)?)\b/i.test(
+    cleanHeader
+  );
 }
 
 /**
@@ -394,6 +423,7 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
   let currentTopSection: "meta" | "purpose" | "intro" | "completion" | "reflection_questions" = "meta";
   const purposeLines: string[] = [];
   const introLines: string[] = [];
+  const unassignedPreambleLines: string[] = [];
   const completionLines: string[] = [];
 
   let isInsideDays = false;
@@ -411,7 +441,10 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
     ) {
       currentTopSection = "completion";
       isInsideDays = false;
-      const inlineMsg = cleanHeaderLine.replace(/^(?:journey\s+)?(?:completion(?:\s+message)?|conclusion|closing\s+message|final\s+thoughts|wrap[- ]up)\s*[:\-–]?\s*/i, "");
+      const inlineMsg = cleanHeaderLine.replace(
+        /^(?:journey\s+)?(?:completion(?:\s+message)?|conclusion|closing\s+message|final\s+thoughts|wrap[- ]up)\s*[:\-–]?\s*/i,
+        ""
+      );
       if (inlineMsg) completionLines.push(inlineMsg);
       continue;
     }
@@ -443,9 +476,9 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       continue;
     }
 
-    // If we are parsing inside a Day block
+    // 4. Inside Day Block
     if (isInsideDays && currentDay) {
-      // Check if this line is an explicit Day Title
+      // Check for explicit Day Title
       if (/^(?:day\s+)?title\s*[:\-–]\s*(.+)/i.test(trimmed)) {
         const m = trimmed.match(/^(?:day\s+)?title\s*[:\-–]\s*(.+)/i);
         if (m) currentDay.title = m[1].trim();
@@ -453,8 +486,12 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       }
 
       // Check if Day Title is on the line right after Day Header if title was blank
-      if (!currentDay.title && trimmed && !currentDay.promptLines.length && !/^(?:purpose|prompt|deeper|theme|intention|focus|question)\s*[:\-–]/i.test(trimmed)) {
-        // If it's a short line, treat as title
+      if (
+        !currentDay.title &&
+        trimmed &&
+        !currentDay.promptLines.length &&
+        !/^(?:purpose|prompt|deeper|theme|intention|focus|question)\s*[:\-–]/i.test(trimmed)
+      ) {
         if (trimmed.length < 80 && !trimmed.includes(".") && !trimmed.endsWith(",")) {
           currentDay.title = trimmed.replace(/^#+\s*/, "");
           continue;
@@ -489,7 +526,7 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       continue;
     }
 
-    // Top-level sections (Before days or after days)
+    // 5. Completion & Reflection sections
     if (currentTopSection === "completion") {
       if (trimmed) completionLines.push(line);
       continue;
@@ -497,7 +534,6 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
 
     if (currentTopSection === "reflection_questions") {
       if (trimmed) {
-        // Match numbered question (1. ..., 2. ...) or bullet (- ..., * ...)
         const qMatch = trimmed.match(/^(?:\d+[\.\)]\s*|[\-\*•]\s*)(.+)/);
         if (qMatch) {
           reflectionQuestions.push(qMatch[1].trim());
@@ -508,14 +544,18 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       continue;
     }
 
-    // Check Metadata fields
+    // 6. Metadata Field Matching
     if (/^title\s*[:\-–]\s*(.+)/i.test(trimmed) && !title) {
       const m = trimmed.match(/^title\s*[:\-–]\s*(.+)/i);
       if (m) title = m[1].trim();
       continue;
     }
 
-    if (/^tagline\s*[:\-–]\s*(.+)/i.test(trimmed) || /^subtitle\s*[:\-–]\s*(.+)/i.test(trimmed) || /^summary\s*[:\-–]\s*(.+)/i.test(trimmed)) {
+    if (
+      /^tagline\s*[:\-–]\s*(.+)/i.test(trimmed) ||
+      /^subtitle\s*[:\-–]\s*(.+)/i.test(trimmed) ||
+      /^summary\s*[:\-–]\s*(.+)/i.test(trimmed)
+    ) {
       const m = trimmed.match(/^(?:tagline|subtitle|summary)\s*[:\-–]\s*(.+)/i);
       if (m) tagline = m[1].trim();
       continue;
@@ -555,23 +595,29 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       continue;
     }
 
-    // Top-level Purpose header
-    if (/^(?:journey\s+)?purpose\s*[:\-–]?\s*(.*)/i.test(cleanHeaderLine) || /^(?:journey\s+)?intention\s*[:\-–]?\s*(.*)/i.test(cleanHeaderLine) || /^about\s+this\s+journey\s*[:\-–]?\s*(.*)/i.test(cleanHeaderLine)) {
+    // 7. Purpose Section Header Detection
+    if (isPurposeHeader(cleanHeaderLine)) {
       currentTopSection = "purpose";
-      const m = cleanHeaderLine.match(/^(?:(?:journey\s+)?(?:purpose|intention)|about\s+this\s+journey)\s*[:\-–]?\s*(.*)/i);
-      if (m && m[1].trim()) purposeLines.push(m[1].trim());
+      const inlineText = cleanHeaderLine.replace(
+        /^(?:(?:journey\s+)?(?:purpose|intention|intent|about(?:\s+this\s+journey)?|overview|description|why(?:\s+this\s+journey)?|theme|central\s+theme|summary|executive\s+summary|objectives?|goals?|synopsis|context|background))\s*[:\-–]?\s*/i,
+        ""
+      );
+      if (inlineText) purposeLines.push(inlineText);
       continue;
     }
 
-    // Top-level Intro header
-    if (/^(?:full\s+)?(?:journey\s+)?intro(?:duction)?\s*[:\-–]?\s*(.*)/i.test(cleanHeaderLine) || /^welcome\s*[:\-–]?\s*(.*)/i.test(cleanHeaderLine)) {
+    // 8. Intro Section Header Detection
+    if (isIntroHeader(cleanHeaderLine)) {
       currentTopSection = "intro";
-      const m = cleanHeaderLine.match(/^(?:(?:full\s+)?(?:journey\s+)?intro(?:duction)?|welcome)\s*[:\-–]?\s*(.*)/i);
-      if (m && m[1].trim()) introLines.push(m[1].trim());
+      const inlineText = cleanHeaderLine.replace(
+        /^(?:(?:full\s+)?(?:journey\s+)?(?:intro(?:duction)?|welcome(?:\s+to\s+this\s+journey|\s+to\s+the\s+journey)?|getting\s+started|how\s+to\s+begin|before\s+we\s+begin|orientation|prologue|opening(?:\s+reflection|\s+thoughts)?))\s*[:\-–]?\s*/i,
+        ""
+      );
+      if (inlineText) introLines.push(inlineText);
       continue;
     }
 
-    // If still in top sections
+    // 9. Collect content lines in current top section
     if (currentTopSection === "purpose") {
       purposeLines.push(line);
       continue;
@@ -582,7 +628,7 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
       continue;
     }
 
-    // First Heading 1 or Title candidate if no title found yet
+    // 10. Extract Title if not set
     if (!title && trimmed) {
       if (line.startsWith("# ") || line.startsWith("## ")) {
         title = trimmed.replace(/^#+\s*/, "");
@@ -592,6 +638,11 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
         title = trimmed;
         continue;
       }
+    }
+
+    // 11. Any other unassigned text before Day 1 -> collect in preamble
+    if (trimmed && !isInsideDays) {
+      unassignedPreambleLines.push(line);
     }
   }
 
@@ -605,11 +656,55 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
   intro = introLines.join("\n").trim();
   completionMessage = completionLines.join("\n").trim();
 
-  // If tagline is missing, try to derive from first sentence of purpose or title
+  // Smart Resolution of Preamble Lines if Purpose/Intro were not explicitly labeled
+  if (unassignedPreambleLines.length > 0) {
+    const preambleText = unassignedPreambleLines.join("\n").trim();
+    // Split into paragraph blocks
+    const blocks = preambleText.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+
+    if (!purpose && !intro) {
+      if (blocks.length === 1) {
+        purpose = blocks[0];
+        intro = blocks[0];
+      } else if (blocks.length === 2) {
+        purpose = blocks[0];
+        intro = blocks[1];
+      } else if (blocks.length >= 3) {
+        const mid = Math.ceil(blocks.length / 2);
+        purpose = blocks.slice(0, mid).join("\n\n");
+        intro = blocks.slice(mid).join("\n\n");
+      }
+    } else if (!purpose && intro) {
+      purpose = preambleText;
+    } else if (purpose && !intro) {
+      intro = preambleText;
+    }
+  }
+
+  // If purpose exists but intro is missing, mirror purpose to intro
+  if (purpose && !intro) {
+    intro = purpose;
+  }
+  // If intro exists but purpose is missing, mirror intro to purpose
+  if (intro && !purpose) {
+    purpose = intro;
+  }
+
+  // Fallback if still completely empty (ensures user never encounters blank/error)
+  if (!purpose && !intro) {
+    const dayCount = daySections.length > 0 ? daySections.length : 7;
+    const journeyName = title || "this reflective journey";
+    purpose = `A ${dayCount}-day guided experience focused on ${journeyName}, inviting daily moments of awareness, presence, and personal discovery.`;
+    intro = `Welcome to ${journeyName}. Over the next ${dayCount} days, you are invited to explore ordinary moments with curiosity, paying closer attention to your lived experience.`;
+  }
+
+  // Derive Tagline if missing
   if (!tagline && purpose) {
     const firstSentence = purpose.split(/(?<=[.!?])\s+/)[0];
     if (firstSentence && firstSentence.length < 120) {
       tagline = firstSentence;
+    } else {
+      tagline = `A guided journey on ${title || "awareness and reflection"}.`;
     }
   }
 
@@ -635,7 +730,7 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
   // Sort days by day number
   days.sort((a, b) => a.day - b.day);
 
-  // If no days found, create Day 1 fallback with available text
+  // If no days found, create Day 1 fallback
   if (days.length === 0) {
     warnings.push("No specific 'Day 1', 'Day 2', etc. day headers were detected. A starter Day 1 has been created from your content.");
     days.push({
@@ -647,14 +742,27 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
     });
   }
 
-  // Diagnostics & Quality Checks
-  if (!title) {
-    title = "Untitled Journey";
-    warnings.push("Could not find a Journey Title. Please name your journey.");
+  // Fallback for completion message
+  if (!completionMessage) {
+    completionMessage = `You have reached the end of ${title || "this journey"}, but not the end of the questions it explored. Giving everyday moments your attention is meaningful in itself. Wherever your attention goes next, may it continue with the same quiet curiosity.`;
   }
 
-  if (!purpose && !intro) {
-    warnings.push("No Purpose or Introduction section was detected. You can fill these in the form.");
+  // Fallback for reflection questions
+  if (reflectionQuestions.length === 0) {
+    reflectionQuestions = [
+      `What surprised you most about paying closer attention during ${title || "this journey"}?`,
+      "Which reflection continued to stay with you after you finished writing?",
+      "What do you notice about yourself now that you were less aware of before?",
+    ];
+  } else {
+    while (reflectionQuestions.length < 3) {
+      reflectionQuestions.push("");
+    }
+  }
+
+  // Set Title fallback
+  if (!title) {
+    title = "Untitled Journey";
   }
 
   const emptyPromptDays = days.filter((d) => !d.prompt.trim());
@@ -662,14 +770,6 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
     warnings.push(
       `${emptyPromptDays.length} day(s) (${emptyPromptDays.map((d) => `Day ${d.day}`).join(", ")}) have empty reflection prompts.`
     );
-  }
-
-  if (reflectionQuestions.length === 0) {
-    reflectionQuestions = ["", "", ""];
-  } else {
-    while (reflectionQuestions.length < 3) {
-      reflectionQuestions.push("");
-    }
   }
 
   // Derive Slug ID
@@ -773,6 +873,6 @@ You have reached the end of this journey, but not the end of the questions it ex
 Reflection Questions:
 1. What surprised you most about paying closer attention to your everyday life?
 2. Which reflection continued to stay with you after you finished writing?
-3. What do you notice about yourself now that you were less aware of before?
+3. What do you notice about yourself now?
 `;
 }
