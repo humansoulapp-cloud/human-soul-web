@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { Shield, UploadCloud } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import { createClient } from "@/lib/supabase/server";
 import JourneysFilter from "@/components/JourneysFilter";
@@ -13,6 +14,7 @@ export default async function JourneysPage() {
 
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
+  let isAdmin = false;
 
   if (user) {
     const [{ data: reflectionRows }, { data: profile }] = await Promise.all([
@@ -26,6 +28,7 @@ export default async function JourneysPage() {
 
     reflections = (reflectionRows ?? []) as ReflectionRow[];
     subscribed = Boolean(profile?.plan && profile.plan !== "free");
+    isAdmin = profile?.role === "admin";
   }
 
   const active = findActiveJourney(journeys as unknown as Journey[], reflections);
@@ -39,12 +42,35 @@ export default async function JourneysPage() {
 
   return (
     <div>
-      <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
-        Guided Journeys
-      </h1>
-      <p className="text-sm text-[var(--ds-text-muted)] m-0">
-        Multi-day guided experiences. One day opens at a time.
-      </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+        <div>
+          <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
+            Guided Journeys
+          </h1>
+          <p className="text-sm text-[var(--ds-text-muted)] m-0">
+            Multi-day guided experiences. One day opens at a time.
+          </p>
+        </div>
+
+        {isAdmin && (
+          <div className="flex items-center gap-2 pt-1">
+            <Link
+              href="/admin/journeys/new?import=open"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-surface)] hover:bg-[var(--ds-surface-2)] text-xs font-semibold text-[var(--ds-text)] transition-colors"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-blue-500" />
+              Import from Doc
+            </Link>
+            <Link
+              href="/admin/journeys"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--ds-accent)] text-[var(--ds-on-accent)] text-xs font-semibold transition-colors hover:bg-[var(--ds-accent-hover)] shadow-sm"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Admin Journeys
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* Continue where the person left off */}
       {active && (
