@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, UploadCloud } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import { getJourneyPerformance } from "@/lib/actions/users";
 import AdminJourneysBrowser from "@/components/admin/AdminJourneysBrowser";
@@ -55,13 +55,22 @@ export default async function AdminJourneysPage({
             {counts.draft} draft · {counts.archived} archived
           </p>
         </div>
-        <Link
-          href="/admin/journeys/new"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-[9px] bg-[var(--admin-accent)] text-[var(--admin-on-accent)] hover:text-[var(--admin-on-accent)] text-[13px] font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          New journey
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/admin/journeys/new?import=open"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-[9px] border border-[var(--admin-border-hover)] bg-[var(--admin-surface)] hover:bg-[var(--admin-surface-2)] text-[var(--admin-text)] text-[13px] font-semibold transition-colors"
+          >
+            <UploadCloud className="w-4 h-4 text-blue-500" />
+            Import from Doc
+          </Link>
+          <Link
+            href="/admin/journeys/new"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-[9px] bg-[var(--admin-accent)] text-[var(--admin-on-accent)] hover:text-[var(--admin-on-accent)] text-[13px] font-semibold shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            New journey
+          </Link>
+        </div>
       </div>
 
       <AdminJourneysBrowser

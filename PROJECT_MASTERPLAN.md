@@ -78,10 +78,19 @@ Este documento es la **fuente única de verdad y progreso** del proyecto. Cualqu
 - [x] Publicación instantánea con 1 clic ("Publish Now") para viajes programados o borradores.
 - [x] Publicación automática inmediata al cumplirse la fecha/hora programada en consultas de usuario y endpoint cron `/api/cron/publish-journeys`.
 - [x] Script de migración SQL en `scripts/migration-add-scheduling.sql`.
+- [x] Importador inteligente de documentos para Viajes (Word `.docx`, Google Docs mediante enlace o exportación, Markdown y texto con análisis estructural automático de días, títulos, reflexiones y preguntas).
 
 ---
 
 ## 📝 Registro de Sesiones e Historial de Cambios
+
+### 📅 Sesión 3 - 2026-09-24 (Agente Antigravity)
+- **Acciones Realizadas**:
+  1. Se implementó el **importador y estructurador automático de documentos (Word `.docx` / Google Docs / Markdown)** en el módulo de administración de viajes (`/admin/journeys` y `/admin/journeys/new`).
+  2. Se creó el motor de análisis y descompresión nativa de archivos Word `.docx` y extracción estructural de Google Docs en `lib/doc-parser.ts`.
+  3. Se creó el endpoint API seguro `/api/admin/parse-doc/route.ts` para procesamiento en servidor y resolución de enlaces públicos de Google Docs.
+  4. Se construyó el componente visual modal `components/admin/JourneyDocImportModal.tsx` con soporte de arrastrar y soltar, enlace de Google Docs, pegado de texto enriquecido, auditoría de salud estructural con vista previa de días y descarga de plantillas.
+  5. Se integró el botón de importación y el banner de inicio rápido en `components/admin/JourneyForm.tsx` y en el listado `app/(admin)/admin/journeys/page.tsx`.
 
 ### 📅 Sesión 2 - 2026-08-14 (Agente Antigravity)
 - **Acciones Realizadas**:

@@ -15,8 +15,11 @@ import {
   Sparkles,
   Archive,
   Eye,
+  UploadCloud,
+  CheckCircle2,
 } from "lucide-react";
 import JourneyPreviewModal from "@/components/admin/JourneyPreviewModal";
+import JourneyDocImportModal from "@/components/admin/JourneyDocImportModal";
 import {
   createJourney,
   updateJourney,
@@ -48,7 +51,13 @@ type DraftValues = {
 
 type StoredDraft = { savedAt: string; values: DraftValues };
 
-export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
+export default function JourneyForm({
+  journey,
+  initialOpenImport = false,
+}: {
+  journey?: JourneyRow;
+  initialOpenImport?: boolean;
+}) {
   const isEditing = !!journey;
 
   const [id, setId] = useState(journey?.id ?? "");
@@ -73,6 +82,9 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
   const [status, setStatus] = useState<JourneyStatus>(journey?.status ?? "published");
   // Preview modal state
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  // Document Import modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(initialOpenImport);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
   
   // Format initial ISO date for datetime-local input (YYYY-MM-DDTHH:mm)
   const formatForInput = (isoDate?: string | null) => {
@@ -225,6 +237,37 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
     updated[index] = value;
     setReflectionQuestions(updated);
     markDirty();
+  };
+
+  // Document Import Apply Handler
+  const handleApplyImportedJourney = (imported: JourneyInput) => {
+    if (imported.title) setTitle(imported.title);
+    if (!isEditing && imported.id) setId(imported.id);
+    if (imported.category) setCategory(imported.category);
+    if (imported.realm) setRealm(imported.realm);
+    if (imported.tagline) setTagline(imported.tagline);
+    if (imported.purpose) setPurpose(imported.purpose);
+    if (imported.intro) setIntro(imported.intro);
+    if (imported.time_required) setTimeRequired(imported.time_required);
+    if (imported.image_url) setImageUrl(imported.image_url);
+    if (imported.completion_message) setCompletionMessage(imported.completion_message);
+    if (imported.reflection_questions && imported.reflection_questions.length > 0) {
+      setReflectionQuestions(
+        [...imported.reflection_questions, "", "", ""].slice(0, 3)
+      );
+    }
+    if (imported.days && imported.days.length > 0) {
+      setDays(imported.days);
+    }
+    if (imported.purpose || imported.intro) {
+      setTextsOpen(true);
+    }
+    setActiveDay(0);
+    markDirty();
+    setImportNotice(
+      `Document imported successfully! Form populated with "${imported.title}" (${imported.days?.length || 0} days).`
+    );
+    setTimeout(() => setImportNotice(null), 8000);
   };
 
   // Image upload
@@ -388,6 +431,20 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           </span>
           <button
             type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 transition-colors border shadow-sm"
+            style={{
+              background: "var(--admin-surface)",
+              borderColor: "var(--admin-border)",
+              color: "var(--admin-text)",
+            }}
+            title="Import journey from Word docx, Google Doc, or Markdown"
+          >
+            <UploadCloud className="w-4 h-4 text-blue-500" />
+            <span>Import from Doc</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setIsPreviewOpen(true)}
             className="px-3.5 py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 transition-colors border"
             style={{
@@ -410,6 +467,65 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           </button>
         </div>
       </div>
+
+      {importNotice && (
+        <div
+          className="flex items-center gap-3 p-4 rounded-xl border text-sm mb-6 animate-in fade-in"
+          style={{
+            background: "rgba(16, 185, 129, 0.1)",
+            borderColor: "rgba(16, 185, 129, 0.3)",
+            color: "var(--admin-text)",
+          }}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+          <span className="flex-1 font-medium">{importNotice}</span>
+          <button
+            type="button"
+            onClick={() => setImportNotice(null)}
+            className="text-xs opacity-70 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Quick Start Document Import Hero Banner for New Journeys */}
+      {!isEditing && days.length <= 1 && !title && (
+        <div
+          className="p-5 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, var(--admin-surface) 0%, var(--admin-surface-2) 100%)",
+            borderColor: "var(--admin-border)",
+          }}
+        >
+          <div className="flex items-center gap-3.5">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+              style={{ background: "var(--admin-accent-soft)", color: "var(--admin-accent)" }}
+            >
+              <UploadCloud className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: "var(--admin-text)" }}>
+                Have your journey written in Google Docs or Word?
+              </div>
+              <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+                Upload your Word document (.docx) or paste a Google Doc link to automatically fill all days, prompts, deeper questions, and metadata.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-4.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 flex-shrink-0 shadow-sm transition-transform active:scale-95"
+            style={{ background: "var(--admin-accent)", color: "#FFFFFF" }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Import Document
+          </button>
+        </div>
+      )}
 
       {recovered && (
         <div
@@ -1136,6 +1252,13 @@ export default function JourneyForm({ journey }: { journey?: JourneyRow }) {
           scheduled_publish_at: scheduledPublishAt,
           days,
         }}
+      />
+
+      {/* Document Import Modal (Word docx, Google Doc, Markdown/Text) */}
+      <JourneyDocImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyJourney={handleApplyImportedJourney}
       />
     </form>
   );
