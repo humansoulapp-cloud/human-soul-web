@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Plus, UploadCloud } from "lucide-react";
+import { Plus, UploadCloud, Sparkles } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import { getJourneyPerformance } from "@/lib/actions/users";
 import AdminJourneysBrowser from "@/components/admin/AdminJourneysBrowser";
@@ -44,7 +44,7 @@ export default async function AdminJourneysPage({
   };
 
   return (
-    <div className="w-full max-w-[1160px] mx-auto">
+    <div className="w-full max-w-[1160px] mx-auto space-y-6">
       <div className="flex items-end gap-5 flex-wrap">
         <div className="flex-1 min-w-[260px]">
           <h1 className="text-[26px] md:text-[31px] font-semibold tracking-[-0.015em] m-0 mb-1.5 text-[var(--admin-text)]">
@@ -71,6 +71,41 @@ export default async function AdminJourneysPage({
             New journey
           </Link>
         </div>
+      </div>
+
+      {/* Prominent Quick-Action Document Import Hero Banner */}
+      <div
+        className="p-5 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm"
+        style={{
+          background: "linear-gradient(135deg, var(--admin-surface) 0%, var(--admin-surface-2) 100%)",
+          borderColor: "var(--admin-border)",
+        }}
+      >
+        <div className="flex items-center gap-3.5">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+            style={{ background: "var(--admin-accent-soft)", color: "var(--admin-accent)" }}
+          >
+            <UploadCloud className="w-5 h-5 text-blue-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm" style={{ color: "var(--admin-text)" }}>
+              Import a Full Guided Journey from Word or Google Docs
+            </div>
+            <p className="text-xs mt-0.5" style={{ color: "var(--admin-text-muted)" }}>
+              Upload your .docx file or paste a Google Doc link to automatically generate all days, titles, daily prompts, deeper questions, and completion wrap-up.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/admin/journeys/new?import=open"
+          className="px-4.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 flex-shrink-0 shadow-sm transition-transform active:scale-95 whitespace-nowrap"
+          style={{ background: "var(--admin-accent)", color: "#FFFFFF" }}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          Import Journey Doc
+        </Link>
       </div>
 
       <AdminJourneysBrowser
