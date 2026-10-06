@@ -12,7 +12,7 @@
 /* Logo */
 .hs-logo { display: inline-flex; align-items: baseline; gap: 3px; color: var(--foreground); line-height: 1; letter-spacing: -0.01em; }
 .hs-logo-human { font-family: var(--font-wordmark); font-weight: 500; }
-.hs-logo-soul { font-family: var(--font-serif); font-weight: 400; }
+.hs-logo-soul { font-family: var(--font-wordmark-serif); font-weight: 400; }
 
 /* Button */
 .hs-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: var(--radius-md); font: 500 14px/20px var(--font-sans); cursor: pointer; text-decoration: none; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s; min-height: 44px; padding: 0 20px; -webkit-tap-highlight-color: transparent; }

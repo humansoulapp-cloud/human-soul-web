@@ -30,10 +30,10 @@
   "Logos"
  ],
  "lastChange": {
-  "at": "2026-10-06T18:58:42Z",
+  "at": "2026-10-06T20:36:58Z",
   "by": "Claude",
   "via": "Claude Code",
-  "note": "Added TextField (label, hint, error, password reveal) and mail, lock, eyeOff icons."
+  "note": "Typography: Newsreader (headings) + Source Sans 3 (body); Bernstein and DM Sans kept for the wordmark only. Colors unchanged."
  },
  "layout": "files",
  "libraries": [

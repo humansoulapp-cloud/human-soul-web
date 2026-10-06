@@ -44,5 +44,6 @@ Equivalences between the repository's current tokens and components and this sys
 
 ## Implementation notes
 - Add `@custom-variant dark (&:where(.dark, .dark *))` to `globals.css` if Tailwind's `dark:` is kept; with the new tokens no `dark:` utility is needed.
-- Exclude `/fonts/` from the `proxy.ts` matcher so Bernstein loads without a session.
+- Exclude `/fonts/` from the `proxy.ts` matcher so Bernstein (wordmark only) loads without a session.
+- Replace Inter with Source Sans 3 and the Bernstein headings with Newsreader via `next/font/google`; keep Bernstein and DM Sans for the wordmark only.
 - Adopt shadcn/ui with these token names (`components.json` + `cn()`): the names already match.
