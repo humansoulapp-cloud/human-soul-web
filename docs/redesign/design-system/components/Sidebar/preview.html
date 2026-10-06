@@ -1,0 +1,22 @@
+<!-- @dsCard group="Navegación" height=700 subtitle="Escritorio ≥ 768px: barra lateral de 256px" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+const items=[{href:'/dashboard',label:'Inicio',icon:'home'},{href:'/journal',label:'Reflexiones',icon:'book'},{href:'/journeys',label:'Viajes',icon:'compass'},{href:'/favorites',label:'Favoritas',icon:'heart'},{href:'/profile',label:'Perfil',icon:'user'},{href:'/admin',label:'Panel de administración',icon:'shield',admin:true}];
+function App(){return Row(
+ C('Reposo · ítem activo',h('div',{style:{height:640}},h(Sidebar,{items,active:'/journal',writeLabel:'Escribir'}))),
+ C('Hover en “Viajes”',h('div',{style:{height:640}},h(Sidebar,{items:items.map(i=>i.href==='/journeys'?{...i,state:'hover'}:i),active:'/dashboard',writeLabel:'Escribir',dark:true}))));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

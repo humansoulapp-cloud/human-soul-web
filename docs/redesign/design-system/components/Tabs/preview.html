@@ -1,0 +1,23 @@
+<!-- @dsCard group="Navegación" height=330 subtitle="Filtros (píldoras) y vistas (subrayado)" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+function App(){const [a,setA]=React.useState('all'),[b,setB]=React.useState('live'),[d,setD]=React.useState('3');
+return h('div',{className:'stack',style:{maxWidth:640}},
+ C('Categorías de viajes (píldoras, scroll horizontal en móvil)',h(Tabs,{value:a,onChange:setA,items:[{value:'all',label:'Todos los viajes'},{value:'f',label:'Fundamentos'},{value:'c',label:'Conciencia y reflexión'},{value:'i',label:'Identidad'},{value:'e',label:'Emociones'}]})),
+ C('Días de un viaje',h(Tabs,{value:d,onChange:setD,items:['1','2','3','4','5','6','7'].map(n=>({value:n,label:'Día '+n}))})),
+ C('Estado de viajes en admin (subrayado)',h(Tabs,{variant:'underline',value:b,onChange:setB,items:[{value:'all',label:'Todos',count:12},{value:'live',label:'En vivo',count:7},{value:'sch',label:'Programados',count:2},{value:'dr',label:'Borradores',count:2},{value:'ar',label:'Archivados',count:1}]})));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

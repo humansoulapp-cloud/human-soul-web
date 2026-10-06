@@ -1,0 +1,34 @@
+<!-- @dsCard height=320 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;background:var(--background)}
+svg{display:block;width:960px;height:320px}
+.name{font-family:var(--font-serif);font-size:72px;fill:var(--foreground)}
+.tag{font-family:var(--font-sans);font-size:14px;fill:var(--muted-foreground)}
+.b-primary{fill:var(--primary)} .b-brand{fill:var(--brand)} .b-ink{fill:var(--foreground)} .b-accent{fill:var(--accent)}
+</style>
+<svg viewBox="0 0 960 320" role="img" aria-label="HumanSoul">
+<!-- derivación
+ bloques: primary hoja 208 (= 13 × space-4) · brand hoja 120 espejada · foreground losa 120×76 con radius-md · accent banda 104 de ancho que sangra por arriba y la derecha
+ disposición: hojas escalonadas a la derecha de x = 480, banda de acento sangrando contra el borde superior y derecho
+ patrón: motivo literal «hoja» (HumanSoul crece como un cuaderno vivo): esquinas opuestas a medio radio y las otras a space-2, repetido en dos escalas y en una fila de 12 hojas pequeñas
+ escalas: radios radius-full/2 y radius-sm; pasos de 32 (space-6) y huecos de space-3 -->
+<path class="b-primary" d="M600,28H696A8,8 0 0 1 704,36V132A104,104 0 0 1 600,236H504A8,8 0 0 1 496,228V132A104,104 0 0 1 600,28Z"/>
+<path class="b-brand" d="M728,28H780A60,60 0 0 1 840,88V140A8,8 0 0 1 832,148H780A60,60 0 0 1 720,88V36A8,8 0 0 1 728,28Z"/>
+<rect class="b-ink" x="720" y="160" width="120" height="76" rx="12"/>
+<path class="b-accent" d="M856,0H960V248A16,16 0 0 1 944,264H872A16,16 0 0 1 856,248Z"/>
+<path class="b-primary" d="M508,264H518A2,2 0 0 1 520,266V276A12,12 0 0 1 508,288H498A2,2 0 0 1 496,286V276A12,12 0 0 1 508,264Z"/>
+<path class="b-brand" d="M530,264H540A12,12 0 0 1 552,276V286A2,2 0 0 1 550,288H540A12,12 0 0 1 528,276V266A2,2 0 0 1 530,264Z"/>
+<path class="b-accent" d="M572,264H582A2,2 0 0 1 584,266V276A12,12 0 0 1 572,288H562A2,2 0 0 1 560,286V276A12,12 0 0 1 572,264Z"/>
+<path class="b-primary" d="M594,264H604A12,12 0 0 1 616,276V286A2,2 0 0 1 614,288H604A12,12 0 0 1 592,276V266A2,2 0 0 1 594,264Z"/>
+<path class="b-brand" d="M636,264H646A2,2 0 0 1 648,266V276A12,12 0 0 1 636,288H626A2,2 0 0 1 624,286V276A12,12 0 0 1 636,264Z"/>
+<path class="b-ink" d="M658,264H668A12,12 0 0 1 680,276V286A2,2 0 0 1 678,288H668A12,12 0 0 1 656,276V266A2,2 0 0 1 658,264Z"/>
+<path class="b-brand" d="M700,264H710A2,2 0 0 1 712,266V276A12,12 0 0 1 700,288H690A2,2 0 0 1 688,286V276A12,12 0 0 1 700,264Z"/>
+<path class="b-primary" d="M722,264H732A12,12 0 0 1 744,276V286A2,2 0 0 1 742,288H732A12,12 0 0 1 720,276V266A2,2 0 0 1 722,264Z"/>
+<path class="b-accent" d="M764,264H774A2,2 0 0 1 776,266V276A12,12 0 0 1 764,288H754A2,2 0 0 1 752,286V276A12,12 0 0 1 764,264Z"/>
+<path class="b-brand" d="M786,264H796A12,12 0 0 1 808,276V286A2,2 0 0 1 806,288H796A12,12 0 0 1 784,276V266A2,2 0 0 1 786,264Z"/>
+<path class="b-primary" d="M828,264H838A2,2 0 0 1 840,266V276A12,12 0 0 1 828,288H818A2,2 0 0 1 816,286V276A12,12 0 0 1 828,264Z"/>
+<path class="b-ink" d="M850,264H860A12,12 0 0 1 872,276V286A2,2 0 0 1 870,288H860A12,12 0 0 1 848,276V266A2,2 0 0 1 850,264Z"/>
+<text class="name" x="40" y="252">HumanSoul</text>
+<text class="tag" x="40" y="284">Un lugar tranquilo para notarte.</text>
+</svg>

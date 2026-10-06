@@ -1,0 +1,23 @@
+<!-- @dsCard group="Datos" height=360 subtitle="Cuaderno del usuario: contador, título, escribir y abrir" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+function App(){const [c,setC]=React.useState(false);
+return Row(
+ C('Reposo',h('div',{style:{width:340}},h(CuadernoCard,{count:12,title:'Páginas de la mañana',date:'4 ene 2026',writeHref:'#',openHref:'#',confirmingDelete:c,onDelete:()=>setC(true),onCancelDelete:()=>setC(false)}))),
+ C('Confirmando eliminación',h('div',{style:{width:340}},h(CuadernoCard,{count:1,title:'Gratitud y alegría',date:'19 feb 2026',writeHref:'#',openHref:'#',confirmingDelete:true}))),
+ C('Hover',h('div',{style:{width:340}},h(CuadernoCard,{state:'hover',count:0,title:'Preguntas que importan',date:'2 sep 2026',writeHref:'#',openHref:'#'}))));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

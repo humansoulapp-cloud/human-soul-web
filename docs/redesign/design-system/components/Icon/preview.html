@@ -1,0 +1,20 @@
+<!-- @dsCard group="Marca" height=300 subtitle="Trazo lucide 24px, 2px, extremos redondeados" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+const names=['home','book','compass','heart','user','pen','plus','search','calendar','tag','camera','trash','check','x','chevronRight','chevronDown','arrowLeft','arrowUpRight','moon','sun','logout','shield','layers','archive','send','users','eye','clock','menu','info','alert','checkCircle','loader','wifiOff','sparkles'];
+function App(){return h('div',{className:'grid',style:{gridTemplateColumns:'repeat(auto-fill,minmax(88px,1fr))'}},names.map(n=>h('div',{key:n,className:'col',style:{alignItems:'center'}},h(Icon,{name:n,size:24}),h('span',{className:'cap'},n))));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

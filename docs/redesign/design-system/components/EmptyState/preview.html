@@ -1,0 +1,19 @@
+<!-- @dsCard group="Feedback" height=420 subtitle="Vacío: explica qué falta y ofrece la primera acción" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+function App(){return h('div',{style:{maxWidth:520}},h(EmptyState,{icon:'book',title:'Crea tu primer cuaderno',description:'Ponle el título que quieras: pensamientos de la mañana, ideas creativas, gratitud o revisiones diarias.',actions:h(React.Fragment,null,h(Chip,{icon:'plus'},'Páginas de la mañana'),h(Chip,{icon:'plus'},'Gratitud y alegría'),h(Button,{icon:'plus'},'Crear cuaderno personalizado'))}));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>

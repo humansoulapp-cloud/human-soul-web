@@ -1,0 +1,24 @@
+<!-- @dsCard group="Datos" height=640 subtitle="Tabla en ≥ 640px; tarjetas por debajo" -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cap{font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid{display:grid;gap:16px}
+</style>
+<div id="root"></div>
+<script>
+const H=window.HumanSoul, h=React.createElement;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
+const Row=(...c)=>h('div',{className:'row'},...c);
+const cols=[{key:'id',label:'Usuario'},{key:'role',label:'Rol'},{key:'joined',label:'Alta'},{key:'act',label:'Acciones',action:true,align:'right'}];
+const rows=[
+ {id:'a41c·7e02·91bd',role:h(Badge,{variant:'primary',icon:'shield'},'Administrador'),joined:'12 mar 2026',act:h(Button,{variant:'outline',size:'sm'},'Quitar administrador')},
+ {id:'5d90·c3a8·02f7',role:h(Badge,null,'Usuario'),joined:'28 abr 2026',act:h(Button,{variant:'outline',size:'sm'},'Hacer administrador')},
+ {id:'c7e1·44b0·aa13',role:h(Badge,null,'Usuario'),joined:'3 jun 2026',act:h(Button,{variant:'outline',size:'sm'},'Hacer administrador')}];
+function App(){return h('div',{className:'stack'},C('Escritorio (720px)',h('div',{style:{width:720}},h(DataList,{columns:cols,rows}))),C('Móvil (358px)',h('div',{style:{width:358}},h(DataList,{columns:cols,rows:rows.slice(0,2)}))));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
