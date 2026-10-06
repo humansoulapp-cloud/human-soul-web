@@ -1,4 +1,4 @@
-/* HumanSoul · estilos de componentes. Solo usa tokens de tokens.css. */
+/* HumanSoul component styles. Uses tokens from tokens.css only. */
 .hs, .hs *, .hs *::before, .hs *::after { box-sizing: border-box; }
 .hs { font-family: var(--font-sans); color: var(--foreground); }
 .hs-focusable:focus-visible,
@@ -154,7 +154,7 @@
 .hs-bottomnav-item[aria-current="page"] { color: var(--primary); background: var(--accent); }
 .hs-bottomnav-item:hover, .hs-bottomnav-item[data-state="hover"] { color: var(--accent-foreground); background: var(--accent); }
 
-/* DataList: tabla en escritorio, tarjetas en móvil (container query) */
+/* DataList: table on desktop, cards on mobile (container query) */
 .hs-datalist { container-type: inline-size; width: 100%; }
 .hs-table-wrap { display: none; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .hs-table { width: 100%; border-collapse: collapse; font: 400 14px/20px var(--font-sans); }
@@ -179,11 +179,11 @@
 .hs-fav { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer; }
 .hs-fav:hover, .hs-fav[data-state="hover"] { background: var(--accent); color: var(--accent-foreground); }
 .hs-fav[aria-pressed="true"] { color: var(--destructive); }
-.hs-cuaderno { display: flex; flex-direction: column; gap: var(--space-4); min-height: 200px; justify-content: space-between; }
-.hs-cuaderno-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
-.hs-cuaderno-title { margin: var(--space-3) 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.hs-cuaderno-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border); flex-wrap: wrap; }
-.hs-cuaderno-actions { display: flex; gap: var(--space-2); }
+.hs-journal { display: flex; flex-direction: column; gap: var(--space-4); min-height: 200px; justify-content: space-between; }
+.hs-journal-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.hs-journal-title { margin: var(--space-3) 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hs-journal-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border); flex-wrap: wrap; }
+.hs-journal-actions { display: flex; gap: var(--space-2); }
 .hs-confirm { display: inline-flex; align-items: center; gap: 4px; }
 .hs-journey { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 .hs-journey-media { position: relative; aspect-ratio: 16 / 10; background: var(--muted); display: flex; align-items: center; justify-content: center; color: var(--muted-foreground); overflow: hidden; max-width: 100%; }

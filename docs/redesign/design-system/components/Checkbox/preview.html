@@ -1,4 +1,4 @@
-<!-- @dsCard group="Formularios" height=200 subtitle="Destacado y Solo premium en el editor de viajes" -->
+<!-- @dsCard group="Forms" height=200 subtitle="Featured and Premium only in the journey editor" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,9 +11,9 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
-function App(){return Row(C('Sin marcar',h(Checkbox,null,'Destacado')),C('Marcado',h(Checkbox,{defaultChecked:true},'Solo premium')),C('Foco',h(Checkbox,{state:'focus'},'Destacado')),C('Deshabilitado',h(Checkbox,{state:'disabled',disabled:true},'Solo premium')));}
+function App(){return Row(C('Unchecked',h(Checkbox,null,'Featured')),C('Checked',h(Checkbox,{defaultChecked:true},'Premium only')),C('Focus',h(Checkbox,{state:'focus'},'Featured')),C('Disabled',h(Checkbox,{state:'disabled',disabled:true},'Premium only')));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

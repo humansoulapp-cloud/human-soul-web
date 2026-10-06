@@ -1,4 +1,4 @@
-<!-- @dsCard group="Feedback" height=320 subtitle="Error de carga con reintento" -->
+<!-- @dsCard group="Feedback" height=320 subtitle="Load error with retry" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,9 +11,9 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
-function App(){return Row(h('div',{style:{width:420}},h(ErrorState,null)),h('div',{style:{width:420}},h(ErrorState,{icon:'wifiOff',title:'Sin conexión',description:'No podemos llegar a tus reflexiones ahora mismo. Se actualizarán cuando vuelvas a estar en línea.'})));}
+function App(){return Row(h('div',{style:{width:420}},h(ErrorState,null)),h('div',{style:{width:420}},h(ErrorState,{icon:'wifiOff',title:'You are offline',description:'We cannot reach your reflections right now. They will refresh when you are back online.'})));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

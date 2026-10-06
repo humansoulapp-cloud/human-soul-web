@@ -1,7 +1,7 @@
-Interruptor para ajustes que se aplican al instante.
+Toggle for settings that apply instantly.
 
-## Qué aporta quien lo usa
-`checked`/`defaultChecked`, `onChange`, `disabled`, hijos como etiqueta.
+## What the consumer provides
+`checked`/`defaultChecked`, `onChange`, `disabled`, children as the label.
 
-## Guía
-Úsalo para ajustes (recordatorios, tema), no para formularios que se envían con un botón.
+## Guidance
+Use it for settings (reminders, theme), not for forms submitted with a button.

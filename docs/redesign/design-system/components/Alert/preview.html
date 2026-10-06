@@ -1,4 +1,4 @@
-<!-- @dsCard group="Feedback" height=380 subtitle="Información, éxito, aviso y error" -->
+<!-- @dsCard group="Feedback" height=380 subtitle="Info, success, warning and error" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,13 +11,13 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 function App(){return h('div',{className:'stack',style:{maxWidth:520}},
- h(Alert,{variant:'success',title:'Reflexión guardada'},'Ya está en tu cuaderno “Páginas de la mañana”.'),
- h(Alert,{variant:'info',title:'Revisa tu correo'},'Te hemos enviado un enlace para confirmar tu cuenta.'),
- h(Alert,{variant:'warning',title:'Cambios sin guardar'},'Si sales ahora perderás lo que has escrito.'),
- h(Alert,{variant:'destructive',title:'No se pudo guardar',action:h(Button,{variant:'outline',size:'sm'},'Reintentar')},'Comprueba tu conexión e inténtalo otra vez.'));}
+ h(Alert,{variant:'success',title:'Reflection saved'},'It is now in your journal “Morning Pages”.'),
+ h(Alert,{variant:'info',title:'Check your email'},'We sent you a link to confirm your account.'),
+ h(Alert,{variant:'warning',title:'Unsaved changes'},'If you leave now, you will lose what you have written.'),
+ h(Alert,{variant:'destructive',title:'Could not save',action:h(Button,{variant:'outline',size:'sm'},'Try again')},'Check your connection and try again.'));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

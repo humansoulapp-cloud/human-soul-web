@@ -1,7 +1,7 @@
-Acción del usuario, en seis variantes y cuatro tamaños.
+A user action, in six variants and several sizes.
 
-## Qué aporta quien lo usa
-`variant`: default, secondary, outline, ghost, destructive, link. `size`: sm, md, lg, icon, icon-sm, fab. `icon`, `loading`, `disabled`, `full`, `href`. `state` solo para documentar hover, foco y active.
+## What the consumer provides
+`variant`: default, secondary, outline, ghost, destructive, link. `size`: sm, md, lg, icon, icon-sm, fab. `icon`, `loading`, `disabled`, `full`, `href`. `state` only to document hover, focus and active.
 
-## Guía
-Una sola acción `default` por zona (guardar, crear, escribir). `destructive` solo para borrar y siempre tras confirmación. Los botones solo con icono llevan `aria-label`. En móvil los formularios usan `full`. `fab` es el acceso «Escribir» en móvil.
+## Guidance
+One `default` action per area (save, create, write). `destructive` only for deleting, always after confirmation. Icon-only buttons carry an `aria-label`. On mobile, forms use `full`. `fab` is the "Write" entry point on mobile.

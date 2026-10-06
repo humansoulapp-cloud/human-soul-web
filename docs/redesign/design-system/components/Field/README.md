@@ -1,7 +1,7 @@
-Envuelve un control con etiqueta, ayuda y mensaje de error.
+Wraps a control with a label, hint and error message.
 
-## Qué aporta quien lo usa
-`label`, `optional`, `hint`, `error`, `required`, y un único control hijo (Input, Textarea o Select).
+## What the consumer provides
+`label`, `optional`, `hint`, `error`, `required`, and a single control child (Input, Textarea or Select).
 
-## Guía
-Todo campo lleva etiqueta visible. El error sustituye a la ayuda, explica cómo corregirlo y se anuncia con `role="alert"`. Campos opcionales se marcan «(opcional)»; no marques los obligatorios con asterisco.
+## Guidance
+Every field has a visible label. The error replaces the hint, says how to fix it and is announced with `role="alert"`. Optional fields are marked "(optional)"; required fields carry no asterisk.

@@ -1,7 +1,7 @@
-Icono de trazo (lucide) por nombre.
+Stroke icon (lucide) by name.
 
-## Qué aporta quien lo usa
-`name` (ver la vista previa), `size` (20 por defecto), `label` si el icono transmite significado por sí solo.
+## What the consumer provides
+`name` (see the preview), `size` (20 by default), `label` if the icon carries meaning on its own.
 
-## Guía
-Decorativo por defecto (`aria-hidden`). Si no lleva texto al lado, ponle `label` o el botón que lo contiene `aria-label`.
+## Guidance
+Decorative by default (`aria-hidden`). If there is no text next to it, give it a `label` or give its button an `aria-label`.

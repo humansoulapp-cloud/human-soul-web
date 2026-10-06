@@ -1,12 +1,41 @@
 {
  "v": 3,
- "layout": "files",
- "createdOnFiles": {
-  "v": 1,
-  "at": "2026-10-06T18:41:17Z"
+ "assetGroups": {
+  "Logos": {
+   "files": {
+    "logo.svg": {
+     "blob": "8ec53c052b8495de3f727014267bd1f8",
+     "name": "logo.svg",
+     "size": 32940,
+     "type": "image/svg+xml"
+    }
+   },
+   "name": "Logos",
+   "order": [
+    "logo.svg"
+   ],
+   "tile": "l"
+  }
  },
- "title": "HumanSoul",
- "namespace": "HumanSoul",
+ "blobs": {},
+ "createdOnFiles": {
+  "at": "2026-10-06T18:41:17Z",
+  "v": 1
+ },
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "groups": [
+  "Logos"
+ ],
+ "lastChange": {
+  "at": "2026-10-06T18:51:56Z",
+  "by": "Claude",
+  "via": "Claude Code",
+  "note": "Translated all content to English; renamed CuadernoCard to JournalCard."
+ },
+ "layout": "files",
  "libraries": [
   {
    "name": "react",
@@ -17,36 +46,7 @@
    "version": "18"
   }
  ],
+ "namespace": "HumanSoul",
  "sections": {},
- "groups": [
-  "Logos"
- ],
- "assetGroups": {
-  "Logos": {
-   "name": "Logos",
-   "tile": "l",
-   "order": [
-    "logo.svg"
-   ],
-   "files": {
-    "logo.svg": {
-     "name": "logo.svg",
-     "blob": "8ec53c052b8495de3f727014267bd1f8",
-     "size": 32940,
-     "type": "image/svg+xml"
-    }
-   }
-  }
- },
- "blobs": {},
- "docs": {
-  "readme": "project/README.md",
-  "sections": []
- },
- "lastChange": {
-  "by": "Claude",
-  "at": "2026-10-06T18:41:17Z",
-  "via": "Claude Code",
-  "note": "Primera versión: tokens shadcn en claro y oscuro, 28 componentes y guías de responsive y estados."
- }
+ "title": "HumanSoul"
 }

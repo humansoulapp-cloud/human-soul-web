@@ -1,7 +1,7 @@
-Marcador de carga con la forma del contenido.
+Loading placeholder shaped like the content.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `width`, `height`, `circle`.
 
-## Guía
-Compón un esqueleto con las mismas dimensiones que la tarjeta real. Es decorativo (`aria-hidden`); anuncia la carga en el contenedor con `aria-busy`.
+## Guidance
+Compose a skeleton with the same dimensions as the real card. It is decorative (`aria-hidden`); announce loading on the container with `aria-busy`.

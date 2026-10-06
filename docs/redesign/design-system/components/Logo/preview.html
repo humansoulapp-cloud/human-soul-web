@@ -1,4 +1,4 @@
-<!-- @dsCard group="Marca" height=140 subtitle="Wordmark: Human en DM Sans + Soul en Bernstein" -->
+<!-- @dsCard group="Brand" height=140 subtitle="Wordmark: Human in DM Sans + Soul in Bernstein" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,9 +11,9 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
-function App(){return Row(C('28px (barra lateral)',h(Logo,{size:28})),C('36px (autenticación)',h(Logo,{size:36})),C('Sobre tarjeta',h(Card,null,h(Logo,{size:32}))));}
+function App(){return Row(C('28px (sidebar)',h(Logo,{size:28})),C('36px (auth)',h(Logo,{size:36})),C('On card',h(Card,null,h(Logo,{size:32}))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

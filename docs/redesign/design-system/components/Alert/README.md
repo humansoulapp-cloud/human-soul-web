@@ -1,7 +1,7 @@
-Mensaje en línea de información, éxito, aviso o error.
+Inline message for info, success, warning or error.
 
-## Qué aporta quien lo usa
-`variant`, `title`, hijos como descripción, `action`.
+## What the consumer provides
+`variant`, `title`, children as the description, `action`.
 
-## Guía
-Aparece junto al elemento que lo causa, no flotando. El error anuncia con `role="alert"`. Incluye una acción de recuperación cuando exista.
+## Guidance
+Appears next to the element that caused it, not floating. Errors announce with `role="alert"`. Include a recovery action when one exists.

@@ -1,4 +1,4 @@
-<!-- @dsCard group="Datos" height=280 subtitle="Superficie base: reposo, interactiva, discontinua" -->
+<!-- @dsCard group="Data" height=280 subtitle="Base surface: default, interactive, dashed" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,12 +11,12 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 function App(){return Row(
- C('Reposo',h('div',{style:{width:240}},h(Card,null,h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'Tarjeta'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'Contenedor para una idea.')))),
- C('Interactiva (hover)',h('div',{style:{width:240}},h(Card,{interactive:true,state:'hover'},h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'Tarjeta'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'Se eleva y resalta el borde.')))),
- C('Discontinua',h('div',{style:{width:240}},h(Card,{variant:'dashed'},h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'Nuevo cuaderno'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'Para acciones de crear.')))));}
+ C('Default',h('div',{style:{width:240}},h(Card,null,h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'Card'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'Contenedor para una idea.')))),
+ C('Interactive (hover)',h('div',{style:{width:240}},h(Card,{interactive:true,state:'hover'},h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'Card'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'Lifts and highlights its border.')))),
+ C('Dashed',h('div',{style:{width:240}},h(Card,{variant:'dashed'},h('h3',{className:'text-h3',style:{margin:'0 0 6px'}},'New Journal'),h('p',{className:'text-body-sm',style:{margin:0,color:'var(--muted-foreground)'}},'For create actions.')))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

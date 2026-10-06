@@ -1,10 +1,10 @@
-/* @ds-bundle: {"format":4,"namespace":"HumanSoul","components":[{"name":"Logo"},{"name":"Icon"},{"name":"Button"},{"name":"Field"},{"name":"Input"},{"name":"Textarea"},{"name":"Select"},{"name":"Checkbox"},{"name":"Switch"},{"name":"Chip"},{"name":"Badge"},{"name":"Card"},{"name":"Alert"},{"name":"Tabs"},{"name":"Dialog"},{"name":"Sheet"},{"name":"Skeleton"},{"name":"EmptyState"},{"name":"ErrorState"},{"name":"Sidebar"},{"name":"BottomNav"},{"name":"DataList"},{"name":"ReflectionCard"},{"name":"CuadernoCard"},{"name":"JourneyCard"},{"name":"Stat"},{"name":"Avatar"},{"name":"PageHeader"}]} */
+/* @ds-bundle: {"format":4,"namespace":"HumanSoul","components":[{"name":"Logo"},{"name":"Icon"},{"name":"Button"},{"name":"Field"},{"name":"Input"},{"name":"Textarea"},{"name":"Select"},{"name":"Checkbox"},{"name":"Switch"},{"name":"Chip"},{"name":"Badge"},{"name":"Card"},{"name":"Alert"},{"name":"Tabs"},{"name":"Dialog"},{"name":"Sheet"},{"name":"Skeleton"},{"name":"EmptyState"},{"name":"ErrorState"},{"name":"Sidebar"},{"name":"BottomNav"},{"name":"DataList"},{"name":"ReflectionCard"},{"name":"JournalCard"},{"name":"JourneyCard"},{"name":"Stat"},{"name":"Avatar"},{"name":"PageHeader"}]} */
 (function () {
   var React = window.React;
   var h = React.createElement;
   var cx = function () { return Array.prototype.slice.call(arguments).filter(Boolean).join(" "); };
 
-  /* ── Iconos (trazos de lucide, 24×24) ── */
+  /* ── Icons (lucide strokes, 24×24) ── */
   var P = {
     plus: ["M5 12h14", "M12 5v14"],
     x: ["M18 6 6 18", "m6 6 12 12"],
@@ -78,7 +78,7 @@
     var describedBy = [p.hint && id + "-hint", p.error && id + "-error"].filter(Boolean).join(" ") || undefined;
     var control = React.cloneElement(child, { id: id, "aria-describedby": describedBy, "aria-invalid": p.error ? "true" : undefined, required: p.required });
     return h("div", { className: cx("hs hs-field", p.className) },
-      p.label ? h("label", { className: "hs-label", htmlFor: id }, p.label, p.optional ? h("span", { className: "hs-label-opt" }, " (opcional)") : null) : null,
+      p.label ? h("label", { className: "hs-label", htmlFor: id }, p.label, p.optional ? h("span", { className: "hs-label-opt" }, " (optional)") : null) : null,
       control,
       p.hint && !p.error ? h("span", { id: id + "-hint", className: "hs-hint" }, p.hint) : null,
       p.error ? h("span", { id: id + "-error", className: "hs-error", role: "alert" }, h(Icon, { name: "alert", size: 16 }), p.error) : null);
@@ -152,7 +152,7 @@
   function Panel(p, sheet) {
     return h("div", { className: cx("hs hs-dialog", sheet && "hs-sheet", p.className), role: "dialog", "aria-modal": "true", "aria-label": p.title },
       sheet ? h("div", { className: "hs-sheet-handle" }) : null,
-      h(Button, { variant: "ghost", size: "icon-sm", icon: "x", className: "hs-dialog-close", "aria-label": "Cerrar", onClick: p.onClose }),
+      h(Button, { variant: "ghost", size: "icon-sm", icon: "x", className: "hs-dialog-close", "aria-label": "Close", onClick: p.onClose }),
       h("div", null, h("h3", { className: "text-h3 hs-dialog-title" }, p.title), p.description ? h("p", { className: "hs-dialog-desc" }, p.description) : null),
       p.children,
       p.footer ? h("div", { className: "hs-dialog-footer" }, p.footer) : null);
@@ -175,13 +175,13 @@
       p.actions ? h("div", { className: "hs-empty-actions" }, p.actions) : null);
   }
   function ErrorState(p) {
-    return h(EmptyState, { error: true, icon: p.icon || "alert", title: p.title || "No hemos podido cargar esto", description: p.description || "Revisa tu conexión e inténtalo de nuevo. Tus reflexiones siguen a salvo.", className: p.className,
-      actions: h(Button, { variant: "outline", icon: "loader", onClick: p.onRetry }, p.retryLabel || "Reintentar") });
+    return h(EmptyState, { error: true, icon: p.icon || "alert", title: p.title || "We could not load this", description: p.description || "Check your connection and try again. Your reflections are safe.", className: p.className,
+      actions: h(Button, { variant: "outline", icon: "loader", onClick: p.onRetry }, p.retryLabel || "Try again") });
   }
 
-  /* ── Navegación ── */
+  /* ── Navigation ── */
   function Sidebar(p) {
-    return h("aside", { className: cx("hs hs-sidebar", p.className), "aria-label": "Navegación principal" },
+    return h("aside", { className: cx("hs hs-sidebar", p.className), "aria-label": "Main navigation" },
       h("div", { className: "hs-sidebar-logo" }, h(Logo, { size: 28 })),
       h("nav", { className: "hs-sidebar-nav" },
         (p.items || []).map(function (it) {
@@ -190,11 +190,11 @@
         })),
       h("div", { className: "hs-sidebar-foot" },
         p.writeLabel ? h(Button, { icon: "pen", full: true, href: p.writeHref || "/journal/new" }, p.writeLabel) : null,
-        h("button", { type: "button", className: "hs-focusable hs-nav-item", onClick: p.onToggleTheme }, h(Icon, { name: p.dark ? "sun" : "moon", size: 20 }), p.dark ? "Modo claro" : "Modo oscuro"),
-        h("button", { type: "button", className: "hs-focusable hs-nav-item", onClick: p.onSignOut }, h(Icon, { name: "logout", size: 20 }), "Cerrar sesión")));
+        h("button", { type: "button", className: "hs-focusable hs-nav-item", onClick: p.onToggleTheme }, h(Icon, { name: p.dark ? "sun" : "moon", size: 20 }), p.dark ? "Light Mode" : "Dark Mode"),
+        h("button", { type: "button", className: "hs-focusable hs-nav-item", onClick: p.onSignOut }, h(Icon, { name: "logout", size: 20 }), "Sign Out")));
   }
   function BottomNav(p) {
-    return h("nav", { className: cx("hs hs-bottomnav", p.className), "aria-label": "Navegación principal" },
+    return h("nav", { className: cx("hs hs-bottomnav", p.className), "aria-label": "Main navigation" },
       (p.items || []).map(function (it) {
         return h("a", { key: it.href, href: it.href, className: "hs-focusable hs-bottomnav-item", "aria-current": it.href === p.active ? "page" : undefined, "data-state": it.state },
           h(Icon, { name: it.icon, size: 22 }), it.label);
@@ -221,39 +221,39 @@
         })));
   }
 
-  /* ── Tarjetas de dominio ── */
+  /* ── Domain cards ── */
   function fmtDate(d) { return d; }
   function ReflectionCard(p) {
     return h(Card, { className: cx("hs-reflection", p.className) },
       h("div", { className: "hs-reflection-head" },
         h("span", { className: "hs-meta" }, h(Icon, { name: "calendar", size: 16 }), p.date),
-        h("button", { type: "button", className: "hs-focusable hs-fav", "aria-pressed": p.favorite ? "true" : "false", "aria-label": p.favorite ? "Quitar de favoritas" : "Marcar como favorita", "data-state": p.state, onClick: p.onToggleFavorite },
+        h("button", { type: "button", className: "hs-focusable hs-fav", "aria-pressed": p.favorite ? "true" : "false", "aria-label": p.favorite ? "Remove from favorites" : "Add to favorites", "data-state": p.state, onClick: p.onToggleFavorite },
           h(Icon, { name: "heart", size: 20, className: null }), null)),
-      p.photo ? h("div", { className: "hs-reflection-photo" }, h("img", { src: p.photo, alt: p.photoAlt || "Foto adjunta" })) : null,
+      p.photo ? h("div", { className: "hs-reflection-photo" }, h("img", { src: p.photo, alt: p.photoAlt || "Attached photo" })) : null,
       h("p", { className: "hs-reflection-text" }, p.children),
       p.tags && p.tags.length ? h("div", { className: "hs-tags" }, p.tags.map(function (t) { return h(Badge, { key: t, variant: "outline", icon: "tag" }, t); })) : null);
   }
-  function CuadernoCard(p) {
-    return h(Card, { className: cx("hs-cuaderno", p.className), interactive: true, state: p.state },
+  function JournalCard(p) {
+    return h(Card, { className: cx("hs-journal", p.className), interactive: true, state: p.state },
       h("div", null,
-        h("div", { className: "hs-cuaderno-top" },
-          h(Badge, { variant: "neutral", icon: "layers" }, p.count + (p.count === 1 ? " reflexión" : " reflexiones")),
+        h("div", { className: "hs-journal-top" },
+          h(Badge, { variant: "neutral", icon: "layers" }, p.count + (p.count === 1 ? " reflection" : " reflections")),
           p.confirmingDelete
-            ? h("span", { className: "hs-confirm" }, h(Button, { variant: "destructive", size: "sm", onClick: p.onConfirmDelete }, "Eliminar"), h(Button, { variant: "ghost", size: "icon-sm", icon: "x", "aria-label": "Cancelar", onClick: p.onCancelDelete }))
-            : h(Button, { variant: "ghost", size: "icon-sm", icon: "trash", "aria-label": "Eliminar cuaderno", onClick: p.onDelete })),
-        h("h3", { className: "text-h3 hs-cuaderno-title" }, p.title)),
-      h("div", { className: "hs-cuaderno-foot" },
+            ? h("span", { className: "hs-confirm" }, h(Button, { variant: "destructive", size: "sm", onClick: p.onConfirmDelete }, "Delete"), h(Button, { variant: "ghost", size: "icon-sm", icon: "x", "aria-label": "Cancel", onClick: p.onCancelDelete }))
+            : h(Button, { variant: "ghost", size: "icon-sm", icon: "trash", "aria-label": "Delete journal", onClick: p.onDelete })),
+        h("h3", { className: "text-h3 hs-journal-title" }, p.title)),
+      h("div", { className: "hs-journal-foot" },
         h("span", { className: "hs-meta" }, h(Icon, { name: "calendar", size: 16 }), p.date),
-        h("span", { className: "hs-cuaderno-actions" },
-          h(Button, { variant: "outline", size: "sm", icon: "pen", href: p.writeHref }, "Escribir"),
-          h(Button, { size: "sm", href: p.openHref }, "Abrir", h(Icon, { name: "arrowUpRight", size: 16 })))));
+        h("span", { className: "hs-journal-actions" },
+          h(Button, { variant: "outline", size: "sm", icon: "pen", href: p.writeHref }, "Write"),
+          h(Button, { size: "sm", href: p.openHref }, "Open", h(Icon, { name: "arrowUpRight", size: 16 })))));
   }
   function JourneyCard(p) {
     return h(Card, { className: cx("hs-journey", p.className), interactive: true, state: p.state },
       h("div", { className: "hs-journey-media" },
         p.image ? h("img", { src: p.image, alt: "" }) : h(Icon, { name: "compass", size: 40 }),
         (p.featured || p.premium || p.status) ? h("div", { className: "hs-journey-badges" },
-          p.featured ? h(Badge, { variant: "primary", icon: "sparkles" }, "Destacado") : null,
+          p.featured ? h(Badge, { variant: "primary", icon: "sparkles" }, "Featured") : null,
           p.premium ? h(Badge, { variant: "warning" }, "Premium") : null,
           p.status ? h(Badge, { variant: p.status.variant, icon: p.status.icon }, p.status.label) : null) : null),
       h("div", { className: "hs-journey-body" },
@@ -261,8 +261,8 @@
         h("h3", { className: "text-h3", style: { margin: 0 } }, p.title),
         h("p", { className: "text-body-sm hs-clamp-2 hs-muted" }, p.tagline),
         h("div", { className: "hs-journey-foot" },
-          h("span", { className: "hs-meta" }, h(Icon, { name: "layers", size: 16 }), p.days + " días", p.time ? h("span", null, " · " + p.time) : null),
-          h("span", { className: "text-label", style: { color: "var(--primary)", display: "inline-flex", alignItems: "center", gap: 4 } }, p.cta || "Comenzar", h(Icon, { name: "chevronRight", size: 16 })))));
+          h("span", { className: "hs-meta" }, h(Icon, { name: "layers", size: 16 }), p.days + " days", p.time ? h("span", null, " · " + p.time) : null),
+          h("span", { className: "text-label", style: { color: "var(--primary)", display: "inline-flex", alignItems: "center", gap: 4 } }, p.cta || "Begin", h(Icon, { name: "chevronRight", size: 16 })))));
   }
 
   /* ── Stat / Avatar / PageHeader ── */
@@ -284,5 +284,5 @@
       p.actions || null);
   }
 
-  window.HumanSoul = { Logo: Logo, Icon: Icon, Button: Button, Field: Field, Input: Input, Textarea: Textarea, Select: Select, Checkbox: Checkbox, Switch: Switch, Chip: Chip, Badge: Badge, Card: Card, Alert: Alert, Tabs: Tabs, Dialog: Dialog, Sheet: Sheet, Skeleton: Skeleton, EmptyState: EmptyState, ErrorState: ErrorState, Sidebar: Sidebar, BottomNav: BottomNav, DataList: DataList, ReflectionCard: ReflectionCard, CuadernoCard: CuadernoCard, JourneyCard: JourneyCard, Stat: Stat, Avatar: Avatar, PageHeader: PageHeader };
+  window.HumanSoul = { Logo: Logo, Icon: Icon, Button: Button, Field: Field, Input: Input, Textarea: Textarea, Select: Select, Checkbox: Checkbox, Switch: Switch, Chip: Chip, Badge: Badge, Card: Card, Alert: Alert, Tabs: Tabs, Dialog: Dialog, Sheet: Sheet, Skeleton: Skeleton, EmptyState: EmptyState, ErrorState: ErrorState, Sidebar: Sidebar, BottomNav: BottomNav, DataList: DataList, ReflectionCard: ReflectionCard, JournalCard: JournalCard, JourneyCard: JourneyCard, Stat: Stat, Avatar: Avatar, PageHeader: PageHeader };
 })();

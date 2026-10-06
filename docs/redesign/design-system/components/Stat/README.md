@@ -1,7 +1,7 @@
-Cifra destacada con etiqueta.
+Highlighted figure with a label.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `value`, `label`, `accent`, `href`.
 
-## Guía
-Cifra en `text-h2`. Con `href`, toda la tarjeta es un enlace (Favoritas en Perfil, KPI de admin).
+## Guidance
+Figure in `text-h2`. With `href`, the whole card is a link (Favorites in Profile, admin KPIs).

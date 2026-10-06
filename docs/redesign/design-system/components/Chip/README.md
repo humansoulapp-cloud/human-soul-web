@@ -1,7 +1,7 @@
-Píldora seleccionable: etiquetas de emoción, sugerencias y filtros.
+Selectable pill: emotion tags, suggestions and filters.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `selected`, `icon`, `onClick`, `disabled`.
 
-## Guía
-Selección múltiple en etiquetas de emoción; selección única en filtros (usa `Tabs`). El estado seleccionado nunca depende solo del color: cambia el relleno y lleva `aria-pressed`.
+## Guidance
+Multi-select for emotion tags; single-select for filters (use `Tabs`). The selected state never depends on color alone: the fill changes and it carries `aria-pressed`.

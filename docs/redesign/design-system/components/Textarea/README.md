@@ -1,7 +1,7 @@
-Campo de texto largo para escribir reflexiones y respuestas de viaje.
+Long text field for writing reflections and journey answers.
 
-## Qué aporta quien lo usa
-`rows`, `placeholder`, `state` y atributos de `<textarea>`.
+## What the consumer provides
+`rows`, `placeholder`, `state` and `<textarea>` attributes.
 
-## Guía
-Texto de 18px/28px, el mismo de la lectura. Crece en vertical. No limites la longitud sin avisar.
+## Guidance
+18px/28px text, the same as reading. It grows vertically. Do not cap length without warning.

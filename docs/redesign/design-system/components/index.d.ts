@@ -20,7 +20,7 @@ export interface SidebarProps { items: { href: string; label: string; icon: stri
 export interface BottomNavProps { items: { href: string; label: string; icon: string }[]; active?: string }
 export interface DataListProps { columns: { key: string; label: string; align?: "left" | "right"; action?: boolean }[]; rows: Record<string, any>[] }
 export interface ReflectionCardProps { date: string; favorite?: boolean; onToggleFavorite?: () => void; photo?: string; photoAlt?: string; tags?: string[]; children?: any }
-export interface CuadernoCardProps { count: number; title: string; date: string; writeHref?: string; openHref?: string; confirmingDelete?: boolean; onDelete?: () => void; onConfirmDelete?: () => void; onCancelDelete?: () => void }
+export interface JournalCardProps { count: number; title: string; date: string; writeHref?: string; openHref?: string; confirmingDelete?: boolean; onDelete?: () => void; onConfirmDelete?: () => void; onCancelDelete?: () => void }
 export interface JourneyCardProps { image?: string; category: string; title: string; tagline?: string; days: number; time?: string; featured?: boolean; premium?: boolean; status?: { variant: string; icon: string; label: string }; cta?: string }
 export interface StatProps { value: string | number; label: string; accent?: boolean; href?: string }
 export interface AvatarProps { name?: string; size?: "sm" }

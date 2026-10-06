@@ -1,7 +1,7 @@
-Etiqueta informativa pequeña, no interactiva.
+Small, non-interactive informational label.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `variant`: neutral, primary, outline, success, warning, info, destructive. `icon`.
 
-## Guía
-Los estados de viaje (en vivo, programado, borrador, archivado) usan siempre variante + icono + texto. No la uses como botón.
+## Guidance
+Journey statuses (live, scheduled, draft, archived) always use variant + icon + text. Do not use it as a button.

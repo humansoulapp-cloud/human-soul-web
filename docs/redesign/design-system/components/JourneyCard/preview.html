@@ -1,4 +1,4 @@
-<!-- @dsCard group="Datos" height=560 subtitle="Viaje guiado: imagen, categoría, días y estado" -->
+<!-- @dsCard group="Data" height=560 subtitle="Guided journey: image, category, days and status" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,13 +11,13 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 const img="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%23c9d6ca'/%3E%3Ccircle cx='300' cy='70' r='46' fill='%23f1e6cf'/%3E%3Cpath d='M0 200V140q90-60 180-10t220-20v90z' fill='%238ba58f'/%3E%3Cpath d='M0 200V170q110-50 210-10t190-10v50z' fill='%234b6a51'/%3E%3C/svg%3E";
 function App(){return Row(
- h('div',{style:{width:340}},h(JourneyCard,{image:img,category:'Fundamentos de HumanSoul',title:'Volverse más humano',tagline:'Una invitación a notar lo que la vida cotidiana revela, sin prisa, de lo que es ser humano.',days:7,time:'unos 7 min al día',featured:true})),
- h('div',{style:{width:340}},h(JourneyCard,{category:'Emociones',title:'Aprender a quedarte',tagline:'Siete días para sostener lo que sientes sin intentar arreglarlo.',days:7,time:'unos 10 min al día',premium:true,cta:'Editar'})),
- h('div',{style:{width:340}},h(JourneyCard,{category:'Identidad',title:'Encontrarte contigo',tagline:'Preguntas suaves para conocer a quien llevas dentro.',days:5,status:{variant:'warning',icon:'clock',label:'Programado'},cta:'Editar'})));}
+ h('div',{style:{width:340}},h(JourneyCard,{image:img,category:'Human Soul Foundations',title:'Becoming More Human',tagline:'An invitation to notice what everyday life quietly reveals about being human.',days:7,time:'About 7 minutes a day',featured:true})),
+ h('div',{style:{width:340}},h(JourneyCard,{category:'Emotional Awareness',title:'Learning to Stay',tagline:'Seven days to hold what you feel without trying to fix it.',days:7,time:'About 10 minutes a day',premium:true,cta:'Edit'})),
+ h('div',{style:{width:340}},h(JourneyCard,{category:'Identity & Self-Discovery',title:'Meeting Yourself',tagline:'Gentle questions to get to know who you carry inside.',days:5,status:{variant:'warning',icon:'clock',label:'Scheduled'},cta:'Edit'})));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

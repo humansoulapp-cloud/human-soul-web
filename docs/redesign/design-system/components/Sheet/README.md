@@ -1,7 +1,7 @@
-Hoja anclada abajo que sustituye al modal en móvil.
+Bottom-anchored sheet that replaces the modal on mobile.
 
-## Qué aporta quien lo usa
-Mismas props que `Dialog`.
+## What the consumer provides
+Same props as `Dialog`.
 
-## Guía
-Botones apilados a ancho completo, principal arriba. Quien lo usa aporta el scrim, el gesto de cierre y el foco atrapado.
+## Guidance
+Buttons stacked at full width, primary on top. The consumer provides the scrim, the dismiss gesture and the focus trap.

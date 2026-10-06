@@ -1,40 +1,40 @@
-HumanSoul es un diario personal y una colección de viajes guiados. El sistema transmite calma: papel cálido, salvia, titulares serif y mucho aire. Todo el contenido visible va en español, en tono sereno.
+HumanSoul is a personal journal and a collection of guided journeys. The system is built to feel calm: warm paper, sage, serif headings and plenty of air. All user-facing content is in English, in a quiet tone.
 
-## Fundamentos de contenido
+## Content fundamentals
 
-- Habla de tú, en frases cortas y tranquilas. Sin exclamaciones, sin emoji, sin urgencia. Ejemplos de la marca: «Un lugar tranquilo para notarte.», «Sin rachas. Sin puntuaciones. Sin presión.», «Privado por defecto.», «Cuando estés listo.»
-- No introduzcas rachas, puntuaciones, insignias ni contadores de constancia. El onboarding promete lo contrario.
-- Usa mayúscula solo al inicio de frase («Guardar reflexión», no «Guardar Reflexión»).
-- Los botones dicen lo que ocurre: verbo + objeto («Crear cuaderno», «Escribir reflexión», «Publicar ahora»). Evita «Aceptar» y «Enviar».
-- Los errores explican qué pasó y qué hacer, sin disculpas: «No se pudo guardar. Comprueba tu conexión e inténtalo otra vez.»
-- Vocabulario fijo: **Cuaderno** (agrupa reflexiones), **Reflexión** (una entrada), **Viaje** (recorrido guiado de varios días), **Favoritas**. No mezcles «diario», «journal» ni «journey».
-- Fechas en formato largo y local («12 de septiembre de 2026»); en tablas y tarjetas compactas, «12 sep 2026».
+- Address the user as "you", in short, calm sentences. No exclamation marks, no emoji, no urgency. Brand examples: "A quiet place to notice yourself.", "No streaks. No scores. No pressure.", "Private by default.", "Whenever you're ready."
+- Never introduce streaks, scores, badges or consistency counters. The onboarding promises the opposite.
+- Use sentence case for buttons and labels ("Save reflection", not "Save Reflection"). Screen titles and product names keep the existing title case ("Your Journals", "Guided Journeys").
+- Buttons say what happens: verb + object ("Create Journal", "Save Reflection", "Publish Now"). Avoid "OK" and "Submit".
+- Errors say what happened and what to do, without apology: "Could not save your reflection. Your text is still here; try again."
+- Fixed vocabulary: **Journal** (a user's collection of reflections), **Reflection** (one entry), **Journey** (a multi-day guided path), **Favorites**. Do not mix in "diary", "notebook" or "entry".
+- Dates use US long format ("September 12, 2026"); in tables and compact cards, "Sep 12, 2026".
 
-## Fundamentos visuales
+## Visual foundations
 
-- **Color.** Fondo de página con `background`, texto con `foreground`, texto secundario con `muted-foreground`. Superficies elevadas con `card` y flotantes con `popover`. La acción principal es siempre `primary` con texto `primary-foreground`; no lo uses para decorar. `brand` (salvia de marca) solo rellena formas decorativas y nunca lleva texto sobre `background` en claro.
-- **Estados.** Error con `destructive` y `destructive-soft`, éxito con `success` y `success-soft`, pendiente con `warning` y `warning-soft`, información o borrador con `info` e `info-soft`. Todo estado lleva icono o palabra, nunca solo color.
-- **Resaltado.** `accent` con `accent-foreground` marca el ítem activo, la fila en hover y el chip o pestaña al pasar el cursor.
-- **Tipografía.** Titulares en Bernstein (`text-display`, `text-h1` a `text-h4`), siempre en peso 400. Cuerpo en Inter: `text-body` por defecto, `text-body-lg` para escribir y leer reflexiones, `text-body-sm` para ayudas y fechas. `text-caption` y `text-overline` (12px) solo para contadores, badges y categorías. El texto corrido no baja de 14px. DM Sans solo aparece en el wordmark.
-- **Espaciado.** Escala `space-1` a `space-8` (4 a 64px). Relleno de tarjeta: `space-4` en móvil, `space-5` desde 640px. Margen lateral de página: `space-4` en móvil, `space-6` en escritorio.
-- **Radios.** Campos y botones `radius-md`; tarjetas `radius-lg`; sheets, diálogos y barra lateral `radius-xl`; chips, avatares y badges `radius-full`.
-- **Sombras.** `shadow-sm` en tarjetas, `shadow-md` en hover, `shadow-lg` en diálogos y sheets. Los bordes usan `border`; los controles usan `input`.
-- **Foco.** Anillo sólido de 2px en `ring` con 2px de separación en todo elemento interactivo. No lo quites.
-- **Táctil.** Todo control mide al menos 44px de alto; los ítems de navegación inferior, 52px.
-- **Movimiento.** Transiciones de 150ms en color, borde y sombra. Respeta `prefers-reduced-motion`: sin giros ni pulsos.
-- **Imágenes.** Portadas de viaje en proporción 16:10 sobre la tarjeta, nunca con texto encima. Fotos de reflexión con `radius-md` y 240px de alto máximo.
-- **Temas.** Claro y oscuro con los mismos nombres de token. Todo texto cumple 4,5:1 sobre las superficies que su nota indica, en ambos temas. En claro `primary` es una salvia profunda; en oscuro es la salvia de marca con texto oscuro.
+- **Color.** Page background is `background`, text is `foreground`, secondary text is `muted-foreground`. Raised surfaces use `card`; floating ones use `popover`. The main action is always `primary` with `primary-foreground` text; never use it for decoration. `brand` (the original sage) only fills decorative shapes and never carries text on `background` in light.
+- **States.** Error uses `destructive` and `destructive-soft`, success `success` and `success-soft`, pending `warning` and `warning-soft`, info or draft `info` and `info-soft`. Every state carries an icon or a word, never color alone.
+- **Highlight.** `accent` with `accent-foreground` marks the active item, the hovered row, and hovered chips or tabs.
+- **Typography.** Headings use Bernstein (`text-display`, `text-h1` to `text-h4`), always weight 400. Body uses Inter: `text-body` by default, `text-body-lg` for writing and reading reflections, `text-body-sm` for hints and dates. `text-caption` and `text-overline` (12px) only for counters, badges and categories. Running text never goes below 14px. DM Sans appears only in the wordmark.
+- **Spacing.** Scale `space-1` to `space-8` (4 to 64px). Card padding: `space-4` on mobile, `space-5` from 640px. Page side margin: `space-4` on mobile, `space-6` on desktop.
+- **Radius.** Fields and buttons `radius-md`; cards `radius-lg`; sheets, dialogs and the sidebar `radius-xl`; chips, avatars and badges `radius-full`.
+- **Shadow.** `shadow-sm` on cards, `shadow-md` on hover, `shadow-lg` on dialogs and sheets. Borders use `border`; controls use `input`.
+- **Focus.** A solid 2px `ring` with a 2px offset on every interactive element. Never remove it.
+- **Touch.** Every control is at least 44px tall; bottom navigation items are 52px.
+- **Motion.** 150ms transitions on color, border and shadow. Honor `prefers-reduced-motion`: no spinning or pulsing.
+- **Imagery.** Journey covers sit above the card in 16:10, never with text on top. Reflection photos use `radius-md` and a 240px maximum height.
+- **Themes.** Light and dark share the same token names. Every text color meets 4.5:1 on the surfaces its note lists, in both themes. In light, `primary` is a deep sage; in dark it is the brand sage with dark text.
 
-## Iconografía
+## Iconography
 
-Iconos de trazo de lucide (24px de rejilla, trazo 2, extremos redondeados), disponibles por nombre en `Icon`. Tamaño base 20px; 16px dentro de chips y badges; 28px dentro de estados vacíos. Heredan el color del texto (`currentColor`). No uses emoji ni iconos rellenos, salvo el corazón de favorita, que se rellena al activarse.
+Lucide-style stroke icons (24px grid, stroke 2, round caps), available by name in `Icon`. Base size 20px; 16px inside chips and badges; 28px inside empty states. They inherit text color (`currentColor`). No emoji and no filled icons, except the favorite heart, which fills when active.
 
-## Marca
+## Brand
 
-El wordmark es «Human» en DM Sans 500 más «Soul» en Bernstein, en una sola línea, con `foreground`. Usa el componente `Logo`. El archivo `assets/Logos/logo.svg` es la marca original en tinta oscura: úsala solo sobre fondos claros; sobre fondos oscuros usa `Logo`.
+The wordmark is "Human" in DM Sans 500 plus "Soul" in Bernstein, on one line, in `foreground`. Use the `Logo` component. `assets/Logos/logo.svg` is the original mark in dark ink: use it only on light backgrounds; on dark backgrounds use `Logo`.
 
-## Cómo construir
+## How to build
 
-- Usa solo tokens y componentes de este sistema. No introduzcas colores, radios ni tamaños sueltos.
-- Escritorio: barra lateral (`Sidebar`). Móvil: navegación inferior (`BottomNav`). Tablas pasan a tarjetas (`DataList`) y modales a sheets (`Sheet`). Ver «Responsive».
-- Toda pantalla que consulta datos define sus cuatro estados: con datos, cargando (`Skeleton`), vacío (`EmptyState`) y error (`ErrorState`). Ver «Estados».
+- Use only the tokens and components in this system. Do not introduce loose colors, radii or sizes.
+- Desktop: sidebar (`Sidebar`). Mobile: bottom navigation (`BottomNav`). Tables become cards (`DataList`) and modals become sheets (`Sheet`). See "Responsive".
+- Every screen that loads data defines four states: with data, loading (`Skeleton`), empty (`EmptyState`) and error (`ErrorState`). See "States".

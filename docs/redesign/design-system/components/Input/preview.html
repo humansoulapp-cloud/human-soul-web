@@ -1,4 +1,4 @@
-<!-- @dsCard group="Formularios" height=330 subtitle="Reposo, hover, foco, deshabilitado, error, con icono" -->
+<!-- @dsCard group="Forms" height=330 subtitle="Default, hover, focus, disabled, error, with icon" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,16 +11,16 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 const W={width:280};
 function App(){return Row(
- C('Reposo',h('div',{style:W},h(Input,{placeholder:'tú@correo.com'}))),
- C('Hover',h('div',{style:W},h(Input,{state:'hover',defaultValue:'ana@correo.com'}))),
- C('Foco',h('div',{style:W},h(Input,{state:'focus',defaultValue:'ana@correo.com'}))),
- C('Deshabilitado',h('div',{style:W},h(Input,{state:'disabled',disabled:true,defaultValue:'ana@correo.com'}))),
- C('Error',h('div',{style:W},h(Field,{error:'Esa contraseña tiene menos de 6 caracteres.'},h(Input,{type:'password',defaultValue:'abc'})))),
- C('Con icono (búsqueda)',h('div',{style:W},h(Input,{icon:'search',placeholder:'Buscar reflexiones…'}))));}
+ C('Default',h('div',{style:W},h(Input,{placeholder:'you@example.com'}))),
+ C('Hover',h('div',{style:W},h(Input,{state:'hover',defaultValue:'ana@example.com'}))),
+ C('Focus',h('div',{style:W},h(Input,{state:'focus',defaultValue:'ana@example.com'}))),
+ C('Disabled',h('div',{style:W},h(Input,{state:'disabled',disabled:true,defaultValue:'ana@example.com'}))),
+ C('Error',h('div',{style:W},h(Field,{error:'Password must be at least 6 characters.'},h(Input,{type:'password',defaultValue:'abc'})))),
+ C('With icon (search)',h('div',{style:W},h(Input,{icon:'search',placeholder:'Search reflections…'}))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

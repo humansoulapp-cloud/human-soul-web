@@ -1,4 +1,4 @@
-<!-- @dsCard group="Datos" height=640 subtitle="Entrada del diario: fecha, favorita, foto, texto, etiquetas" -->
+<!-- @dsCard group="Data" height=640 subtitle="Journal entry: date, favorite, photo, text, tags" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,13 +11,13 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 const img="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%23c9d6ca'/%3E%3Ccircle cx='300' cy='70' r='46' fill='%23f1e6cf'/%3E%3Cpath d='M0 200V140q90-60 180-10t220-20v90z' fill='%238ba58f'/%3E%3Cpath d='M0 200V170q110-50 210-10t190-10v50z' fill='%234b6a51'/%3E%3C/svg%3E";
 function App(){const [f,setF]=React.useState(true);
 return Row(
- h('div',{style:{width:380}},h(ReflectionCard,{date:'12 de septiembre de 2026',favorite:f,onToggleFavorite:()=>setF(!f),tags:['Calma','Claridad']},'Hoy caminé hasta la panadería sin el móvil. Me di cuenta de lo mucho que llenaba los silencios con pantallas, y de lo bien que se está cuando no hace falta llenarlos.')),
- h('div',{style:{width:380}},h(ReflectionCard,{date:'3 de septiembre de 2026',photo:img,photoAlt:'Paisaje de colinas al atardecer',tags:['Gratitud']},'La luz de la tarde en el valle. Quise recordar cómo se sentía el aire.')));}
+ h('div',{style:{width:380}},h(ReflectionCard,{date:'September 12, 2026',favorite:f,onToggleFavorite:()=>setF(!f),tags:['Calm','Clarity']},'Walked to the bakery today without my phone. I noticed how often I fill silences with screens, and how good it feels when there is no need to fill them.')),
+ h('div',{style:{width:380}},h(ReflectionCard,{date:'September 3, 2026',photo:img,photoAlt:'Rolling hills at sunset',tags:['Gratitude']},'The afternoon light over the valley. I wanted to remember how the air felt.')));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

@@ -1,7 +1,7 @@
-Selector nativo con flecha propia.
+Native select with its own arrow.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `options` (`{value,label}`), `value`/`defaultValue`, `onChange`.
 
-## Guía
-Usa el selector nativo para listas cortas (cuaderno al que guardar). Para más de ocho opciones, considera una búsqueda.
+## Guidance
+Use the native select for short lists (which journal to save to). For more than eight options, consider a search.

@@ -1,7 +1,7 @@
-Selector de vista o filtro en una fila.
+View or filter selector on one row.
 
-## Qué aporta quien lo usa
-`items` (`{value,label,icon,count}`), `value`, `onChange`, `variant`: pills (por defecto) o underline.
+## What the consumer provides
+`items` (`{value,label,icon,count}`), `value`, `onChange`, `variant`: pills (default) or underline.
 
-## Guía
-Píldoras para filtros de contenido (categorías, días). Subrayado para vistas de un mismo recurso (estado de viajes en admin). En móvil hacen scroll horizontal.
+## Guidance
+Pills for content filters (categories, days). Underline for views of a single resource (journey status in admin). On mobile they scroll horizontally.

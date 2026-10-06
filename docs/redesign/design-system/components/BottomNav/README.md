@@ -1,7 +1,7 @@
-Navegación inferior de móvil con cinco destinos.
+Mobile bottom navigation with five destinations.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `items` (`{href,label,icon}`), `active`.
 
-## Guía
-Solo por debajo de 768px. Etiqueta siempre visible. Respeta el área segura inferior. El acceso a administración y el cierre de sesión viven en Perfil.
+## Guidance
+Below 768px only. Label always visible. Respect the bottom safe area. The admin entry and sign out live in Profile.

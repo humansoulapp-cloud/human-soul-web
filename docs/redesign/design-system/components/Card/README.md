@@ -1,7 +1,7 @@
-Superficie base de contenido.
+Base content surface.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `variant`: flat, dashed. `interactive`, `as`, `href`, `className`.
 
-## Guía
-Una tarjeta por idea. Usa `interactive` solo si toda la tarjeta es un enlace. `dashed` es para acciones de crear («Nuevo cuaderno»).
+## Guidance
+One card per idea. Use `interactive` only if the whole card is a link. `dashed` is for create actions ("New Journal").

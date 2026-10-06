@@ -1,7 +1,7 @@
-Wordmark de HumanSoul: «Human» en DM Sans y «Soul» en Bernstein.
+HumanSoul wordmark: "Human" in DM Sans and "Soul" in Bernstein.
 
-## Qué aporta quien lo usa
-`size` en px (28 en barra lateral, 36 en autenticación).
+## What the consumer provides
+`size` in px (28 in the sidebar, 36 on auth screens).
 
-## Guía
-Úsalo siempre en lugar de recomponer el texto. En fondos oscuros hereda `foreground`. No lo recolorees.
+## Guidance
+Always use it instead of re-typing the text. On dark backgrounds it inherits `foreground`. Do not recolor it.

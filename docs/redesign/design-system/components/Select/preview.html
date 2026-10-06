@@ -1,4 +1,4 @@
-<!-- @dsCard group="Formularios" height=200 subtitle="Selector de cuaderno al escribir" -->
+<!-- @dsCard group="Forms" height=200 subtitle="Journal picker when writing" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,11 +11,11 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
-const O=[{value:'',label:'General (sin cuaderno)'},{value:'1',label:'Páginas de la mañana'},{value:'2',label:'Gratitud y alegría'}];
+const O=[{value:'',label:'General (No Journal)'},{value:'1',label:'Morning Pages'},{value:'2',label:'Gratitude & Joy'}];
 const W={width:280};
-function App(){return Row(C('Reposo',h('div',{style:W},h(Select,{options:O}))),C('Foco',h('div',{style:W},h(Select,{options:O,state:'focus'}))),C('Deshabilitado',h('div',{style:W},h(Select,{options:O,disabled:true,state:'disabled'}))));}
+function App(){return Row(C('Default',h('div',{style:W},h(Select,{options:O}))),C('Focus',h('div',{style:W},h(Select,{options:O,state:'focus'}))),C('Disabled',h('div',{style:W},h(Select,{options:O,disabled:true,state:'disabled'}))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

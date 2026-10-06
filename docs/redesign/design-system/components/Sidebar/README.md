@@ -1,7 +1,7 @@
-Barra lateral de escritorio de 256px.
+256px desktop sidebar.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `items` (`{href,label,icon,admin}`), `active`, `writeLabel`, `dark`, `onToggleTheme`, `onSignOut`.
 
-## Guía
-Solo desde 768px. El ítem de administración aparece solo para administradores, con borde discontinuo. «Escribir» es la única acción primaria. En móvil se sustituye por `BottomNav`.
+## Guidance
+From 768px up only. The admin item appears for admins only, with a dashed border. "Write" is the only primary action. On mobile it is replaced by `BottomNav`.

@@ -1,7 +1,7 @@
-Tabla en escritorio y pila de tarjetas en móvil, con los mismos datos.
+A table on desktop and a stack of cards on mobile, with the same data.
 
-## Qué aporta quien lo usa
-`columns` (`{key,label,align,action}`), `rows` (objetos con nodos React). La columna con `action: true` pasa al pie de la tarjeta en móvil.
+## What the consumer provides
+`columns` (`{key,label,align,action}`), `rows` (objects with React nodes). The column with `action: true` moves to the card foot on mobile.
 
-## Guía
-Cambia a tarjetas por debajo de 640px de ancho del contenedor. No hay ordenación ni paginación incluidas: añádelas fuera si hacen falta.
+## Guidance
+Switches to cards below 640px of container width. Sorting and pagination are not included: add them outside if needed.

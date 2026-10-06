@@ -1,7 +1,7 @@
-Casilla para opciones independientes.
+Checkbox for independent options.
 
-## Qué aporta quien lo usa
-`checked`/`defaultChecked`, `onChange`, `disabled`, hijos como etiqueta.
+## What the consumer provides
+`checked`/`defaultChecked`, `onChange`, `disabled`, children as the label.
 
-## Guía
-Etiqueta siempre a la derecha. Área táctil de 44px.
+## Guidance
+Label always on the right. 44px touch area.

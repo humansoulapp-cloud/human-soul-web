@@ -1,7 +1,7 @@
-Modal centrado con título, descripción, cuerpo y pie de acciones.
+Centered modal with title, description, body and action footer.
 
-## Qué aporta quien lo usa
-`title`, `description`, `footer`, `onClose`, hijos como cuerpo.
+## What the consumer provides
+`title`, `description`, `footer`, `onClose`, children as the body.
 
-## Guía
-Solo en escritorio. En móvil usa `Sheet` con el mismo contenido. El pie lleva la acción principal a la derecha. Confirmaciones destructivas usan `Dialog` con botón `destructive`. Quien lo usa aporta el scrim, el foco atrapado y el cierre con Escape.
+## Guidance
+Desktop only. On mobile use `Sheet` with the same content. The footer puts the primary action on the right. Destructive confirmations use `Dialog` with a `destructive` button. The consumer provides the scrim, focus trap and Escape to close.

@@ -1,7 +1,7 @@
-Cabecera de pantalla: sobretítulo, título, subtítulo y acciones.
+Screen header: eyebrow, title, subtitle and actions.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `eyebrow`, `title`, `subtitle`, `actions`.
 
-## Guía
-Un solo `h1` por pantalla. En móvil la acción pasa debajo del texto.
+## Guidance
+One `h1` per screen. On mobile the action moves below the text.

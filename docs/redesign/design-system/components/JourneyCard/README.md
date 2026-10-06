@@ -1,7 +1,7 @@
-Viaje guiado con portada 16:10, categoría, título, descripción y duración.
+Guided journey with a 16:10 cover, category, title, description and length.
 
-## Qué aporta quien lo usa
-`image`, `category`, `title`, `tagline`, `days`, `time`, `featured`, `premium`, `status` (`{variant,icon,label}` para admin), `cta`.
+## What the consumer provides
+`image`, `category`, `title`, `tagline`, `days`, `time`, `featured`, `premium`, `status` (`{variant,icon,label}` for admin), `cta`.
 
-## Guía
-El texto nunca va sobre la imagen. Sin imagen, muestra un marcador. En admin `cta` es «Editar».
+## Guidance
+Text never sits on the image. Without an image it shows a placeholder. In admin `cta` is "Edit".

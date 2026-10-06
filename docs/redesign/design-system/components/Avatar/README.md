@@ -1,7 +1,7 @@
-Inicial del nombre sobre fondo `accent`.
+Name initial on an `accent` background.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `name`, `size`: sm.
 
-## Guía
-No hay fotos de perfil; si se añaden, mantén el círculo y el tamaño.
+## Guidance
+There are no profile photos; if added, keep the circle and size.

@@ -1,7 +1,7 @@
-Campo de texto de una línea.
+Single-line text field.
 
-## Qué aporta quien lo usa
-`type`, `icon` (inicio), `placeholder`, y el resto de atributos de `<input>`. `state` documenta hover, foco, disabled.
+## What the consumer provides
+`type`, `icon` (leading), `placeholder`, and the rest of the `<input>` attributes. `state` documents hover, focus, disabled.
 
-## Guía
-El placeholder nunca sustituye a la etiqueta. Envuélvelo en `Field`. Altura mínima de 44px.
+## Guidance
+A placeholder never replaces the label. Wrap it in `Field`. Minimum height 44px.

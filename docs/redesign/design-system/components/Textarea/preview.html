@@ -1,4 +1,4 @@
-<!-- @dsCard group="Formularios" height=360 subtitle="Escritura de reflexiones: 18px/28px" -->
+<!-- @dsCard group="Forms" height=360 subtitle="Reflection writing: 18px/28px" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -11,14 +11,14 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,CuadernoCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 const W={width:360};
 function App(){return Row(
- C('Reposo',h('div',{style:W},h(Textarea,{placeholder:'¿Qué ha captado tu atención hoy? Tómate el tiempo que necesites…'}))),
- C('Foco',h('div',{style:W},h(Textarea,{state:'focus',defaultValue:'Hoy me di cuenta de que camino más despacio cuando nadie me espera.'}))),
- C('Error',h('div',{style:W},h(Field,{error:'Escribe algo antes de guardar tu reflexión.'},h(Textarea,{rows:3})))),
- C('Deshabilitado',h('div',{style:W},h(Textarea,{state:'disabled',disabled:true,rows:3,defaultValue:'Guardando…'}))));}
+ C('Default',h('div',{style:W},h(Textarea,{placeholder:'What caught your attention today? Take your time…'}))),
+ C('Focus',h('div',{style:W},h(Textarea,{state:'focus',defaultValue:'I noticed I walk more slowly when no one is waiting for me.'}))),
+ C('Error',h('div',{style:W},h(Field,{error:'Write something in your reflection before saving.'},h(Textarea,{rows:3})))),
+ C('Disabled',h('div',{style:W},h(Textarea,{state:'disabled',disabled:true,rows:3,defaultValue:'Saving…'}))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

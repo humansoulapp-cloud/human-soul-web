@@ -1,7 +1,7 @@
-Estado de error de carga con reintento.
+Load-error state with retry.
 
-## Qué aporta quien lo usa
+## What the consumer provides
 `title`, `description`, `icon`, `onRetry`, `retryLabel`.
 
-## Guía
-Úsalo cuando falla la carga completa de una pantalla. Para fallos de una acción usa `Alert`.
+## Guidance
+Use it when a whole screen fails to load. For a failed action use `Alert`.

@@ -1,7 +1,7 @@
-Estado vacío con icono, título, explicación y acciones.
+Empty state with icon, title, explanation and actions.
 
-## Qué aporta quien lo usa
-`icon`, `title`, `description`, `actions`, hijos.
+## What the consumer provides
+`icon`, `title`, `description`, `actions`, children.
 
-## Guía
-Explica qué falta y ofrece la primera acción. Distingue «no hay nada aún» de «no hay resultados».
+## Guidance
+Explain what is missing and offer the first action. Distinguish "nothing here yet" from "no results".
