@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign In · Error · Mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Source+Sans+3:wght@400;500;600&amp;family=DM+Sans:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 48px 16px 32px; display: flex; flex-direction: column; gap: 32px; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+<header style="display: flex; justify-content: center;">
+<x-import component-from-global-scope="HumanSoul.Logo" size="{{logo}}"></x-import>
+</header>
+<main style="display: flex; flex-direction: column; gap: 24px; flex: 1;">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<h1 class="text-h2" style="margin: 0;">Welcome Back</h1>
+<p class="text-body" style="margin: 0; color: var(--muted-foreground);">Sign in to return to your personal space.</p>
+</div>
+<form style="display: flex; flex-direction: column; gap: 16px;">
+<x-import component-from-global-scope="HumanSoul.Alert" variant="destructive" title="Could not sign in">That email and password don't match. Check them and try again.</x-import>
+<x-import component-from-global-scope="HumanSoul.TextField" label="Email address" type="email" name="email" default-value="ana.ruiz@example.com" auto-complete="email" required="{{yes}}"></x-import>
+<x-import component-from-global-scope="HumanSoul.TextField" label="Password" type="password" name="password" default-value="quietmornin" auto-complete="current-password" required="{{yes}}" state="focus"></x-import>
+<div style="display: flex; justify-content: flex-end;">
+<x-import component-from-global-scope="HumanSoul.Button" variant="link" href="auth-forgot-password-empty-mobile.dc.html">Forgot password?</x-import>
+</div>
+<x-import component-from-global-scope="HumanSoul.Button" type="submit" size="lg" full="{{yes}}">Sign In</x-import>
+</form>
+</main>
+<footer style="display: flex; flex-direction: column; gap: 16px; align-items: center;">
+<p class="text-body-sm" style="margin: 0; display: flex; gap: 6px; color: var(--muted-foreground);">Don't have an account? <x-import component-from-global-scope="HumanSoul.Button" variant="link" href="auth-sign-up-empty-mobile.dc.html">Create one</x-import></p>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { yes: true, logo: 28 };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brand panel</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Source+Sans+3:wght@400;500;600&amp;family=DM+Sans:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<aside style="width: 720px; height: 900px; box-sizing: border-box; padding: 64px; display: flex; flex-direction: column; justify-content: space-between; background: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans); position: relative; overflow: hidden;" aria-label="HumanSoul">
+<svg width="336" height="336" viewBox="0 0 336 336" aria-hidden="true" style="position: absolute; top: 0; right: 0;">
+<path d="M104,32H296A8,8 0 0 1 304,40V224A104,104 0 0 1 200,328H40A8,8 0 0 1 32,320V136A104,104 0 0 1 104,32Z" style="fill: var(--primary);"></path>
+</svg>
+<svg width="200" height="40" viewBox="0 0 200 40" aria-hidden="true" style="position: absolute; top: 352px; right: 32px;">
+<path d="M12,8H32A0,0 0 0 1 32,8V20A12,12 0 0 1 20,32H8A0,0 0 0 1 8,32V20A12,12 0 0 1 20,8Z" style="fill: var(--brand);"></path>
+<path d="M52,8H64A12,12 0 0 1 76,20V32H52A12,12 0 0 1 40,20V8Z" style="fill: var(--primary);"></path>
+<path d="M92,8H104A12,12 0 0 1 116,20V32H92A0,0 0 0 1 92,32V20A12,12 0 0 1 104,8Z" style="fill: var(--brand);"></path>
+<path d="M136,8H148A12,12 0 0 1 160,20V32H136A12,12 0 0 1 124,20V8Z" style="fill: var(--foreground);"></path>
+<path d="M176,8H188A12,12 0 0 1 200,20V32H176A12,12 0 0 1 164,20V8Z" style="fill: var(--brand);"></path>
+</svg>
+<span class="text-overline" style="position: relative;">Private by default</span>
+<div style="position: relative; display: flex; flex-direction: column; gap: 24px; max-width: 520px;">
+<p class="text-display" style="margin: 0;">A quiet place to notice yourself.</p>
+<p class="text-body-lg" style="margin: 0;">No streaks. No scores. No pressure.<br>Your reflections belong to you.</p>
+</div>
+</aside>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":720,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

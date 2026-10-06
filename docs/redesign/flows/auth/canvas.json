@@ -1,0 +1,482 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-06T19:01:02Z"
+ },
+ "title": "HumanSoul Auth Flow",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "auth-sign-in-before-desktop.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Before / Desktop"
+  },
+  "auth-sign-in-before-mobile.dc.html": {
+   "x": 0,
+   "y": 1020,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Before / Mobile"
+  },
+  "Main.dc.html": {
+   "x": 1520,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Empty / Desktop"
+  },
+  "auth-sign-in-empty-mobile.dc.html": {
+   "x": 470,
+   "y": 1020,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Empty / Mobile"
+  },
+  "auth-sign-in-filled-desktop.dc.html": {
+   "x": 3040,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Filled / Desktop"
+  },
+  "auth-sign-in-filled-mobile.dc.html": {
+   "x": 940,
+   "y": 1020,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Filled / Mobile"
+  },
+  "auth-sign-in-error-desktop.dc.html": {
+   "x": 4560,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Error / Desktop"
+  },
+  "auth-sign-in-error-mobile.dc.html": {
+   "x": 1410,
+   "y": 1020,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Error / Mobile"
+  },
+  "auth-sign-in-loading-desktop.dc.html": {
+   "x": 6080,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Loading / Desktop"
+  },
+  "auth-sign-in-loading-mobile.dc.html": {
+   "x": 1880,
+   "y": 1020,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Loading / Mobile"
+  },
+  "auth-sign-up-before-desktop.dc.html": {
+   "x": 0,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Before / Desktop"
+  },
+  "auth-sign-up-before-mobile.dc.html": {
+   "x": 0,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Before / Mobile"
+  },
+  "auth-sign-up-empty-desktop.dc.html": {
+   "x": 1520,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Empty / Desktop"
+  },
+  "auth-sign-up-empty-mobile.dc.html": {
+   "x": 470,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Empty / Mobile"
+  },
+  "auth-sign-up-filled-desktop.dc.html": {
+   "x": 3040,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Filled / Desktop"
+  },
+  "auth-sign-up-filled-mobile.dc.html": {
+   "x": 940,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Filled / Mobile"
+  },
+  "auth-sign-up-error-desktop.dc.html": {
+   "x": 4560,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Error / Desktop"
+  },
+  "auth-sign-up-error-mobile.dc.html": {
+   "x": 1410,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Error / Mobile"
+  },
+  "auth-sign-up-loading-desktop.dc.html": {
+   "x": 6080,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Loading / Desktop"
+  },
+  "auth-sign-up-loading-mobile.dc.html": {
+   "x": 1880,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Loading / Mobile"
+  },
+  "auth-sign-up-success-desktop.dc.html": {
+   "x": 7600,
+   "y": 2300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign Up / Success / Desktop"
+  },
+  "auth-sign-up-success-mobile.dc.html": {
+   "x": 2350,
+   "y": 3320,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign Up / Success / Mobile"
+  },
+  "auth-forgot-password-before-desktop.dc.html": {
+   "x": 0,
+   "y": 4600,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Forgot Password / Before / Desktop"
+  },
+  "auth-forgot-password-before-mobile.dc.html": {
+   "x": 0,
+   "y": 5620,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Forgot Password / Before / Mobile"
+  },
+  "auth-forgot-password-empty-desktop.dc.html": {
+   "x": 1520,
+   "y": 4600,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Forgot Password / Empty / Desktop"
+  },
+  "auth-forgot-password-empty-mobile.dc.html": {
+   "x": 470,
+   "y": 5620,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Forgot Password / Empty / Mobile"
+  },
+  "auth-forgot-password-error-desktop.dc.html": {
+   "x": 3040,
+   "y": 4600,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Forgot Password / Error / Desktop"
+  },
+  "auth-forgot-password-error-mobile.dc.html": {
+   "x": 940,
+   "y": 5620,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Forgot Password / Error / Mobile"
+  },
+  "auth-forgot-password-loading-desktop.dc.html": {
+   "x": 4560,
+   "y": 4600,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Forgot Password / Loading / Desktop"
+  },
+  "auth-forgot-password-loading-mobile.dc.html": {
+   "x": 1410,
+   "y": 5620,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Forgot Password / Loading / Mobile"
+  },
+  "auth-forgot-password-success-desktop.dc.html": {
+   "x": 6080,
+   "y": 4600,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Forgot Password / Success / Desktop"
+  },
+  "auth-forgot-password-success-mobile.dc.html": {
+   "x": 1880,
+   "y": 5620,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Forgot Password / Success / Mobile"
+  },
+  "auth-reset-password-before-desktop.dc.html": {
+   "x": 0,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Before / Desktop"
+  },
+  "auth-reset-password-before-mobile.dc.html": {
+   "x": 0,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Before / Mobile"
+  },
+  "auth-reset-password-verifying-desktop.dc.html": {
+   "x": 1520,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Verifying link (skeleton) / Desktop"
+  },
+  "auth-reset-password-verifying-mobile.dc.html": {
+   "x": 470,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Verifying link (skeleton) / Mobile"
+  },
+  "auth-reset-password-empty-desktop.dc.html": {
+   "x": 3040,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Empty / Desktop"
+  },
+  "auth-reset-password-empty-mobile.dc.html": {
+   "x": 940,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Empty / Mobile"
+  },
+  "auth-reset-password-error-desktop.dc.html": {
+   "x": 4560,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Error / Desktop"
+  },
+  "auth-reset-password-error-mobile.dc.html": {
+   "x": 1410,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Error / Mobile"
+  },
+  "auth-reset-password-expired-desktop.dc.html": {
+   "x": 6080,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Expired link / Desktop"
+  },
+  "auth-reset-password-expired-mobile.dc.html": {
+   "x": 1880,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Expired link / Mobile"
+  },
+  "auth-reset-password-loading-desktop.dc.html": {
+   "x": 7600,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Loading / Desktop"
+  },
+  "auth-reset-password-loading-mobile.dc.html": {
+   "x": 2350,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Loading / Mobile"
+  },
+  "auth-reset-password-success-desktop.dc.html": {
+   "x": 9120,
+   "y": 6900,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Reset Password / Success / Desktop"
+  },
+  "auth-reset-password-success-mobile.dc.html": {
+   "x": 2820,
+   "y": 7920,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Reset Password / Success / Mobile"
+  },
+  "auth-sign-in-filled-dark-desktop.dc.html": {
+   "x": 0,
+   "y": 9300,
+   "w": 1440,
+   "h": 900,
+   "title": "Auth / Sign In / Filled · Dark / Desktop"
+  },
+  "auth-sign-in-filled-dark-mobile.dc.html": {
+   "x": 1520,
+   "y": 9300,
+   "w": 390,
+   "h": 844,
+   "title": "Auth / Sign In / Filled · Dark / Mobile"
+  },
+  "BrandPanel.dc.html": {
+   "x": 1990,
+   "y": 9300,
+   "w": 720,
+   "h": 900,
+   "title": "Auth / Shared / Brand panel"
+  }
+ },
+ "order": [
+  "auth-sign-in-before-desktop.dc.html",
+  "auth-sign-in-before-mobile.dc.html",
+  "Main.dc.html",
+  "auth-sign-in-empty-mobile.dc.html",
+  "auth-sign-in-filled-desktop.dc.html",
+  "auth-sign-in-filled-mobile.dc.html",
+  "auth-sign-in-error-desktop.dc.html",
+  "auth-sign-in-error-mobile.dc.html",
+  "auth-sign-in-loading-desktop.dc.html",
+  "auth-sign-in-loading-mobile.dc.html",
+  "auth-sign-up-before-desktop.dc.html",
+  "auth-sign-up-before-mobile.dc.html",
+  "auth-sign-up-empty-desktop.dc.html",
+  "auth-sign-up-empty-mobile.dc.html",
+  "auth-sign-up-filled-desktop.dc.html",
+  "auth-sign-up-filled-mobile.dc.html",
+  "auth-sign-up-error-desktop.dc.html",
+  "auth-sign-up-error-mobile.dc.html",
+  "auth-sign-up-loading-desktop.dc.html",
+  "auth-sign-up-loading-mobile.dc.html",
+  "auth-sign-up-success-desktop.dc.html",
+  "auth-sign-up-success-mobile.dc.html",
+  "auth-forgot-password-before-desktop.dc.html",
+  "auth-forgot-password-before-mobile.dc.html",
+  "auth-forgot-password-empty-desktop.dc.html",
+  "auth-forgot-password-empty-mobile.dc.html",
+  "auth-forgot-password-error-desktop.dc.html",
+  "auth-forgot-password-error-mobile.dc.html",
+  "auth-forgot-password-loading-desktop.dc.html",
+  "auth-forgot-password-loading-mobile.dc.html",
+  "auth-forgot-password-success-desktop.dc.html",
+  "auth-forgot-password-success-mobile.dc.html",
+  "auth-reset-password-before-desktop.dc.html",
+  "auth-reset-password-before-mobile.dc.html",
+  "auth-reset-password-verifying-desktop.dc.html",
+  "auth-reset-password-verifying-mobile.dc.html",
+  "auth-reset-password-empty-desktop.dc.html",
+  "auth-reset-password-empty-mobile.dc.html",
+  "auth-reset-password-error-desktop.dc.html",
+  "auth-reset-password-error-mobile.dc.html",
+  "auth-reset-password-expired-desktop.dc.html",
+  "auth-reset-password-expired-mobile.dc.html",
+  "auth-reset-password-loading-desktop.dc.html",
+  "auth-reset-password-loading-mobile.dc.html",
+  "auth-reset-password-success-desktop.dc.html",
+  "auth-reset-password-success-mobile.dc.html",
+  "auth-sign-in-filled-dark-desktop.dc.html",
+  "auth-sign-in-filled-dark-mobile.dc.html",
+  "BrandPanel.dc.html"
+ ],
+ "notes": {
+  "t-sign-in": {
+   "x": 0,
+   "y": -300,
+   "text": "Auth / Sign In",
+   "kind": "title1",
+   "maxW": 7520
+  },
+  "t-sign-up": {
+   "x": 0,
+   "y": 2000,
+   "text": "Auth / Sign Up",
+   "kind": "title1",
+   "maxW": 9040
+  },
+  "t-forgot-password": {
+   "x": 0,
+   "y": 4300,
+   "text": "Auth / Forgot Password",
+   "kind": "title1",
+   "maxW": 7520
+  },
+  "t-reset-password": {
+   "x": 0,
+   "y": 6600,
+   "text": "Auth / Reset Password",
+   "kind": "title1",
+   "maxW": 10560
+  },
+  "t-extra": {
+   "x": 0,
+   "y": 9000,
+   "text": "Auth / Dark theme & shared",
+   "kind": "title1",
+   "maxW": 2710
+  },
+  "n-sign-in": {
+   "x": 2470,
+   "y": 1020,
+   "text": "Sign In\n\nSe conserva: email, contraseña, «Forgot password?», Sign In, «Create one», mensaje de error de Supabase.\nNuevo: mostrar/ocultar contraseña, autocompletado, estado de carga con campos bloqueados, panel de marca en escritorio.\nCorregido: «Forgot password?» ya no lleva a un 404.\nSkeleton: no aplica (no hay datos que cargar); el estado de espera es «Loading» al enviar.",
+   "w": 520,
+   "fill": "teal"
+  },
+  "n-sign-up": {
+   "x": 2940,
+   "y": 3320,
+   "text": "Sign Up\n\nSe conserva: Name (optional), email, password, confirm password, Create Account, «Sign In», validación (6 caracteres, coincidencia) y el mensaje de confirmación por email.\nNuevo: errores por campo, pista «At least 6 characters» visible desde el inicio, pantalla «Check your email» con «Resend email» (acción nueva, usa supabase.auth.resend).",
+   "w": 520,
+   "fill": "teal"
+  },
+  "n-forgot-password": {
+   "x": 2470,
+   "y": 5620,
+   "text": "Forgot Password (pantalla nueva; hoy 404)\n\nCampo: email. Acción: «Send reset link» (supabase.auth.resetPasswordForEmail).\nEl mensaje de éxito no revela si la cuenta existe.\nEnlaces: «Back to sign in» y «Resend link».",
+   "w": 520,
+   "fill": "teal"
+  },
+  "n-reset-password": {
+   "x": 3410,
+   "y": 7920,
+   "text": "Reset Password (pantalla nueva; hoy 404)\n\nSe llega desde el enlace del email. «Verifying link» es el skeleton mientras se valida el token.\nCampos: new password, confirm new password. Acción: «Update password» (supabase.auth.updateUser).\nEstados de error: contraseñas distintas y enlace caducado (lleva a pedir uno nuevo).",
+   "w": 520,
+   "fill": "teal"
+  }
+ },
+ "designSystems": [
+  {
+   "title": "HumanSoul",
+   "namespace": "humansoul",
+   "artifact": "https://claude.ai/artifact/ESP6cv1CdThSuYLviunSEQ",
+   "version": "1791319028-eb7e",
+   "copiedAt": "2026-10-06T20:37:59Z"
+  }
+ ]
+}
