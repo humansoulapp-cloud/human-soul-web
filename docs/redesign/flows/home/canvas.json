@@ -129,11 +129,25 @@
       "y": 1360
     },
     "home-option-b-desktop.dc.html": {
-      "x": 0,
-      "y": 7400,
-      "w": 1440,
       "h": 1320,
-      "title": "App / Home / Option B · From scratch / Desktop"
+      "title": "App / Home / Option B · From scratch / Desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 7400
+    },
+    "home-option-c-desktop.dc.html": {
+      "x": 0,
+      "y": 9140,
+      "w": 1440,
+      "h": 1120,
+      "title": "App / Home / Option C · Minimal dark / Desktop"
+    },
+    "home-option-c-mobile.dc.html": {
+      "x": 1520,
+      "y": 9140,
+      "w": 390,
+      "h": 1560,
+      "title": "App / Home / Option C · Minimal dark / Mobile"
     }
   },
   "createdOnFiles": {
@@ -160,6 +174,13 @@
       "x": 3760,
       "y": 2240
     },
+    "n-option-b": {
+      "fill": "teal",
+      "text": "Opción B: Inicio rediseñado desde cero\n\nUna pregunta: «¿qué escribo hoy?».\n1. Pregunta del día con campo para empezar a escribir y elegir cuaderno.\n2. Lo último que escribiste (3 reflexiones + See all).\n3. Continúa el viaje en curso (Day 3 of 7).\n4. Un recuerdo de tus favoritas.\n5. Cuadernos en lista compacta; crear, renombrar y borrar pasan a Journal.\n\nQuitado del Inicio: banner grande, cuadrícula de cuadernos, cita fija.\n\nNecesita datos nuevos: prompts diarios y progreso del usuario en viajes.",
+      "w": 560,
+      "x": 1520,
+      "y": 7400
+    },
     "n-shell": {
       "fill": "teal",
       "text": "Estructura de la app\n\nEscritorio: sidebar fija de 256 px con Home, Journal, Journeys, Favorites, Profile (+ Admin Panel solo si role = admin). Abajo: Write, Dark/Light Mode y Sign Out. Igual que hoy.\n\nMóvil (nuevo): barra superior con logo y botón de menú; bottom nav con los mismos 5 destinos; botón flotante «Write» encima de la barra. El menú (sheet) recupera lo que hoy falta en móvil: cambiar tema, Premium, Admin Panel y Sign Out.\n\n«Antes» está reconstruido desde el código (no hay capturas con sesión iniciada).",
@@ -175,6 +196,14 @@
       "x": 0,
       "y": -300
     },
+    "t-option-b": {
+      "kind": "title1",
+      "maxW": 2080,
+      "text": "App / Home · Option B",
+      "w": 240,
+      "x": 0,
+      "y": 7100
+    },
     "t-variants": {
       "kind": "title1",
       "maxW": 3430,
@@ -183,19 +212,19 @@
       "x": 0,
       "y": 4080
     },
-    "t-option-b": {
+    "t-option-c": {
       "x": 0,
-      "y": 7100,
-      "text": "App / Home · Option B",
+      "y": 8840,
+      "text": "App / Home · Option C",
       "kind": "title1",
-      "maxW": 2080
+      "maxW": 2550
     },
-    "n-option-b": {
-      "x": 1520,
-      "y": 7400,
+    "n-option-c": {
+      "x": 1990,
+      "y": 9140,
       "w": 560,
       "fill": "teal",
-      "text": "Opción B: Inicio rediseñado desde cero\n\nUna pregunta: «¿qué escribo hoy?».\n1. Pregunta del día con campo para empezar a escribir y elegir cuaderno.\n2. Lo último que escribiste (3 reflexiones + See all).\n3. Continúa el viaje en curso (Day 3 of 7).\n4. Un recuerdo de tus favoritas.\n5. Cuadernos en lista compacta; crear, renombrar y borrar pasan a Journal.\n\nQuitado del Inicio: banner grande, cuadrícula de cuadernos, cita fija.\n\nNecesita datos nuevos: prompts diarios y progreso del usuario en viajes."
+      "text": "Opción C: minimalista, modo oscuro, Public Sans\n\nPrioridad según el uso: 1) escribir ya, 2) saber qué escribir, 3) seguir el viaje, 4) releer.\n\n• Una sola columna de 680 px; sin tarjetas apiladas: superficies suaves y separadores finos.\n• Pregunta del día + campo de escritura en el propio Inicio; cuaderno por defecto (el último usado), «Another question».\n• Recordatorio suave visible (9:00 PM): por fin usa la opción del onboarding.\n• Viaje en curso como una sola fila con 7 puntos (sin porcentajes).\n• «Recently»: lista de 3 entradas con fecha, extracto y cuaderno.\n• «One month ago»: un recuerdo.\n\nNavegación más ligera: escritorio con «New reflection» arriba y Profile como fila de cuenta abajo (tema y Sign Out pasan a Profile & settings). Móvil: Write en el centro de la barra inferior; Profile en el avatar.\n\nUsa tokens oscuros del DS con Public Sans sobrescrita solo en estos marcos."
     }
   },
   "order": [
@@ -217,7 +246,9 @@
     "home-admin-desktop.dc.html",
     "home-dark-desktop.dc.html",
     "home-dark-mobile.dc.html",
-    "home-option-b-desktop.dc.html"
+    "home-option-b-desktop.dc.html",
+    "home-option-c-desktop.dc.html",
+    "home-option-c-mobile.dc.html"
   ],
   "pages": [],
   "title": "HumanSoul App Shell & Home"

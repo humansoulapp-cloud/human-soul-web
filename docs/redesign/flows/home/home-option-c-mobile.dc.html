@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Option C · Mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.optc{--font-sans:"Public Sans",system-ui,sans-serif;--font-serif:"Public Sans",system-ui,sans-serif;--font-wordmark:"Public Sans",system-ui,sans-serif;--font-wordmark-serif:"Public Sans",system-ui,sans-serif}
+.optc .hs-logo-human{font-weight:600}
+.c-link{color:var(--primary);font:500 14px/20px var(--font-sans);text-decoration:none}
+.c-row{display:flex;flex-direction:column;gap:6px;padding:16px 0;border-top:1px solid var(--border);color:inherit;text-decoration:none}
+.c-excerpt{margin:0;font:400 16px/24px var(--font-sans);color:color-mix(in srgb,var(--foreground) 88%,transparent);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.c-editor{width:100%;box-sizing:border-box;min-height:112px;resize:none;border:0;outline:none;background:transparent;color:var(--foreground);font:400 17px/26px var(--font-sans)}
+.c-editor::placeholder{color:var(--muted-foreground)}
+.c-avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:9999px;text-decoration:none}
+</style>
+</helmet>
+<div class="optc" data-theme="dark" style="position: relative; width: 390px; min-height: 1560px; box-sizing: border-box; padding-bottom: 88px; display: flex; flex-direction: column; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+
+<header style="height: 60px; flex: none; box-sizing: border-box; padding: 0 12px 0 20px; display: flex; align-items: center; justify-content: space-between;">
+<x-import component-from-global-scope="HumanSoul.Logo" size="{{logo}}"></x-import>
+<a class="c-avatar" href="/profile" aria-label="Profile and settings"><x-import component-from-global-scope="HumanSoul.Avatar" name="Ana Ruiz" size="sm"></x-import></a>
+</header>
+
+<main style="box-sizing: border-box; padding: 16px 20px 32px; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<span class="text-body-sm" style="color: var(--muted-foreground);">Tuesday, October 6</span>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="sm" icon="clock">9:00 PM</x-import>
+</div>
+<h1 style="margin: 8px 0 0; font: 600 26px/32px var(--font-sans); letter-spacing: -0.02em;">Good evening, Ana.</h1>
+
+<section aria-labelledby="cm-question" style="margin-top: 36px; display: flex; flex-direction: column; gap: 12px;">
+<span class="text-overline" style="color: var(--primary);">Today's question</span>
+<h2 id="cm-question" style="margin: 0; font: 500 22px/30px var(--font-sans); letter-spacing: -0.01em;">What did you notice today that you usually overlook?</h2>
+<div style="margin-top: 4px; padding: 16px 16px 12px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--border); display: flex; flex-direction: column; gap: 8px;">
+<textarea class="c-editor" aria-label="Your reflection" placeholder="Start with one sentence…"></textarea>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="sm" icon="book">Morning Pages</x-import>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="icon-sm" icon="sparkles" aria-label="Another question"></x-import>
+</div>
+</div>
+<x-import component-from-global-scope="HumanSoul.Button" size="lg" full="{{yes}}" href="/journal/new">Start writing</x-import>
+</section>
+
+<section aria-labelledby="cm-journey" style="margin-top: 40px; display: flex; flex-direction: column; gap: 12px;">
+<h2 id="cm-journey" class="text-overline" style="margin: 0; color: var(--muted-foreground);">Your journey</h2>
+<a href="/journeys/becoming-more-human" style="display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 14px; background: var(--card); color: inherit; text-decoration: none;">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<span role="img" aria-label="Day 3 of 7" style="display: flex; gap: 4px;">
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--primary);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--primary);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; box-shadow: inset 0 0 0 2px var(--primary);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--muted);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--muted);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--muted);"></span>
+<span style="width: 8px; height: 8px; border-radius: 9999px; background: var(--muted);"></span>
+</span>
+<span style="font: 600 16px/24px var(--font-sans);">Becoming More Human</span>
+<span class="text-body-sm" style="color: var(--muted-foreground);">Day 3 · The routines that carry you</span>
+</span>
+<span style="color: var(--primary); display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="chevronRight" label="Continue"></x-import></span>
+</a>
+</section>
+
+<section aria-labelledby="cm-recent" style="margin-top: 40px; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8px;">
+<h2 id="cm-recent" class="text-overline" style="margin: 0; color: var(--muted-foreground);">Recently</h2>
+<a class="c-link" href="/journal">See all</a>
+</div>
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3">
+<a class="c-row" href="/journal">
+<span class="text-caption" style="color: var(--muted-foreground); font-weight: 400;">{{r.date}} · {{r.journal}}</span>
+<p class="c-excerpt">{{r.text}}</p>
+</a>
+</sc-for>
+</section>
+
+<section aria-labelledby="cm-memory" style="margin-top: 24px; padding: 20px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--border); display: flex; flex-direction: column; gap: 10px;">
+<h2 id="cm-memory" class="text-overline" style="margin: 0; color: var(--muted-foreground);">One month ago</h2>
+<p style="margin: 0; font: 400 17px/26px var(--font-sans); color: color-mix(in srgb, var(--foreground) 88%, transparent);">“I walked home without headphones and heard the neighbour's daughter practising scales. Somehow it was the best part of my day.”</p>
+<a class="c-link" href="/favorites">Read the full reflection</a>
+</section>
+</main>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0;">
+<x-import component-from-global-scope="HumanSoul.BottomNav" items="{{navItems}}" active="/dashboard"></x-import>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+yes: true,
+logo: 22,
+navItems: [
+{ href: '/dashboard', label: 'Home', icon: 'home' },
+{ href: '/journal', label: 'Journal', icon: 'book' },
+{ href: '/journal/new', label: 'Write', icon: 'pen' },
+{ href: '/journeys', label: 'Journeys', icon: 'compass' },
+{ href: '/favorites', label: 'Favorites', icon: 'heart' }
+],
+recent: [
+{ date: 'Yesterday', journal: 'Morning Pages', text: 'I keep saying I don’t have time to read, but I scrolled for forty minutes before bed. It isn’t about time.' },
+{ date: 'Oct 3', journal: 'Becoming More Human', text: 'Noticed how differently I speak to strangers than to my own family. More patient with people I’ll never see again.' },
+{ date: 'Sep 29', journal: 'Travel & Wonder', text: 'The train out of Lisbon was late and nobody seemed to mind. An old man shared his oranges with the whole carriage.' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
