@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Source+Sans+3:wght@400;500;600&amp;family=DM+Sans:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 2600px; display: flex; flex-direction: column; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+<header style="height: 56px; flex: none; box-sizing: border-box; padding: 0 8px 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: var(--background);">
+<x-import component-from-global-scope="HumanSoul.Logo" size="{{logo}}"></x-import>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="icon" icon="menu" aria-label="Open menu"></x-import>
+</header>
+
+<main style="flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; padding: 24px 16px 104px; display: flex; flex-direction: column; gap: 32px;">
+<header style="display: flex; flex-direction: column; gap: 6px;">
+<span class="text-overline" style="color: var(--muted-foreground);">Tuesday, October 6</span>
+<sc-if value="{{showGreeting}}" hint-placeholder-val="{{true}}">
+<h1 class="text-h2" style="margin: 0;">Good evening, Ana</h1>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<div style="padding: 4px 0;"><x-import component-from-global-scope="HumanSoul.Skeleton" width="260px" height="30px"></x-import></div>
+</sc-if>
+<p class="text-body" style="margin: 0; color: var(--muted-foreground);">What's on your mind today?</p>
+</header>
+
+<div style="box-sizing: border-box; padding: 20px; border-radius: var(--radius-xl); background: var(--accent); color: var(--accent-foreground); display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
+<x-import component-from-global-scope="HumanSoul.Badge" variant="primary" icon="sparkles">Daily Reflection</x-import>
+<p class="text-h4" style="margin: 0;">“A quiet space to pause and listen to your thoughts.”</p>
+<p class="text-body-sm" style="margin: 0;">Write a few lines about what you've noticed today.</p>
+<div style="align-self: stretch; padding-top: 4px;"><x-import component-from-global-scope="HumanSoul.Button" icon="pen" href="/journal/new" full="{{yes}}">Write Now</x-import></div>
+</div>
+
+<sc-if value="{{notLoading}}" hint-placeholder-val="{{true}}">
+<x-import component-from-global-scope="HumanSoul.Card" interactive="{{yes}}" as="a" href="/journeys/becoming-more-human" style="display: block; text-decoration: none; color: inherit;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div role="img" aria-label="[Journey cover image]" style="height: 160px; border-radius: var(--radius-md); background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center;">
+<x-import component-from-global-scope="HumanSoul.Icon" name="compass" size="{{iconLg}}"></x-import>
+</div>
+<div style="display: flex;"><x-import component-from-global-scope="HumanSoul.Badge" variant="primary" icon="sparkles">Featured journey</x-import></div>
+<span class="text-overline" style="color: var(--muted-foreground);">Human Soul Foundations</span>
+<h2 class="text-h3" style="margin: 0;">Becoming More Human</h2>
+<p class="text-body-sm" style="margin: 0; color: var(--muted-foreground);">An invitation to notice what everyday life quietly reveals about being human.</p>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px;">
+<span class="text-body-sm" style="display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground);"><x-import component-from-global-scope="HumanSoul.Icon" name="layers" size="{{iconSm}}"></x-import>7 days</span>
+<span class="text-label" style="display: inline-flex; align-items: center; gap: 4px; color: var(--primary);">Begin Journey<x-import component-from-global-scope="HumanSoul.Icon" name="chevronRight" size="{{iconSm}}"></x-import></span>
+</div>
+</div>
+</x-import>
+</sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<x-import component-from-global-scope="HumanSoul.Card" style="display: block;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<x-import component-from-global-scope="HumanSoul.Skeleton" height="160px"></x-import>
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="120px" height="24px"></x-import>
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="70%" height="28px"></x-import>
+<x-import component-from-global-scope="HumanSoul.Skeleton" height="14px"></x-import>
+</div>
+</x-import>
+</sc-if>
+
+<section aria-labelledby="journals-title-m" style="display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<h2 id="journals-title-m" class="text-h3" style="margin: 0;">Your Journals</h2>
+<p class="text-body-sm" style="margin: 0; color: var(--muted-foreground);">Organize your reflections by theme, project, or season of life.</p>
+</div>
+<sc-if value="{{showNewButton}}" hint-placeholder-val="{{true}}">
+<x-import component-from-global-scope="HumanSoul.Button" variant="outline" size="sm" icon="plus">New</x-import>
+</sc-if>
+</div>
+
+<sc-if value="{{isData}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{journals}}" as="j" hint-placeholder-count="5">
+<x-import component-from-global-scope="HumanSoul.JournalCard" count="{{j.count}}" title="{{j.title}}" date="{{j.date}}" write-href="/journal/new" open-href="/journal" confirming-delete="{{j.confirm}}"></x-import>
+</sc-for>
+<x-import component-from-global-scope="HumanSoul.Card" variant="dashed" interactive="{{yes}}" as="button" style="display: block;">
+<div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+<span style="width: 44px; height: 44px; flex: none; border-radius: var(--radius-full); background: var(--accent); color: var(--accent-foreground); display: inline-flex; align-items: center; justify-content: center;"><x-import component-from-global-scope="HumanSoul.Icon" name="plus"></x-import></span>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span class="text-h4">Create New Journal</span><span class="text-body-sm" style="color: var(--muted-foreground);">Title it whatever you wish</span></span>
+</div>
+</x-import>
+</div>
+</sc-if>
+
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{false}}">
+<div aria-busy="true" style="display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{skeletons}}" as="s" hint-placeholder-count="3">
+<x-import component-from-global-scope="HumanSoul.Card" style="display: block;">
+<div style="min-height: 168px; display: flex; flex-direction: column; gap: 12px;">
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="120px" height="24px"></x-import>
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="70%" height="28px"></x-import>
+<div style="margin-top: auto; display: flex; justify-content: space-between; gap: 12px;">
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="100px" height="20px"></x-import>
+<x-import component-from-global-scope="HumanSoul.Skeleton" width="130px" height="32px"></x-import>
+</div>
+</div>
+</x-import>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{false}}">
+<x-import component-from-global-scope="HumanSoul.EmptyState" icon="book" title="Create your first journal" description="Give your journal any title you wish, whether it's for morning thoughts, creative ideas, gratitude, or daily check-ins.">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+<span class="text-overline" style="color: var(--muted-foreground);">Popular titles</span>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+<sc-for list="{{popular}}" as="t" hint-placeholder-count="5">
+<x-import component-from-global-scope="HumanSoul.Chip" icon="plus">{{t}}</x-import>
+</sc-for>
+</div>
+<div style="margin-top: 8px; align-self: stretch;"><x-import component-from-global-scope="HumanSoul.Button" icon="plus" full="{{yes}}">Create Custom Journal</x-import></div>
+</div>
+</x-import>
+</sc-if>
+
+<sc-if value="{{isError}}" hint-placeholder-val="{{false}}">
+<x-import component-from-global-scope="HumanSoul.ErrorState" title="We couldn't load your journals" description="Check your connection and try again. Your reflections are safe." retry-label="Try again"></x-import>
+</sc-if>
+</section>
+</main>
+
+<div style="position: absolute; right: 16px; bottom: 88px;">
+<x-import component-from-global-scope="HumanSoul.Button" size="fab" icon="pen" href="/journal/new" aria-label="Write a reflection"></x-import>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0;">
+<x-import component-from-global-scope="HumanSoul.BottomNav" items="{{navItems}}" active="/dashboard"></x-import>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["data","empty","loading","error"],"default":"data"},"confirmFirst":{"editor":"boolean","default":false},"$preview":{"width":390,"height":2600}}'>
+class Component extends DCLogic {
+renderVals() {
+const state = this.props.state ?? 'data';
+const confirmFirst = !!this.props.confirmFirst;
+return {
+yes: true,
+logo: 24,
+iconSm: 16,
+iconLg: 40,
+navItems: [
+{ href: '/dashboard', label: 'Home', icon: 'home' },
+{ href: '/journal', label: 'Journal', icon: 'book' },
+{ href: '/journeys', label: 'Journeys', icon: 'compass' },
+{ href: '/favorites', label: 'Favorites', icon: 'heart' },
+{ href: '/profile', label: 'Profile', icon: 'user' }
+],
+isData: state === 'data',
+isEmpty: state === 'empty',
+isLoading: state === 'loading',
+notLoading: state !== 'loading',
+isError: state === 'error',
+showGreeting: state !== 'loading',
+showNewButton: state === 'data' || state === 'error',
+skeletons: [1, 2, 3],
+popular: ['Morning Pages', 'Gratitude & Joy', 'Mindful Moments', 'Creative Sparks', 'Travel & Wonder'],
+journals: [
+{ count: 12, title: 'Morning Pages', date: 'Sep 2, 2026', confirm: false },
+{ count: 8, title: 'Gratitude & Joy', date: 'Aug 18, 2026', confirm: confirmFirst },
+{ count: 3, title: 'Deep Questions', date: 'Sep 21, 2026', confirm: false },
+{ count: 1, title: 'Travel & Wonder', date: 'Sep 29, 2026', confirm: false },
+{ count: 0, title: 'Life Lessons', date: 'Oct 4, 2026', confirm: false }
+]
+};
+}
+}
+</script>
+</body>
+</html>

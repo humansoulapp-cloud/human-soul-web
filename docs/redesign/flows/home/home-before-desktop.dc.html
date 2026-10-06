@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Before · Desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=DM+Sans:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+.old-nav{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:16px;font-size:14px;color:#6E6A65;text-decoration:none}
+.old-serif{font-family:"Bernstein",Georgia,serif;font-weight:400}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; min-height: 1240px; background: #F8F6F2; color: #2F2F2F; font-family: 'Inter', sans-serif;">
+<aside style="position: absolute; top: 16px; bottom: 16px; left: 16px; width: 256px; box-sizing: border-box; padding: 24px 20px; display: flex; flex-direction: column; background: rgba(242,238,232,0.9); border: 1px solid #E4DED5; border-radius: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+<div style="display: flex; justify-content: center; padding-bottom: 24px; margin-bottom: 16px; border-bottom: 1px solid #E4DED5; font-size: 28px; color: #131312;"><span style="font-family: 'DM Sans', sans-serif; font-weight: 500; margin-right: 3px;">Human</span><span class="old-serif">Soul</span></div>
+<nav style="display: flex; flex-direction: column; gap: 6px; flex: 1; padding-top: 8px;">
+<a class="old-nav" href="/dashboard" style="background: #E4DED5; color: #2F2F2F; font-weight: 500;"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="home"></x-import></span>Home</a>
+<a class="old-nav" href="/journal"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="book"></x-import></span>Journal</a>
+<a class="old-nav" href="/journeys"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="compass"></x-import></span>Journeys</a>
+<a class="old-nav" href="/favorites"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="heart"></x-import></span>Favorites</a>
+<a class="old-nav" href="/profile"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="user"></x-import></span>Profile</a>
+</nav>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; margin-top: 8px; border-top: 1px solid #E4DED5;">
+<a class="old-nav" href="/journal/new" style="background: #8BA58F; color: #F8F6F2; font-weight: 500;"><x-import component-from-global-scope="HumanSoul.Icon" name="pen"></x-import>Write</a>
+<a class="old-nav" href="#"><x-import component-from-global-scope="HumanSoul.Icon" name="moon"></x-import>Dark Mode</a>
+<a class="old-nav" href="#"><x-import component-from-global-scope="HumanSoul.Icon" name="logout"></x-import>Sign Out</a>
+</div>
+</aside>
+<main style="box-sizing: border-box; padding: 32px 40px 40px 304px;">
+<div style="max-width: 1024px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #6E6A65; font-weight: 500;">Tuesday, October 6</span>
+<h1 class="old-serif" style="margin: 0; font-size: 48px; line-height: 1.1;">Good Evening, Ana</h1>
+<p style="margin: 0; font-size: 16px; font-weight: 300; color: #6E6A65;">What's on your mind today?</p>
+</div>
+<div style="background: #F2EEE8; border: 1px solid #E4DED5; border-radius: 24px; padding: 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 8px; max-width: 512px; align-items: flex-start;">
+<span style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(139,165,143,0.15); color: #8BA58F; font-size: 12px; font-weight: 500;"><x-import component-from-global-scope="HumanSoul.Icon" name="sparkles" size="{{i14}}"></x-import>Daily Reflection</span>
+<h2 class="old-serif" style="margin: 0; font-size: 24px;">"A quiet space to pause and listen to your thoughts."</h2>
+<p style="margin: 0; font-size: 12px; color: #6E6A65;">Write a few lines about what you've noticed today.</p>
+</div>
+<a href="/journal/new" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #8BA58F; color: #F8F6F2; border-radius: 12px; font-size: 14px; font-weight: 500; text-decoration: none;"><x-import component-from-global-scope="HumanSoul.Icon" name="pen" size="{{i16}}"></x-import>Write Now</a>
+</div>
+<a href="/journeys/becoming-more-human" style="position: relative; min-height: 360px; border-radius: 24px; border: 1px solid #E4DED5; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; color: #2F2F2F; background: #EDE8E0;">
+<div style="padding: 40px;"><span style="display: inline-block; padding: 6px 12px; border-radius: 9999px; background: rgba(248,246,242,0.6); border: 1px solid #E4DED5; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;">Human Soul Foundations</span></div>
+<div style="padding: 0 40px 40px; display: flex; flex-direction: column; gap: 16px;">
+<div><h3 class="old-serif" style="margin: 0 0 12px; font-size: 48px; line-height: 1.15;">Becoming More Human</h3>
+<p style="margin: 0; font-size: 16px; font-weight: 300; color: #6E6A65;">An invitation to notice what everyday life quietly reveals about being human.</p></div>
+<div style="display: flex; justify-content: space-between; padding-top: 24px; border-top: 1px solid #E4DED5; font-size: 14px; font-weight: 500;">
+<span style="display: inline-flex; gap: 8px; align-items: center;"><x-import component-from-global-scope="HumanSoul.Icon" name="checkCircle" size="{{i16}}"></x-import>7 days</span>
+<span style="display: inline-flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Begin Journey<x-import component-from-global-scope="HumanSoul.Icon" name="chevronRight" size="{{i16}}"></x-import></span>
+</div>
+</div>
+</a>
+<section style="display: flex; flex-direction: column; gap: 24px;">
+<div style="display: flex; align-items: flex-end; justify-content: space-between;">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<div style="display: flex; align-items: center; gap: 8px;"><span style="color: #8BA58F; display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Icon" name="book"></x-import></span><h2 class="old-serif" style="margin: 0; font-size: 30px;">Your Journals</h2></div>
+<p style="margin: 0; font-size: 14px; font-weight: 300; color: #6E6A65;">Dedicated spaces to organize your reflections by theme, project, or season of life.</p>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #8BA58F; color: #F8F6F2; border-radius: 12px; font-size: 12px; font-weight: 500;"><x-import component-from-global-scope="HumanSoul.Icon" name="plus" size="{{i16}}"></x-import>New Journal</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+<sc-for list="{{journals}}" as="j" hint-placeholder-count="5">
+<div style="position: relative; min-height: 176px; box-sizing: border-box; padding: 24px; background: #F2EEE8; border: 1px solid #E4DED5; border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+<span style="position: absolute; left: 0; top: 24px; bottom: 24px; width: 4px; border-radius: 0 4px 4px 0; background: rgba(139,165,143,0.4);"></span>
+<div><span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #9E9A93;">{{j.label}}</span>
+<h3 class="old-serif" style="margin: 8px 0 0; font-size: 22px;">{{j.title}}</h3></div>
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6E6A65;"><span>{{j.date}}</span><span style="display: flex; gap: 12px; font-weight: 500;"><span>Write</span><span style="color: #8BA58F;">Open</span></span></div>
+</div>
+</sc-for>
+<div style="min-height: 176px; border: 1px dashed #E4DED5; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;">
+<span style="width: 40px; height: 40px; border-radius: 9999px; border: 1px solid #E4DED5; background: #F2EEE8; display: inline-flex; align-items: center; justify-content: center;"><x-import component-from-global-scope="HumanSoul.Icon" name="plus"></x-import></span>
+<span class="old-serif" style="font-size: 18px;">Create New Journal</span>
+<span style="font-size: 11px; font-weight: 300; color: #6E6A65;">Title it whatever you wish</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+i14: 14,
+i16: 16,
+journals: [
+{ label: '12 reflections', title: 'Morning Pages', date: 'Sep 2, 2026' },
+{ label: '8 reflections', title: 'Gratitude & Joy', date: 'Aug 18, 2026' },
+{ label: '3 reflections', title: 'Deep Questions', date: 'Sep 21, 2026' },
+{ label: '1 reflection', title: 'Travel & Wonder', date: 'Sep 29, 2026' },
+{ label: '0 reflections', title: 'Life Lessons', date: 'Oct 4, 2026' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

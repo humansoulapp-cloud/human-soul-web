@@ -1,0 +1,56 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-06T21:10:00Z"},
+  "title": "HumanSoul App Shell & Home",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "home-before-desktop.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Before / Desktop"},
+    "Main.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / With data / Desktop"},
+    "home-empty-desktop.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Empty / Desktop"},
+    "home-loading-desktop.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Loading (skeleton) / Desktop"},
+    "home-error-desktop.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Error / Desktop"},
+    "home-create-journal-desktop.dc.html": {"x": 7600, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Create journal (dialog) / Desktop"},
+    "home-delete-journal-desktop.dc.html": {"x": 9120, "y": 0, "w": 1440, "h": 1240, "title": "App / Home / Delete journal (confirm) / Desktop"},
+    "home-before-mobile.dc.html": {"x": 0, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / Before / Mobile"},
+    "HomeMobile.dc.html": {"x": 470, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / With data / Mobile"},
+    "home-empty-mobile.dc.html": {"x": 940, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / Empty / Mobile"},
+    "home-loading-mobile.dc.html": {"x": 1410, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / Loading (skeleton) / Mobile"},
+    "home-error-mobile.dc.html": {"x": 1880, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / Error / Mobile"},
+    "home-create-journal-mobile.dc.html": {"x": 2350, "y": 1360, "w": 390, "h": 844, "title": "App / Home / Create journal (sheet) / Mobile"},
+    "home-delete-journal-mobile.dc.html": {"x": 2820, "y": 1360, "w": 390, "h": 2600, "title": "App / Home / Delete journal (confirm) / Mobile"},
+    "home-menu-mobile.dc.html": {"x": 3290, "y": 1360, "w": 390, "h": 844, "title": "App / Shell / Menu (sheet) / Mobile"},
+    "home-admin-desktop.dc.html": {"x": 0, "y": 4380, "w": 1440, "h": 1240, "title": "App / Shell / Admin user / Desktop"},
+    "home-dark-desktop.dc.html": {"x": 1520, "y": 4380, "w": 1440, "h": 1240, "title": "App / Home / With data · Dark / Desktop"},
+    "home-dark-mobile.dc.html": {"x": 3040, "y": 4380, "w": 390, "h": 2600, "title": "App / Home / With data · Dark / Mobile"}
+  },
+  "order": [
+    "home-before-desktop.dc.html",
+    "Main.dc.html",
+    "home-empty-desktop.dc.html",
+    "home-loading-desktop.dc.html",
+    "home-error-desktop.dc.html",
+    "home-create-journal-desktop.dc.html",
+    "home-delete-journal-desktop.dc.html",
+    "home-before-mobile.dc.html",
+    "HomeMobile.dc.html",
+    "home-empty-mobile.dc.html",
+    "home-loading-mobile.dc.html",
+    "home-error-mobile.dc.html",
+    "home-create-journal-mobile.dc.html",
+    "home-delete-journal-mobile.dc.html",
+    "home-menu-mobile.dc.html",
+    "home-admin-desktop.dc.html",
+    "home-dark-desktop.dc.html",
+    "home-dark-mobile.dc.html"
+  ],
+  "notes": {
+    "t-home": {"x": 0, "y": -300, "text": "App / Shell & Home", "kind": "title1", "maxW": 10560},
+    "t-variants": {"x": 0, "y": 4080, "text": "App / Shell variants & dark theme", "kind": "title1", "maxW": 3430},
+    "n-shell": {"x": 3760, "y": 1360, "w": 560, "fill": "teal", "text": "Estructura de la app\n\nEscritorio: sidebar fija de 256 px con Home, Journal, Journeys, Favorites, Profile (+ Admin Panel solo si role = admin). Abajo: Write, Dark/Light Mode y Sign Out. Igual que hoy.\n\nMóvil (nuevo): barra superior con logo y botón de menú; bottom nav con los mismos 5 destinos; botón flotante «Write» encima de la barra. El menú (sheet) recupera lo que hoy falta en móvil: cambiar tema, Premium, Admin Panel y Sign Out.\n\n«Antes» está reconstruido desde el código (no hay capturas con sesión iniciada)."},
+    "n-home": {"x": 3760, "y": 2240, "w": 560, "fill": "teal", "text": "Inicio\n\nSe conserva: fecha, saludo por hora con nombre, «What's on your mind today?», Daily Reflection + Write Now, viaje destacado + Begin Journey, Your Journals con New Journal, contador, fecha, Write, Open, borrar con confirmación, Create New Journal, 8 sugerencias de título y Popular Titles en vacío.\n\nNuevo: estado de error (hoy los fallos se ignoran), skeleton de toda la página y no solo de los cuadernos, modal → sheet en móvil.\n\nPendiente: el viaje destacado hoy es estático (lib/content.ts); la imagen es un hueco [Journey cover image] porque no se pueden cargar las de Unsplash aquí. Qué pasa con las reflexiones al borrar un cuaderno depende de la FK: el texto de confirmación asume que se borran."}
+  },
+  "designSystems": [
+    {"title": "HumanSoul", "namespace": "humansoul", "artifact": "https://claude.ai/artifact/ESP6cv1CdThSuYLviunSEQ", "version": "1791319028-eb7e", "copiedAt": "2026-10-06T21:10:00Z"}
+  ]
+}
