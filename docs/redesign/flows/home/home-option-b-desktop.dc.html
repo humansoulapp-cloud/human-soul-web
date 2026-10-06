@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Option B · Desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;family=Source+Sans+3:wght@400;500;600&amp;family=DM+Sans:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+.jrow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 12px;border-radius:var(--radius-md);color:var(--foreground);text-decoration:none;font:500 15px/22px var(--font-sans)}
+.jrow:hover{background:var(--accent)}
+.see-all{color:var(--primary);font:500 14px/20px var(--font-sans);text-decoration:none}
+.see-all:hover{text-decoration:underline}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1320px; box-sizing: border-box; padding: 16px; display: flex; gap: 16px; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+<div style="width: 256px; flex: none; display: flex;">
+<x-import component-from-global-scope="HumanSoul.Sidebar" items="{{navItems}}" active="/dashboard" write-label="Write" write-href="/journal/new" style="width: 256px;"></x-import>
+</div>
+<main style="flex: 1; min-width: 0; padding: 32px 48px 48px; display: flex; justify-content: center;">
+<div style="width: 100%; max-width: 1040px; display: flex; flex-direction: column; gap: 32px;">
+
+<header style="display: flex; flex-direction: column; gap: 6px;">
+<span class="text-overline" style="color: var(--muted-foreground);">Tuesday, October 6</span>
+<h1 class="text-h1" style="margin: 0;">Good evening, Ana</h1>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start;">
+
+<div style="grid-column: span 2; display: flex; flex-direction: column; gap: 40px; min-width: 0;">
+
+<section aria-labelledby="prompt-title" style="box-sizing: border-box; padding: 28px; border-radius: var(--radius-xl); background: var(--accent); color: var(--accent-foreground); display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<span class="text-overline">Today's question</span>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="sm" icon="sparkles">Another question</x-import>
+</div>
+<h2 id="prompt-title" class="text-h2" style="margin: 0; color: var(--foreground);">What did you notice today that you usually overlook?</h2>
+<x-import component-from-global-scope="HumanSoul.Textarea" rows="{{rows}}" placeholder="Start with a single sentence. You can keep going in the full editor."></x-import>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+<label class="text-body-sm" style="display: flex; align-items: center; gap: 8px; color: var(--accent-foreground);">Save to
+<span style="width: 200px; display: inline-block;"><x-import component-from-global-scope="HumanSoul.Select" options="{{journalOptions}}" default-value="morning"></x-import></span>
+</label>
+<x-import component-from-global-scope="HumanSoul.Button" icon="pen" href="/journal/new">Continue writing</x-import>
+</div>
+</section>
+
+<section aria-labelledby="recent-title" style="display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+<h2 id="recent-title" class="text-h3" style="margin: 0;">What you wrote recently</h2>
+<a class="see-all" href="/journal">See all reflections</a>
+</div>
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3">
+<x-import component-from-global-scope="HumanSoul.ReflectionCard" date="{{r.date}}" tags="{{r.tags}}" favorite="{{r.fav}}">{{r.text}}</x-import>
+</sc-for>
+</section>
+</div>
+
+<aside aria-label="For you" style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+
+<section aria-labelledby="continue-title" style="display: flex; flex-direction: column; gap: 12px;">
+<h2 id="continue-title" class="text-h4" style="margin: 0;">Continue where you left off</h2>
+<x-import component-from-global-scope="HumanSoul.Card" style="display: block;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex;"><x-import component-from-global-scope="HumanSoul.Badge" variant="primary" icon="compass">Journey in progress</x-import></div>
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<span class="text-overline" style="color: var(--muted-foreground);">Human Soul Foundations</span>
+<h3 class="text-h3" style="margin: 0;">Becoming More Human</h3>
+</div>
+<div role="img" aria-label="Day 3 of 7" style="display: flex; gap: 6px;">
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--primary);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--primary);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--brand);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--muted);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--muted);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--muted);"></span>
+<span style="flex: 1; height: 6px; border-radius: var(--radius-full); background: var(--muted);"></span>
+</div>
+<p class="text-body-sm" style="margin: 0; color: var(--muted-foreground);">Day 3 of 7 · The routines that carry you</p>
+<x-import component-from-global-scope="HumanSoul.Button" variant="outline" full="{{yes}}" href="/journeys/becoming-more-human">Continue Day 3</x-import>
+</div>
+</x-import>
+</section>
+
+<section aria-labelledby="memory-title" style="display: flex; flex-direction: column; gap: 12px;">
+<h2 id="memory-title" class="text-h4" style="margin: 0;">A moment to revisit</h2>
+<x-import component-from-global-scope="HumanSoul.Card" variant="flat" style="display: block;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+<x-import component-from-global-scope="HumanSoul.Badge" variant="outline" icon="heart">From your favorites</x-import>
+<span class="text-caption" style="color: var(--muted-foreground);">Sep 6, 2026</span>
+</div>
+<p class="text-body" style="margin: 0; font-family: var(--font-serif); font-size: 18px; line-height: 28px;">“I walked home without headphones and heard the neighbour's daughter practising scales. Same three notes, over and over, and somehow it was the best part of my day.”</p>
+<a class="see-all" href="/favorites">Read it again</a>
+</div>
+</x-import>
+</section>
+
+<section aria-labelledby="journals-title" style="display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+<h2 id="journals-title" class="text-h4" style="margin: 0;">Your journals</h2>
+<a class="see-all" href="/journal">Manage</a>
+</div>
+<x-import component-from-global-scope="HumanSoul.Card" variant="flat" style="display: block;">
+<nav aria-label="Journals" style="display: flex; flex-direction: column; gap: 2px; margin: -8px;">
+<sc-for list="{{journals}}" as="j" hint-placeholder-count="5">
+<a class="jrow" href="/journal"><span>{{j.title}}</span><span class="text-body-sm" style="color: var(--muted-foreground);">{{j.count}}</span></a>
+</sc-for>
+</nav>
+</x-import>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" icon="plus" full="{{yes}}">New journal</x-import>
+</section>
+
+</aside>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+yes: true,
+rows: 3,
+navItems: [
+{ href: '/dashboard', label: 'Home', icon: 'home' },
+{ href: '/journal', label: 'Journal', icon: 'book' },
+{ href: '/journeys', label: 'Journeys', icon: 'compass' },
+{ href: '/favorites', label: 'Favorites', icon: 'heart' },
+{ href: '/profile', label: 'Profile', icon: 'user' }
+],
+journalOptions: [
+{ value: 'morning', label: 'Morning Pages' },
+{ value: 'gratitude', label: 'Gratitude & Joy' },
+{ value: 'deep', label: 'Deep Questions' },
+{ value: 'travel', label: 'Travel & Wonder' },
+{ value: 'lessons', label: 'Life Lessons' }
+],
+recent: [
+{ date: 'Yesterday · 9:40 PM', tags: ['Morning Pages'], fav: false, text: 'I keep saying I don’t have time to read, but I scrolled for forty minutes before bed. It isn’t about time. It’s about what feels easy when I’m tired.' },
+{ date: 'Oct 3 · 7:15 AM', tags: ['Becoming More Human', 'Day 2'], fav: true, text: 'Noticed how differently I speak to strangers than to my own family. More patient with people I’ll never see again. Want to sit with that.' },
+{ date: 'Sep 29 · 6:50 PM', tags: ['Travel & Wonder'], fav: false, text: 'The train out of Lisbon was late and nobody seemed to mind. An old man shared his oranges with the whole carriage.' }
+],
+journals: [
+{ title: 'Morning Pages', count: '12' },
+{ title: 'Gratitude & Joy', count: '8' },
+{ title: 'Deep Questions', count: '3' },
+{ title: 'Travel & Wonder', count: '1' },
+{ title: 'Life Lessons', count: '0' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
