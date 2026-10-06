@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"HumanSoul","components":[{"name":"Logo"},{"name":"Icon"},{"name":"Button"},{"name":"Field"},{"name":"Input"},{"name":"Textarea"},{"name":"Select"},{"name":"Checkbox"},{"name":"Switch"},{"name":"Chip"},{"name":"Badge"},{"name":"Card"},{"name":"Alert"},{"name":"Tabs"},{"name":"Dialog"},{"name":"Sheet"},{"name":"Skeleton"},{"name":"EmptyState"},{"name":"ErrorState"},{"name":"Sidebar"},{"name":"BottomNav"},{"name":"DataList"},{"name":"ReflectionCard"},{"name":"JournalCard"},{"name":"JourneyCard"},{"name":"Stat"},{"name":"Avatar"},{"name":"PageHeader"}]} */
+/* @ds-bundle: {"format":4,"namespace":"HumanSoul","components":[{"name":"Logo"},{"name":"Icon"},{"name":"Button"},{"name":"Field"},{"name":"Input"},{"name":"TextField"},{"name":"Textarea"},{"name":"Select"},{"name":"Checkbox"},{"name":"Switch"},{"name":"Chip"},{"name":"Badge"},{"name":"Card"},{"name":"Alert"},{"name":"Tabs"},{"name":"Dialog"},{"name":"Sheet"},{"name":"Skeleton"},{"name":"EmptyState"},{"name":"ErrorState"},{"name":"Sidebar"},{"name":"BottomNav"},{"name":"DataList"},{"name":"ReflectionCard"},{"name":"JournalCard"},{"name":"JourneyCard"},{"name":"Stat"},{"name":"Avatar"},{"name":"PageHeader"}]} */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -40,6 +40,9 @@
     users: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", { c: [9, 7, 4] }, "M22 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"],
     eye: ["M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z", { c: [12, 12, 3] }],
     wifiOff: ["M2 2l20 20", "M8.5 16.5a5 5 0 0 1 7 0", "M2 8.82a15 15 0 0 1 4.17-2.65", "M10.66 5c4.01-.36 8.14.9 11.34 3.76", "M12 20h.01"],
+    eyeOff: ["M9.88 9.88a3 3 0 1 0 4.24 4.24", "M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68", "M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61", "M2 2l20 20"],
+    mail: ["M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7", { r: [2, 4, 20, 16, 2] }],
+    lock: ["M7 11V7a5 5 0 0 1 10 0v4", { r: [3, 11, 18, 11, 2] }],
     sparkles: ["M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z", "M19 17v4", "M17 19h4"]
   };
   function Icon(p) {
@@ -88,6 +91,23 @@
     return h("div", { className: "hs hs-input-wrap" },
       p.icon ? h(Icon, { name: p.icon, size: 18, className: "hs-lead" }) : null,
       h("input", Object.assign({ className: cx("hs-control", p.icon && "hs-has-lead", p.className), "data-state": p.state, type: p.type || "text" }, q)));
+  }
+
+  /* TextField: Field + Input in one component (label, hint, error, password toggle) */
+  function TextField(p) {
+    var id = useId(p.id);
+    var st = React.useState(false), shown = st[0], setShown = st[1];
+    var isPw = p.type === "password";
+    var describedBy = [p.hint && !p.error && id + "-hint", p.error && id + "-error"].filter(Boolean).join(" ") || undefined;
+    var disabled = p.disabled || p.state === "disabled";
+    return h("div", { className: cx("hs hs-field", p.className) },
+      p.label ? h("label", { className: "hs-label", htmlFor: id }, p.label, p.optional ? h("span", { className: "hs-label-opt" }, " (optional)") : null) : null,
+      h("div", { className: "hs-input-wrap" },
+        p.icon ? h(Icon, { name: p.icon, size: 18, className: "hs-lead" }) : null,
+        h("input", { id: id, name: p.name, type: isPw && shown ? "text" : (p.type || "text"), className: cx("hs-control", p.icon && "hs-has-lead", isPw && "hs-has-trail"), "data-state": p.state, placeholder: p.placeholder, value: p.value, defaultValue: p.defaultValue, autoComplete: p.autoComplete, required: p.required, disabled: disabled, "aria-invalid": p.error ? "true" : undefined, "aria-describedby": describedBy, onChange: p.onChange }),
+        isPw ? h("button", { type: "button", className: "hs-focusable hs-reveal", "aria-label": shown ? "Hide password" : "Show password", "aria-pressed": shown ? "true" : "false", disabled: disabled, onClick: function () { setShown(!shown); } }, h(Icon, { name: shown ? "eyeOff" : "eye", size: 18 })) : null),
+      p.hint && !p.error ? h("span", { id: id + "-hint", className: "hs-hint" }, p.hint) : null,
+      p.error ? h("span", { id: id + "-error", className: "hs-error", role: "alert" }, h(Icon, { name: "alert", size: 16 }), p.error) : null);
   }
   function Textarea(p) {
     var q = Object.assign({}, p); delete q.state; delete q.className;
@@ -284,5 +304,5 @@
       p.actions || null);
   }
 
-  window.HumanSoul = { Logo: Logo, Icon: Icon, Button: Button, Field: Field, Input: Input, Textarea: Textarea, Select: Select, Checkbox: Checkbox, Switch: Switch, Chip: Chip, Badge: Badge, Card: Card, Alert: Alert, Tabs: Tabs, Dialog: Dialog, Sheet: Sheet, Skeleton: Skeleton, EmptyState: EmptyState, ErrorState: ErrorState, Sidebar: Sidebar, BottomNav: BottomNav, DataList: DataList, ReflectionCard: ReflectionCard, JournalCard: JournalCard, JourneyCard: JourneyCard, Stat: Stat, Avatar: Avatar, PageHeader: PageHeader };
+  window.HumanSoul = { Logo: Logo, Icon: Icon, Button: Button, Field: Field, Input: Input, TextField: TextField, Textarea: Textarea, Select: Select, Checkbox: Checkbox, Switch: Switch, Chip: Chip, Badge: Badge, Card: Card, Alert: Alert, Tabs: Tabs, Dialog: Dialog, Sheet: Sheet, Skeleton: Skeleton, EmptyState: EmptyState, ErrorState: ErrorState, Sidebar: Sidebar, BottomNav: BottomNav, DataList: DataList, ReflectionCard: ReflectionCard, JournalCard: JournalCard, JourneyCard: JourneyCard, Stat: Stat, Avatar: Avatar, PageHeader: PageHeader };
 })();

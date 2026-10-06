@@ -1,4 +1,4 @@
-<!-- @dsCard group="Brand" height=300 subtitle="Lucide strokes, 24px grid, 2px, round caps" -->
+<!-- @dsCard group="Forms" height=420 subtitle="Label, input, hint, error and password reveal in one" -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@500&display=swap">
 <style>
 body{margin:0;padding:24px;background:var(--background);color:var(--foreground);font-family:var(--font-sans)}
@@ -14,7 +14,11 @@ const H=window.HumanSoul, h=React.createElement;
 const {Logo,Icon,Button,Field,Input,TextField,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
-const names=['home','book','compass','heart','user','pen','plus','search','calendar','tag','camera','trash','check','x','chevronRight','chevronDown','arrowLeft','arrowUpRight','moon','sun','logout','shield','layers','archive','send','users','eye','clock','menu','info','alert','checkCircle','loader','wifiOff','sparkles'];
-function App(){return h('div',{className:'grid',style:{gridTemplateColumns:'repeat(auto-fill,minmax(88px,1fr))'}},names.map(n=>h('div',{key:n,className:'col',style:{alignItems:'center'}},h(Icon,{name:n,size:24}),h('span',{className:'cap'},n))));}
+function App(){return Row(
+ C('Default',h('div',{style:{width:300}},h(TextField,{label:'Email address',type:'email',placeholder:'you@example.com'}))),
+ C('Hint',h('div',{style:{width:300}},h(TextField,{label:'Password',type:'password',hint:'At least 6 characters.',defaultValue:'quietmorning'}))),
+ C('Error',h('div',{style:{width:300}},h(TextField,{label:'Email address',type:'email',error:'Enter a valid email address.',defaultValue:'ana@example'}))),
+ C('Focus',h('div',{style:{width:300}},h(TextField,{label:'Name',optional:true,state:'focus',defaultValue:'Ana'}))),
+ C('Disabled',h('div',{style:{width:300}},h(TextField,{label:'Email address',state:'disabled',defaultValue:'ana@example.com'}))));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>

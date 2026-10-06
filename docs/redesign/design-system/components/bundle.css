@@ -207,3 +207,7 @@
 .hs-pageheader-text h1, .hs-pageheader-text p { margin: 0; }
 
 .hs-fav[aria-pressed="true"] svg { fill: currentColor; }
+.hs-input-wrap .hs-control.hs-has-trail { padding-right: 48px; }
+.hs-reveal { position: absolute; right: 4px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.hs-reveal:hover { background: var(--accent); color: var(--accent-foreground); }
+.hs-reveal:disabled { opacity: .5; cursor: not-allowed; }

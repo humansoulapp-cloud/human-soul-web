@@ -30,10 +30,10 @@
   "Logos"
  ],
  "lastChange": {
-  "at": "2026-10-06T18:51:56Z",
+  "at": "2026-10-06T18:58:42Z",
   "by": "Claude",
   "via": "Claude Code",
-  "note": "Translated all content to English; renamed CuadernoCard to JournalCard."
+  "note": "Added TextField (label, hint, error, password reveal) and mail, lock, eyeOff icons."
  },
  "layout": "files",
  "libraries": [

@@ -11,7 +11,7 @@ body{margin:0;padding:24px;background:var(--background);color:var(--foreground);
 <div id="root"></div>
 <script>
 const H=window.HumanSoul, h=React.createElement;
-const {Logo,Icon,Button,Field,Input,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
+const {Logo,Icon,Button,Field,Input,TextField,Textarea,Select,Checkbox,Switch,Chip,Badge,Card,Alert,Tabs,Dialog,Sheet,Skeleton,EmptyState,ErrorState,Sidebar,BottomNav,DataList,ReflectionCard,JournalCard,JourneyCard,Stat,Avatar,PageHeader}=H;
 const C=(cap,node,style)=>h('div',{className:'col',style},h('span',{className:'cap'},cap),node);
 const Row=(...c)=>h('div',{className:'row'},...c);
 const items=[{href:'/dashboard',label:'Home',icon:'home'},{href:'/journal',label:'Journal',icon:'book'},{href:'/journeys',label:'Journeys',icon:'compass'},{href:'/favorites',label:'Favorites',icon:'heart'},{href:'/profile',label:'Profile',icon:'user'}];

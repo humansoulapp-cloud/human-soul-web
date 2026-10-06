@@ -27,3 +27,4 @@ export interface AvatarProps { name?: string; size?: "sm" }
 export interface PageHeaderProps { eyebrow?: string; title: string; subtitle?: string; actions?: any }
 export interface LogoProps { size?: number }
 export interface IconProps { name: string; size?: number; label?: string }
+export interface TextFieldProps { label?: string; optional?: boolean; hint?: string; error?: string; type?: "text" | "email" | "password"; name?: string; placeholder?: string; value?: string; defaultValue?: string; autoComplete?: string; required?: boolean; disabled?: boolean; icon?: string; state?: State; onChange?: (e: any) => void }
