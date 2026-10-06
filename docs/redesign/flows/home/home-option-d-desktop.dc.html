@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · Option D · Desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/humansoul/tokens.css">
+<link rel="stylesheet" href="ds/humansoul/components/bundle.css">
+<script src="ds/humansoul/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.optc{--font-sans:"Public Sans",system-ui,sans-serif;--font-serif:"Public Sans",system-ui,sans-serif;--font-wordmark:"Public Sans",system-ui,sans-serif;--font-wordmark-serif:"Public Sans",system-ui,sans-serif}
+.optc .hs-logo-human{font-weight:600}
+.d-skip:not(:focus){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.d-skip:focus{position:absolute;z-index:20;top:12px;left:16px;padding:10px 16px;border-radius:9999px;background:var(--popover);color:var(--foreground);font:500 14px/20px var(--font-sans);text-decoration:none;outline:2px solid var(--ring);outline-offset:2px}
+.d-nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;color:var(--muted-foreground);text-decoration:none;font:500 14px/20px var(--font-sans)}
+.d-nav:hover{color:var(--foreground);background:color-mix(in srgb,var(--foreground) 5%,transparent)}
+.d-nav[aria-current="page"]{color:var(--foreground);background:color-mix(in srgb,var(--foreground) 7%,transparent)}
+.d-nav[aria-current="page"] .hs-icon{color:var(--primary)}
+.d-studio{transition:border-color .15s,box-shadow .15s}
+.d-studio:has(.d-editor:focus){border-color:var(--ring);box-shadow:0 0 0 1px var(--ring)}
+.d-editor{display:block;width:100%;box-sizing:border-box;min-height:304px;field-sizing:content;resize:none;border:0;outline:none;padding:0;background:transparent;color:var(--foreground);font:400 18px/30px var(--font-sans);caret-color:var(--primary)}
+.d-editor::placeholder{color:var(--muted-foreground)}
+.d-toolbar{position:sticky;bottom:0;z-index:1;background:var(--card)}
+.d-journey .hs-btn::after{content:"";position:absolute;inset:0;border-radius:16px}
+.d-journey{transition:border-color .15s}
+.d-journey:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
+.d-journey:hover .hs-btn-outline{background:var(--accent);color:var(--accent-foreground);border-color:var(--primary)}
+.d-journey:focus-within{border-color:var(--ring)}
+.d-hide{position:absolute;top:18px;right:14px;opacity:.6;transition:opacity .15s}
+.d-memory:hover .d-hide,.d-memory:focus-within .d-hide{opacity:1}
+.d-recent{display:flex;flex-direction:column;padding-top:20px;border-top:1px solid var(--border);color:inherit;text-decoration:none;transition:border-color .15s}
+.d-recent:hover{border-top-color:var(--input)}
+.d-recent:hover .d-excerpt,.d-recent:hover .d-day{color:var(--foreground)}
+.d-recent:hover .d-jn{text-decoration:underline;text-underline-offset:3px}
+.d-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:balance}
+.d-excerpt{margin:12px 0 8px;font:400 16px/24px var(--font-sans);color:color-mix(in srgb,var(--foreground) 88%,transparent);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.d-link-quiet{display:inline-block;padding:10px 0;margin:-8px 0;color:var(--muted-foreground);font:500 14px/20px var(--font-sans);text-decoration:none}
+.d-link-quiet:hover{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
+:is(.d-nav,.d-link-quiet,.d-recent,.d-logo):focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:8px}
+@media (max-height:820px){.d-editor{min-height:176px}}
+@media (prefers-reduced-motion:reduce){.d-studio,.d-journey,.d-recent,.d-hide{transition:none}}
+</style>
+</helmet>
+<div class="optc" data-theme="dark" style="position: relative; width: 1440px; min-height: 1180px; display: flex; background: var(--background); color: var(--foreground); font-family: var(--font-sans);">
+
+<a class="d-skip" href="#d-editor">Skip to writing</a>
+
+<aside class="d-side" aria-label="Sidebar" style="width: 248px; flex: none; box-sizing: border-box; padding: 32px 20px 24px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 32px;">
+<a class="d-logo" href="/dashboard" aria-label="HumanSoul home" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px;"><x-import component-from-global-scope="HumanSoul.Logo" size="{{logo}}"></x-import></a>
+<x-import component-from-global-scope="HumanSoul.Button" variant="secondary" icon="pen" full="{{yes}}" href="/journal/new">New reflection</x-import>
+<nav aria-label="Primary" style="display: flex; flex-direction: column; gap: 2px;">
+<a class="d-nav" href="/dashboard" aria-current="page"><x-import component-from-global-scope="HumanSoul.Icon" name="home" size="{{i20}}"></x-import>Home</a>
+<a class="d-nav" href="/journal"><x-import component-from-global-scope="HumanSoul.Icon" name="book" size="{{i20}}"></x-import>Journal</a>
+<a class="d-nav" href="/journeys"><x-import component-from-global-scope="HumanSoul.Icon" name="compass" size="{{i20}}"></x-import>Journeys</a>
+<a class="d-nav" href="/favorites"><x-import component-from-global-scope="HumanSoul.Icon" name="heart" size="{{i20}}"></x-import>Favorites</a>
+</nav>
+<a class="d-nav" href="/profile" style="margin-top: auto; min-height: 56px;">
+<span aria-hidden="true" style="display: inline-flex;"><x-import component-from-global-scope="HumanSoul.Avatar" name="Ana Ruiz" size="sm"></x-import></span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0;"><span style="font: 500 14px/20px var(--font-sans); color: var(--foreground);">Ana Ruiz</span><span class="text-caption" style="font-weight: 400; color: var(--muted-foreground);">Profile &amp; settings</span></span>
+</a>
+</aside>
+
+<main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 32px 48px 64px;">
+<div style="max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 32px; row-gap: 32px; align-items: start;">
+
+<header style="grid-column: 1 / -1; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+<div style="display: flex; align-items: baseline; gap: 16px;">
+<h1 style="margin: 0; font: 600 24px/32px var(--font-sans); letter-spacing: -0.01em;">Good evening, Ana.</h1>
+<span class="text-body-sm" style="color: var(--muted-foreground);">Tuesday, October 6</span>
+</div>
+<button type="button" class="hs hs-focusable hs-btn hs-btn-ghost hs-btn-sm" aria-haspopup="dialog" aria-expanded="false" style="margin-right: -14px;"><x-import component-from-global-scope="HumanSoul.Icon" name="clock" size="{{i18}}"></x-import>Reminder at 9:00 PM</button>
+</header>
+
+<section id="d-studio" class="d-studio" aria-labelledby="d-question" style="grid-column: 1 / span 8; align-self: start; box-sizing: border-box; background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 40px 0; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 36px;">
+<p id="d-q-label" class="text-overline" style="margin: 0; color: var(--primary);">Tonight's question</p>
+<div style="display: flex; gap: 4px; margin-right: -8px;">
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="sm">Another question</x-import>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="icon-sm" icon="arrowUpRight" aria-label="Open in full editor" href="/journal/new"></x-import>
+</div>
+</div>
+<div aria-live="polite" style="margin-top: 16px;">
+<h2 id="d-question" style="margin: 0; max-width: 600px; font: 500 36px/44px var(--font-sans); letter-spacing: -0.022em; text-wrap: balance;">What did you notice today that you usually overlook?</h2>
+</div>
+<p id="d-helper" class="text-body" style="margin: 8px 0 0; color: var(--muted-foreground);">Answer it, or write about whatever is on your mind.</p>
+<textarea id="d-editor" class="d-editor" aria-labelledby="d-q-label d-question" aria-describedby="d-helper" placeholder="Start with one sentence." style="margin-top: 32px;"></textarea>
+<div class="d-toolbar" style="margin-top: 24px; border-top: 1px solid var(--border); padding: 16px 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<div style="display: flex; align-items: center; gap: 0;">
+<span class="text-body-sm" style="color: var(--muted-foreground);">Save to</span>
+<button type="button" class="hs hs-focusable hs-btn hs-btn-ghost hs-btn-sm" aria-label="Save to Morning Pages. Change journal" aria-haspopup="listbox" aria-expanded="false"><x-import component-from-global-scope="HumanSoul.Icon" name="book" size="{{i18}}"></x-import>Morning Pages<x-import component-from-global-scope="HumanSoul.Icon" name="chevronDown" size="{{i16}}"></x-import></button>
+<x-import component-from-global-scope="HumanSoul.Button" variant="ghost" size="icon-sm" icon="camera" aria-label="Add a photo"></x-import>
+</div>
+<div style="display: flex; align-items: center; gap: 16px;">
+<span class="text-caption" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 400; color: var(--muted-foreground);"><x-import component-from-global-scope="HumanSoul.Icon" name="lock" size="{{i16}}"></x-import><span>Only you can read this</span></span>
+<x-import component-from-global-scope="HumanSoul.Button">Save reflection</x-import>
+</div>
+</div>
+</section>
+
+<aside aria-label="For you" style="grid-column: 9 / span 4; align-self: start; display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+
+<section aria-labelledby="d-journey">
+<article class="d-journey" style="position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
+<div class="d-cover" style="position: relative; aspect-ratio: 16 / 9; background: var(--muted); overflow: hidden; border-bottom: 1px solid var(--border);">
+<img src="/_blob/7e25d393e9682e97a36b34c1947f936b" alt="Cover image for Becoming More Human" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; display: block; filter: brightness(.9);">
+</div>
+<div style="padding: 20px 24px 20px; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 24px;">
+<h2 id="d-journey" class="text-overline" style="margin: 0; color: var(--muted-foreground);">Your journey</h2>
+<a class="d-link-quiet" href="/journeys" style="position: relative; z-index: 1;">All journeys</a>
+</div>
+<h3 class="d-clamp2" style="margin: 8px 0 0; font: 600 20px/26px var(--font-sans); letter-spacing: -0.01em;">Becoming More Human</h3>
+<p style="margin: 12px 0 0; display: flex; flex-direction: column;"><span class="text-caption" style="font-weight: 400; color: var(--muted-foreground);">Up next</span><span class="text-body" style="color: var(--foreground);">The routines that carry you</span></p>
+<div style="margin-top: 16px; display: flex; align-items: center; gap: 12px; min-height: 20px;">
+<div role="progressbar" aria-label="Becoming More Human" aria-valuemin="0" aria-valuemax="7" aria-valuenow="3" aria-valuetext="Day 3 of 7" style="flex: 1; height: 4px; border-radius: 9999px; background: color-mix(in srgb, var(--foreground) 22%, transparent); overflow: hidden;">
+<div style="width: 42.857%; height: 100%; border-radius: inherit; background: var(--primary);"></div>
+</div>
+<span class="text-label" aria-hidden="true" style="color: var(--foreground); white-space: nowrap;">Day 3 of 7</span>
+</div>
+<div style="margin-top: 16px;">
+<x-import component-from-global-scope="HumanSoul.Button" variant="outline" full="{{yes}}" href="/journeys/becoming-more-human?day=3" aria-label="Begin Day 3 of Becoming More Human">Begin Day 3</x-import>
+</div>
+</div>
+</article>
+</section>
+
+<section aria-labelledby="d-memory" class="d-memory" style="position: relative; border: 1px solid var(--border); border-radius: 16px; padding: 24px; background: transparent; display: flex; flex-direction: column;">
+<div style="min-height: 24px; display: flex; align-items: center;">
+<h2 id="d-memory" class="text-overline" style="margin: 0; color: var(--muted-foreground);">One month ago</h2>
+</div>
+<button type="button" class="hs hs-focusable hs-btn hs-btn-ghost hs-btn-sm hs-btn-icon d-hide" aria-label="Hide this memory for today"><x-import component-from-global-scope="HumanSoul.Icon" name="x" size="{{i16}}"></x-import></button>
+<blockquote style="margin: 12px 0 0;"><p style="margin: 0; font: 400 16px/24px var(--font-sans); color: color-mix(in srgb, var(--foreground) 88%, transparent);">“I walked home without headphones and heard the neighbour’s daughter practising scales. Somehow it was the best part of my day.”</p></blockquote>
+<div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; min-height: 24px;">
+<span style="display: inline-flex; align-items: center; gap: 8px; color: var(--muted-foreground);">
+<span class="text-body-sm" style="color: var(--muted-foreground);">Sep 6 · Sunday</span>
+<x-import component-from-global-scope="HumanSoul.Icon" name="heart" size="{{i16}}" label="Favorite"></x-import>
+</span>
+<a class="d-link-quiet" href="/journal?entry=rf_0906">Read it again</a>
+</div>
+</section>
+
+</aside>
+
+<section aria-labelledby="d-recent" style="grid-column: 1 / -1; margin-top: 32px;">
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;">
+<h2 id="d-recent" class="text-overline" style="margin: 0; color: var(--muted-foreground);">Recently</h2>
+<a class="d-link-quiet" href="/journal">See all in Journal</a>
+</div>
+<ul role="list" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 32px;">
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3">
+<li><a class="d-recent" href="{{r.href}}" aria-labelledby="{{r.labelIds}}" aria-describedby="{{r.excerptId}}">
+<span style="display: flex; align-items: center; justify-content: space-between; min-height: 20px;">
+<span id="{{r.dateId}}" class="text-body-sm"><span style="font-weight: 500; color: var(--foreground);">{{r.date}}</span><span class="d-day" style="color: var(--muted-foreground);"> · {{r.day}}</span></span>
+<sc-if value="{{r.fav}}" hint-placeholder-val="{{false}}"><span style="display: inline-flex; color: var(--muted-foreground);"><x-import component-from-global-scope="HumanSoul.Icon" name="heart" size="{{i16}}" label="Favorite"></x-import></span></sc-if>
+</span>
+<p id="{{r.excerptId}}" class="d-excerpt">{{r.text}}</p>
+<span id="{{r.journalId}}" class="text-caption d-jn" style="font-weight: 400; color: var(--muted-foreground);">{{r.journal}}</span>
+</a></li>
+</sc-for>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+yes: true,
+logo: 24,
+i16: 16,
+i18: 18,
+i20: 20,
+recent: [
+{ href: '/journal?entry=rf_1005', dateId: 'd-rd-1005', journalId: 'd-rj-1005', excerptId: 'd-rx-1005', labelIds: 'd-rd-1005 d-rj-1005', date: 'Yesterday', day: 'Monday', journal: 'Morning Pages', fav: false, text: 'I keep saying I don’t have time to read, but I scrolled for forty minutes before bed. It isn’t about time. It’s about what feels easy when I’m tired.' },
+{ href: '/journal?entry=rf_1003', dateId: 'd-rd-1003', journalId: 'd-rj-1003', excerptId: 'd-rx-1003', labelIds: 'd-rd-1003 d-rj-1003', date: 'Oct 3', day: 'Saturday', journal: 'Becoming More Human · Day 2', fav: true, text: 'Noticed how differently I speak to strangers than to my own family. More patient with people I’ll never see again. Want to sit with that.' },
+{ href: '/journal?entry=rf_0929', dateId: 'd-rd-0929', journalId: 'd-rj-0929', excerptId: 'd-rx-0929', labelIds: 'd-rd-0929 d-rj-0929', date: 'Sep 29', day: 'Tuesday', journal: 'Travel & Wonder', fav: false, text: 'The train out of Lisbon was late and nobody seemed to mind. An old man shared his oranges with the whole carriage.' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

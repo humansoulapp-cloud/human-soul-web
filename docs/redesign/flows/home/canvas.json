@@ -136,18 +136,25 @@
       "y": 7400
     },
     "home-option-c-desktop.dc.html": {
-      "x": 0,
-      "y": 9140,
+      "h": 1368,
+      "title": "App / Home / Option C · Minimal dark / Desktop",
       "w": 1440,
-      "h": 1120,
-      "title": "App / Home / Option C · Minimal dark / Desktop"
+      "x": 0,
+      "y": 9140
     },
     "home-option-c-mobile.dc.html": {
-      "x": 1520,
-      "y": 9140,
-      "w": 390,
       "h": 1560,
-      "title": "App / Home / Option C · Minimal dark / Mobile"
+      "title": "App / Home / Option C · Minimal dark / Mobile",
+      "w": 390,
+      "x": 1520,
+      "y": 9140
+    },
+    "home-option-d-desktop.dc.html": {
+      "x": 0,
+      "y": 11120,
+      "w": 1440,
+      "h": 1180,
+      "title": "App / Home / Option D · Writing studio / Desktop"
     }
   },
   "createdOnFiles": {
@@ -181,6 +188,13 @@
       "x": 1520,
       "y": 7400
     },
+    "n-option-c": {
+      "fill": "teal",
+      "text": "Opción C: minimalista, modo oscuro, Public Sans\n\nPrioridad según el uso: 1) escribir ya, 2) saber qué escribir, 3) seguir el viaje, 4) releer.\n\n• Una sola columna de 680 px; sin tarjetas apiladas: superficies suaves y separadores finos.\n• Pregunta del día + campo de escritura en el propio Inicio; cuaderno por defecto (el último usado), «Another question».\n• Recordatorio suave visible (9:00 PM): por fin usa la opción del onboarding.\n• Viaje en curso como una sola fila con 7 puntos (sin porcentajes).\n• «Recently»: lista de 3 entradas con fecha, extracto y cuaderno.\n• «One month ago»: un recuerdo.\n\nNavegación más ligera: escritorio con «New reflection» arriba y Profile como fila de cuenta abajo (tema y Sign Out pasan a Profile & settings). Móvil: Write en el centro de la barra inferior; Profile en el avatar.\n\nUsa tokens oscuros del DS con Public Sans sobrescrita solo en estos marcos.",
+      "w": 560,
+      "x": 1990,
+      "y": 9140
+    },
     "n-shell": {
       "fill": "teal",
       "text": "Estructura de la app\n\nEscritorio: sidebar fija de 256 px con Home, Journal, Journeys, Favorites, Profile (+ Admin Panel solo si role = admin). Abajo: Write, Dark/Light Mode y Sign Out. Igual que hoy.\n\nMóvil (nuevo): barra superior con logo y botón de menú; bottom nav con los mismos 5 destinos; botón flotante «Write» encima de la barra. El menú (sheet) recupera lo que hoy falta en móvil: cambiar tema, Premium, Admin Panel y Sign Out.\n\n«Antes» está reconstruido desde el código (no hay capturas con sesión iniciada).",
@@ -204,6 +218,14 @@
       "x": 0,
       "y": 7100
     },
+    "t-option-c": {
+      "kind": "title1",
+      "maxW": 2550,
+      "text": "App / Home · Option C",
+      "w": 240,
+      "x": 0,
+      "y": 8840
+    },
     "t-variants": {
       "kind": "title1",
       "maxW": 3430,
@@ -212,19 +234,19 @@
       "x": 0,
       "y": 4080
     },
-    "t-option-c": {
+    "t-option-d": {
       "x": 0,
-      "y": 8840,
-      "text": "App / Home · Option C",
+      "y": 10820,
+      "text": "App / Home · Option D",
       "kind": "title1",
-      "maxW": 2550
+      "maxW": 2080
     },
-    "n-option-c": {
-      "x": 1990,
-      "y": 9140,
+    "n-option-d": {
+      "x": 1520,
+      "y": 11120,
       "w": 560,
       "fill": "teal",
-      "text": "Opción C: minimalista, modo oscuro, Public Sans\n\nPrioridad según el uso: 1) escribir ya, 2) saber qué escribir, 3) seguir el viaje, 4) releer.\n\n• Una sola columna de 680 px; sin tarjetas apiladas: superficies suaves y separadores finos.\n• Pregunta del día + campo de escritura en el propio Inicio; cuaderno por defecto (el último usado), «Another question».\n• Recordatorio suave visible (9:00 PM): por fin usa la opción del onboarding.\n• Viaje en curso como una sola fila con 7 puntos (sin porcentajes).\n• «Recently»: lista de 3 entradas con fecha, extracto y cuaderno.\n• «One month ago»: un recuerdo.\n\nNavegación más ligera: escritorio con «New reflection» arriba y Profile como fila de cuenta abajo (tema y Sign Out pasan a Profile & settings). Móvil: Write en el centro de la barra inferior; Profile en el avatar.\n\nUsa tokens oscuros del DS con Public Sans sobrescrita solo en estos marcos."
+      "text": "Opción D: «Writing studio» (oscuro, Public Sans)\n\nGanadora entre 3 conceptos evaluados por 3 jueces (necesidades del usuario, diseño visual, viabilidad/accesibilidad).\n\n• Rejilla de 12 columnas a todo el ancho: estudio de escritura (8 col.) + columna lateral (4 col.); «Recently» en 3 columnas alineadas debajo.\n• La pregunta del día es el texto más grande; el campo de escritura vive en el Inicio, con «Saving to · Morning Pages», «Only you can read this» y un único botón principal «Save reflection».\n• Tarjeta del viaje con imagen de portada y línea de progreso continua (Day 3 of 7) + «Continue Day 3».\n• Recuerdo de favoritas con «Read it again».\n\nLa imagen es provisional (generada); en la app será la portada real del viaje."
     }
   },
   "order": [
@@ -248,7 +270,8 @@
     "home-dark-mobile.dc.html",
     "home-option-b-desktop.dc.html",
     "home-option-c-desktop.dc.html",
-    "home-option-c-mobile.dc.html"
+    "home-option-c-mobile.dc.html",
+    "home-option-d-desktop.dc.html"
   ],
   "pages": [],
   "title": "HumanSoul App Shell & Home"
