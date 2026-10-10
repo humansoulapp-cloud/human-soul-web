@@ -41,6 +41,13 @@
   /* desktop: the button sits on the right of the card, inviting the click */
   .gl-card.wide .gl-cta { position: absolute; right: 32px; bottom: 32px; width: auto; min-height: 60px; padding-left: 26px; font-size: 17px; }
 }
+@media (min-width: 768px) {
+  .gl-card.home { min-height: 520px; }
+  .gl-card.home .gl-body { gap: 14px; padding: 28px; }
+  .gl-card.home .gl-cta-row { display: flex; justify-content: flex-start; padding-top: 4px; }
+  .gl-card.home .gl-cta { width: auto; min-height: 60px; padding-left: 26px; font-size: 17px; }
+}
+.gl-card.home .gl-cta-arrow { background: rgba(20,19,18,.14); }
 @media (prefers-reduced-motion: reduce) { .gl-cta, .gl-cta-arrow { transition: none; } }
 
 /* ── Glass card: catalog ──────────────────────────────────────── */

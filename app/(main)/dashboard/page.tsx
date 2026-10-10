@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, ChevronRight, Compass, PenLine, Plus } from "lucide-react";
+import { BookOpen, ChevronRight, PenLine, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { findActiveJourney, type Journey, type UserJournal } from "@/lib/journal";
 import { journeyImage } from "@/lib/journey-images";
@@ -15,7 +15,8 @@ import {
   resolvePhotos,
   type Reflection,
 } from "@/lib/reflections";
-import { Button, Icon, JourneyCard, ReflectionCard, SegmentProgress } from "@/components/ds";
+import { Button, Icon, JourneyCard, ReflectionCard } from "@/components/ds";
+import { JourneyProgressCard } from "@/components/journeys/glass-cards";
 
 function greeting() {
   const h = new Date().getHours();
@@ -119,71 +120,31 @@ export default function HomePage() {
         <div className="hs-grid-2">
           {/* Journey: a prompt for each day */}
           {active ? (
-            <div className="hs-panel">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={journeyImage(active.journey)} alt="" className="hs-media-169 wide" />
-              <div style={{ padding: "24px 24px 28px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                <span className="hs-kind">
-                  <Icon icon={Compass} size={16} />
-                  Journey · A prompt for each day
-                </span>
-                <h3 className="text-h2" style={{ margin: 0 }}>
-                  {active.journey.title}
-                </h3>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <SegmentProgress
-                    total={active.totalDays}
-                    done={active.completedDays}
-                    current={active.nextDay.day}
-                    width={168}
-                    label={`Day ${active.nextDay.day} of ${active.totalDays}`}
-                  />
-                  <span className="text-label" style={{ color: "var(--muted-foreground)" }}>
-                    Day {active.nextDay.day} of {active.totalDays}
-                  </span>
-                </div>
-                <p className="text-body-lg" style={{ margin: 0 }}>
-                  <b style={{ fontWeight: 600 }}>Today: {active.nextDay.title}.</b>
-                </p>
-                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-                  <Button size="lg" href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}>
-                    Begin Day {active.nextDay.day}
-                  </Button>
-                  <Link className="hs-more" href={`/journeys/${active.journey.id}`}>
-                    View journey
-                    <Icon icon={ChevronRight} size={16} />
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <JourneyProgressCard
+              variant="home"
+              href={`/journeys/${active.journey.id}`}
+              dayHref={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
+              image={journeyImage(active.journey)}
+              category={active.journey.category}
+              title={active.journey.title}
+              day={active.nextDay.day}
+              total={active.totalDays}
+              done={active.completedDays}
+              todayTitle={active.nextDay.title}
+            />
           ) : offer ? (
-            <div className="hs-panel">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={journeyImage(offer)} alt="" className="hs-media-169 wide" />
-              <div style={{ padding: "24px 24px 28px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                <span className="hs-kind">
-                  <Icon icon={Compass} size={16} />
-                  Journey · A prompt for each day
-                </span>
-                <h3 className="text-h2" style={{ margin: 0 }}>
-                  {offer.title}
-                </h3>
-                {offer.tagline ? (
-                  <p className="text-body-lg" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-                    {offer.tagline}
-                  </p>
-                ) : null}
-                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-                  <Button size="lg" href={`/journeys/${offer.id}`}>
-                    Begin Day 1
-                  </Button>
-                  <Link className="hs-more" href="/journeys">
-                    All journeys
-                    <Icon icon={ChevronRight} size={16} />
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <JourneyProgressCard
+              variant="home"
+              href={`/journeys/${offer.id}`}
+              dayHref={`/journeys/${offer.id}?day=1`}
+              image={journeyImage(offer)}
+              category={offer.category}
+              title={offer.title}
+              tagline={offer.tagline}
+              day={1}
+              total={(offer.journey_days ?? []).length}
+              done={0}
+            />
           ) : null}
 
           {/* Journal: free writing */}
