@@ -1,16 +1,18 @@
 import React from "react";
-import Link from "next/link";
-import { Shield, UploadCloud } from "lucide-react";
+import { Compass, Shield } from "lucide-react";
 import { getJourneys } from "@/lib/actions/journeys";
 import { createClient } from "@/lib/supabase/server";
 import JourneysFilter from "@/components/JourneysFilter";
 import { journeyImage } from "@/lib/journey-images";
 import { findActiveJourney, type Journey, type ReflectionRow } from "@/lib/journal";
+import { Button, Icon, SegmentProgress } from "@/components/ds";
 
 export default async function JourneysPage() {
   const journeys = await getJourneys();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
@@ -18,11 +20,7 @@ export default async function JourneysPage() {
 
   if (user) {
     const [{ data: reflectionRows }, { data: profile }] = await Promise.all([
-      supabase
-        .from("reflections")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
+      supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
     ]);
 
@@ -32,85 +30,61 @@ export default async function JourneysPage() {
   }
 
   const active = findActiveJourney(journeys as unknown as Journey[], reflections);
-  const categories = Array.from(
-    new Set(journeys.map((j) => j.category).filter(Boolean))
-  ) as string[];
-
-  const progressPct = active
-    ? Math.round((active.completedDays / active.totalDays) * 100)
-    : 0;
+  const categories = Array.from(new Set(journeys.map((j) => j.category).filter(Boolean))) as string[];
 
   return (
-    <div>
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <div>
-          <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
-            Guided Journeys
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+          <span className="hs-kind">
+            <Icon icon={Compass} size={16} />
+            Guided writing
+          </span>
+          <h1 className="text-h1" style={{ margin: 0 }}>
+            Journeys
           </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">
-            Multi-day guided experiences. One day opens at a time.
+          <p className="text-body-lg" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+            A theme and a prompt for each day. Start whenever it feels right.
           </p>
         </div>
-
         {isAdmin && (
-          <div className="flex items-center gap-2 pt-1">
-            <Link
-              href="/admin/journeys/new?import=open"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-surface)] hover:bg-[var(--ds-surface-2)] text-xs font-semibold text-[var(--ds-text)] transition-colors"
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-blue-500" />
-              Import from Doc
-            </Link>
-            <Link
-              href="/admin/journeys"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--ds-accent)] text-[var(--ds-on-accent)] text-xs font-semibold transition-colors hover:bg-[var(--ds-accent-hover)] shadow-sm"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Admin Journeys
-            </Link>
-          </div>
+          <Button variant="secondary" size="sm" icon={Shield} href="/admin/journeys">
+            Admin journeys
+          </Button>
         )}
       </div>
 
-      {/* Continue where the person left off */}
       {active && (
-        <div className="flex flex-col sm:flex-row gap-5 p-4 mt-[22px] rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-          <span
-            className="w-full h-32 sm:w-[150px] sm:h-auto sm:min-h-[114px] flex-shrink-0 rounded-xl bg-cover bg-center"
-            style={{ backgroundImage: `url("${journeyImage(active.journey)}")` }}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="text-[10.5px] font-semibold tracking-[0.11em] text-[var(--ds-text-muted)]">
-              CONTINUE · DAY {active.nextDay.day} OF {active.totalDays}
-            </div>
-            <div className="text-2xl font-semibold leading-[1.2] mt-[5px] mb-[3px]">
-              {active.journey.title}
-            </div>
-            <div className="text-[12.5px] text-[var(--ds-text-muted)]">
-              Today · {active.nextDay.title}
-            </div>
-            <span className="block h-1 rounded-full bg-[var(--ds-line-strong)] mt-3 max-w-[340px]">
-              <span
-                className="block h-full rounded-full bg-[var(--ds-accent)]"
-                style={{ width: `${progressPct}%` }}
+        <section className="hs-sec" aria-labelledby="journeys-now">
+          <h2 id="journeys-now" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+            In progress
+          </h2>
+          <div className="hs-panel md:!flex-row md:items-center md:gap-6 md:p-4 md:pr-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={journeyImage(active.journey)}
+              alt=""
+              className="hs-media-169 md:!w-[176px] md:!h-[110px] md:!aspect-auto md:rounded-2xl md:flex-none"
+            />
+            <div className="flex flex-col gap-2.5 p-5 md:p-0 md:flex-1 md:min-w-0 md:flex-row md:flex-wrap md:items-center md:gap-6">
+              <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+                <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
+                  {active.journey.category ? `${active.journey.category} · ` : ""}Day {active.nextDay.day} of {active.totalDays}
+                </span>
+                <span className="text-h3">{active.journey.title}</span>
+                <span className="hs-meta">Today: {active.nextDay.title}</span>
+              </div>
+              <SegmentProgress
+                total={active.totalDays}
+                done={active.completedDays}
+                current={active.nextDay.day}
+                width={140}
+                label={`Day ${active.nextDay.day} of ${active.totalDays}`}
               />
-            </span>
+              <Button href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}>Begin Day {active.nextDay.day}</Button>
+            </div>
           </div>
-          <div className="flex sm:flex-col gap-2 self-center">
-            <Link
-              href={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
-              className="px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold text-center whitespace-nowrap transition-colors"
-            >
-              Open today
-            </Link>
-            <Link
-              href={`/journeys/${active.journey.id}`}
-              className="px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] text-center whitespace-nowrap transition-colors"
-            >
-              Overview
-            </Link>
-          </div>
-        </div>
+        </section>
       )}
 
       <JourneysFilter
@@ -119,6 +93,6 @@ export default async function JourneysPage() {
         activeJourneyId={active?.journey.id ?? null}
         subscribed={subscribed}
       />
-    </div>
+    </>
   );
 }

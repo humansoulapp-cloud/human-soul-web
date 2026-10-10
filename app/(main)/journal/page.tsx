@@ -1,564 +1,553 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowDownUp, BookOpen, Heart, Search, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { BookOpen, Camera, Compass, Heart, Lock, PenLine, Plus, Search, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { UserJournal } from "@/lib/journal";
 import {
-  dayKey,
-  longestStreak,
-  wordCount,
-  writtenDays,
-  type ReflectionRow,
-} from "@/lib/journal";
+  MAX_PHOTO_BYTES,
+  dayGroupLabel,
+  entryBody,
+  entryLabels,
+  entryTitle,
+  inJournal,
+  journeyInfo,
+  longDate,
+  resolvePhotos,
+  uploadPhoto,
+  type Reflection,
+} from "@/lib/reflections";
+import { Button, Chip, EmptyState, Icon, Input, ReflectionCard, Select, Textarea } from "@/components/ds";
 
-const CARD = "rounded-[14px] border border-[var(--ds-line)] bg-[var(--ds-surface)]";
-const RAIL_TITLE = "text-[15px] font-semibold";
-const GHOST_SMALL =
-  "flex-1 px-3 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[12.5px] text-center transition-colors cursor-pointer";
+type Filter = { kind: "all" } | { kind: "journeys" } | { kind: "favorites" } | { kind: "journal"; id: string };
 
-const FILTERS = ["All", "Journeys", "Free writing", "Favorites"] as const;
-type Filter = (typeof FILTERS)[number];
+function JournalPageInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const journalParam = params.get("journal_id");
+  const filterParam = params.get("filter");
+  const entryParam = params.get("entry");
+  const newJournalParam = params.get("new_journal");
 
-const DAY_TAG = /^Day (\d+)$/;
-
-/** Journey entries carry [journey title, "Day N"]; anything else is free writing. */
-function entryMeta(entry: ReflectionRow) {
-  const tags = entry.tags ?? [];
-  const dayTag = tags.find((t) => DAY_TAG.test(t));
-  const journeyTitle = tags.find((t) => t !== dayTag && !DAY_TAG.test(t));
-
-  if (dayTag && journeyTitle) {
-    return {
-      kind: "journey" as const,
-      source: `${journeyTitle} · ${dayTag}`,
-    };
-  }
-  return { kind: "free" as const, source: "Free writing" };
-}
-
-/** Strip the "[Journey - Day N: Title]" header journey entries are saved with. */
-function entryText(content: string | null) {
-  const text = (content ?? "").trim();
-  return text.startsWith("[") ? text.slice(text.indexOf("]") + 1).trim() : text;
-}
-
-function chip(on: boolean) {
-  return `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors cursor-pointer ${
-    on
-      ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
-      : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
-  }`;
-}
-
-function JournalFeed() {
-  const searchParams = useSearchParams();
-  const focusEntry = searchParams.get("entry");
-  const selectedJournalId = searchParams.get("journal_id");
-
-  const [entries, setEntries] = useState<ReflectionRow[]>([]);
-  const [journalTitle, setJournalTitle] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [entries, setEntries] = useState<Reflection[]>([]);
+  const [journals, setJournals] = useState<UserJournal[]>([]);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("All");
-  const [sortNewest, setSortNewest] = useState(true);
-  const [tag, setTag] = useState<string | null>(null);
-  const [day, setDay] = useState<string | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  // Composer
+  const [title, setTitle] = useState("");
+  const [draft, setDraft] = useState("");
+  const [composerJournal, setComposerJournal] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [composerError, setComposerError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Journal management
+  const [creating, setCreating] = useState(Boolean(newJournalParam));
+  const [newJournal, setNewJournal] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [journalError, setJournalError] = useState("");
+
+  const filter: Filter = journalParam
+    ? { kind: "journal", id: journalParam }
+    : filterParam === "journeys"
+      ? { kind: "journeys" }
+      : filterParam === "favorites"
+        ? { kind: "favorites" }
+        : { kind: "all" };
+
+  // Old links opened an entry inside the feed; entries now have their own page.
+  useEffect(() => {
+    if (entryParam) router.replace(`/journal/${entryParam}`);
+  }, [entryParam, router]);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return setLoading(false);
+      setUserId(user.id);
 
-      const { data } = await supabase
-        .from("reflections")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      setEntries((data ?? []) as ReflectionRow[]);
-
-      if (selectedJournalId) {
-        const { data: jData } = await supabase
-          .from("journals")
-          .select("title")
-          .eq("id", selectedJournalId)
-          .single();
-        if (jData) {
-          setJournalTitle(jData.title);
-        }
-      } else {
-        setJournalTitle("");
-      }
-
+      const [{ data: rows }, { data: journalRows }] = await Promise.all([
+        supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      ]);
+      const list = (rows ?? []) as Reflection[];
+      setEntries(list);
+      setJournals((journalRows ?? []) as UserJournal[]);
       setLoading(false);
+      setPhotos(await resolvePhotos(supabase, list));
     }
     load();
-  }, [selectedJournalId]);
+  }, []);
 
-  // An entry linked from Home opens expanded and scrolls into view
   useEffect(() => {
-    if (!focusEntry || loading) return;
-    setOpen((prev) => ({ ...prev, [focusEntry]: true }));
-    document.getElementById(`entry-${focusEntry}`)?.scrollIntoView({ block: "center" });
-  }, [focusEntry, loading]);
+    if (filter.kind === "journal") setComposerJournal(filter.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journalParam]);
 
-  const toggleFavorite = async (entry: ReflectionRow) => {
-    const next = !entry.favorite;
-    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, favorite: next } : e)));
-    const supabase = createClient();
-    await supabase.from("reflections").update({ favorite: next }).eq("id", entry.id);
-  };
-
-  const counts = useMemo(
-    () => ({
-      All: entries.length,
-      Journeys: entries.filter((e) => entryMeta(e).kind === "journey").length,
-      "Free writing": entries.filter((e) => entryMeta(e).kind === "free").length,
-      Favorites: entries.filter((e) => e.favorite).length,
-    }),
-    [entries]
+  const setFilter = useCallback(
+    (next: Filter) => {
+      setRenaming(false);
+      const url =
+        next.kind === "journal"
+          ? `/journal?journal_id=${next.id}`
+          : next.kind === "all"
+            ? "/journal"
+            : `/journal?filter=${next.kind}`;
+      router.replace(url, { scroll: false });
+    },
+    [router]
   );
 
-  const tagCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const e of entries) for (const t of e.tags ?? []) map.set(t, (map.get(t) ?? 0) + 1);
-    return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [entries]);
+  const activeJournal = filter.kind === "journal" ? journals.find((j) => j.id === filter.id) ?? null : null;
+
+  const counts = useMemo(() => {
+    const byJournal: Record<string, number> = {};
+    for (const j of journals) byJournal[j.id] = entries.filter((e) => inJournal(e, j)).length;
+    return {
+      all: entries.length,
+      journeys: entries.filter((e) => journeyInfo(e)).length,
+      favorites: entries.filter((e) => e.favorite).length,
+      byJournal,
+    };
+  }, [entries, journals]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = entries.filter((e) => {
-      const { kind, source } = entryMeta(e);
-      if (selectedJournalId) {
-        const matchesJournalId = e.journal_id === selectedJournalId;
-        const matchesTag = journalTitle && (e.tags ?? []).includes(journalTitle);
-        if (!matchesJournalId && !matchesTag) return false;
+    return entries.filter((e) => {
+      if (filter.kind === "journeys" && !journeyInfo(e)) return false;
+      if (filter.kind === "favorites" && !e.favorite) return false;
+      if (filter.kind === "journal") {
+        const j = journals.find((x) => x.id === filter.id);
+        if (!j || !inJournal(e, j)) return false;
       }
-      if (filter === "Journeys" && kind !== "journey") return false;
-      if (filter === "Free writing" && kind !== "free") return false;
-      if (filter === "Favorites" && !e.favorite) return false;
-      if (tag && !(e.tags ?? []).includes(tag)) return false;
-      if (day && dayKey(e.created_at) !== day) return false;
       if (!q) return true;
-      return `${e.content ?? ""} ${source} ${(e.tags ?? []).join(" ")} ${e.mood ?? ""}`
-        .toLowerCase()
-        .includes(q);
+      return `${entryTitle(e)} ${e.content ?? ""} ${(e.tags ?? []).join(" ")}`.toLowerCase().includes(q);
     });
-    return sortNewest ? list : [...list].reverse();
-  }, [entries, selectedJournalId, journalTitle, query, filter, tag, day, sortNewest]);
+  }, [entries, journals, filter, query]);
 
   const groups = useMemo(() => {
-    const map = new Map<string, ReflectionRow[]>();
+    const map = new Map<string, Reflection[]>();
     for (const e of visible) {
-      const label = new Date(e.created_at).toLocaleDateString("en-GB", {
-        month: "long",
-        year: "numeric",
-      });
+      const label = dayGroupLabel(e.created_at);
       map.set(label, [...(map.get(label) ?? []), e]);
     }
     return [...map.entries()];
   }, [visible]);
 
-  // Calendar for the current month
-  const today = new Date();
-  const written = useMemo(() => writtenDays(entries), [entries]);
-  const calendar = useMemo(() => {
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    // Monday-first grid
-    const lead = (new Date(year, month, 1).getDay() + 6) % 7;
-    const cells: (number | null)[] = Array.from({ length: lead }, () => null);
-    for (let d = 1; d <= daysInMonth; d += 1) cells.push(d);
-    return { cells, year, month, daysInMonth };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries]);
+  const toggleFavorite = async (entry: Reflection) => {
+    const next = !entry.favorite;
+    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, favorite: next } : e)));
+    await createClient().from("reflections").update({ favorite: next }).eq("id", entry.id);
+  };
 
-  const monthWritten = useMemo(
-    () =>
-      calendar.cells.filter(
-        (d) => d !== null && written.has(dayKey(new Date(calendar.year, calendar.month, d)))
-      ).length,
-    [calendar, written]
-  );
+  /* ── Composer ── */
+  const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (file && file.size > MAX_PHOTO_BYTES) {
+      setComposerError("That photo is larger than 10 MB. Try a smaller one.");
+      return;
+    }
+    setComposerError("");
+    setPhotoFile(file);
+  };
 
-  const stats = useMemo(
-    () => [
-      { label: "Entries", value: String(entries.length) },
-      {
-        label: "Words",
-        value: entries
-          .reduce((total, e) => total + wordCount(entryText(e.content)), 0)
-          .toLocaleString("en-GB"),
-      },
-      { label: "Longest streak", value: `${longestStreak(written)} d` },
-    ],
-    [entries, written]
-  );
+  const saveReflection = async () => {
+    if (!userId || !draft.trim()) return;
+    setSaving(true);
+    setComposerError("");
+    const supabase = createClient();
+    try {
+      const photo = photoFile ? await uploadPhoto(supabase, userId, photoFile) : null;
+      const journal = journals.find((j) => j.id === composerJournal);
+      const { data, error } = await supabase
+        .from("reflections")
+        .insert([
+          {
+            user_id: userId,
+            title: title.trim() || null,
+            content: draft.trim(),
+            tags: journal ? [journal.title] : [],
+            journal_id: journal ? journal.id : null,
+            photo,
+            favorite: false,
+          },
+        ])
+        .select();
+      if (error || !data?.[0]) throw new Error(error?.message ?? "Could not save your reflection.");
+      const saved = data[0] as Reflection;
+      setEntries((prev) => [saved, ...prev]);
+      if (photo && photoFile) {
+        const preview = URL.createObjectURL(photoFile);
+        setPhotos((prev) => ({ ...prev, [saved.id]: preview }));
+      }
+      setTitle("");
+      setDraft("");
+      setPhotoFile(null);
+      if (fileInput.current) fileInput.current.value = "";
+    } catch (err) {
+      setComposerError(
+        `${err instanceof Error ? err.message : "Could not save your reflection."} Your text is still here; try again.`
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const firstEntry = entries[entries.length - 1];
-  const countLabel = entries.length
-    ? `${entries.length} entries · ${counts.Journeys} from journeys${
-        firstEntry
-          ? ` · first written ${new Date(firstEntry.created_at).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}`
-          : ""
-      }`
-    : "Nothing written yet.";
+  /* ── Journals ── */
+  const createJournal = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const value = newJournal.trim();
+    if (!userId || !value) return;
+    setJournalError("");
+    const { data, error } = await createClient()
+      .from("journals")
+      .insert([{ user_id: userId, title: value }])
+      .select();
+    if (error || !data?.[0]) {
+      setJournalError(error?.message ?? "Could not create the journal.");
+      return;
+    }
+    const created = data[0] as UserJournal;
+    setJournals((prev) => [...prev, created]);
+    setNewJournal("");
+    setCreating(false);
+    setFilter({ kind: "journal", id: created.id });
+  };
 
-  const resetAll = () => {
-    setQuery("");
-    setFilter("All");
-    setTag(null);
-    setDay(null);
+  const renameJournal = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const value = renameValue.trim();
+    if (!activeJournal || !value || value === activeJournal.title) return setRenaming(false);
+    setJournalError("");
+    const { error } = await createClient().from("journals").update({ title: value }).eq("id", activeJournal.id);
+    if (error) {
+      setJournalError(error.message);
+      return;
+    }
+    setJournals((prev) => prev.map((j) => (j.id === activeJournal.id ? { ...j, title: value } : j)));
+    setRenaming(false);
+  };
+
+  const deleteJournal = async () => {
+    if (!activeJournal) return;
+    if (!window.confirm(`Delete the journal "${activeJournal.title}"? Its reflections stay in your Journal.`)) return;
+    const { error } = await createClient().from("journals").delete().eq("id", activeJournal.id);
+    if (error) {
+      setJournalError(error.message);
+      return;
+    }
+    setJournals((prev) => prev.filter((j) => j.id !== activeJournal.id));
+    setFilter({ kind: "all" });
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-[13px] text-[var(--ds-text-muted)]">Loading…</div>;
+    return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
   }
 
+  const first = activeJournal ? visible[visible.length - 1] : null;
+  const journalOptions = [{ value: "", label: "No journal" }, ...journals.map((j) => ({ value: j.id, label: j.title }))];
+
   return (
-    <div>
-      <div className="flex items-end gap-5 flex-wrap">
-        <div className="flex-1 min-w-[260px]">
-          <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
-            {journalTitle ? journalTitle : "Journal"}
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+          <span className="hs-kind">
+            <Icon icon={BookOpen} size={16} />
+            Free writing
+          </span>
+          <h1 className="text-h1" style={{ margin: 0 }}>
+            Your Journal
           </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">
-            {journalTitle ? `Viewing reflections saved in "${journalTitle}".` : countLabel}
+          <p className="text-body-lg hidden md:block" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+            No prompts and no streaks. A private place for whatever is on your mind.
           </p>
         </div>
+        <span className="hs-meta">
+          <Icon icon={Lock} size={16} />
+          Only you can read this
+        </span>
+      </div>
+
+      {/* Mobile: a quiet entry point that opens the full-screen editor */}
+      <div className="md:hidden">
         <Link
-          href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
-          className="px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors cursor-pointer"
+          className="hs-prompt hs-focusable"
+          href={activeJournal ? `/journal/new?journal_id=${activeJournal.id}` : "/journal/new"}
         >
-          New entry
+          <span className="hs-prompt-ico">
+            <Icon icon={PenLine} size={20} />
+          </span>
+          <span>What&apos;s on your mind today?</span>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-[18px] mt-6 items-start">
-        <div className="min-w-0">
-          {/* Active Journal Filter Banner */}
-          {selectedJournalId && (
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]">
-              <div className="flex items-center gap-2 text-[12.5px]">
-                <BookOpen className="w-4 h-4 text-[var(--ds-accent)] flex-shrink-0" />
-                <span>
-                  Filtered by journal: <strong className="font-semibold">{journalTitle || "Selected Journal"}</strong>
-                </span>
-              </div>
-              <Link
-                href="/journal"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[11.5px] transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Show all</span>
-              </Link>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 px-4 h-12 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-            <Search className="w-4 h-4 flex-shrink-0 text-[var(--ds-text-muted)]" strokeWidth={1.8} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search your entries, prompts and tags"
-              className="flex-1 min-w-0 bg-transparent border-none text-sm text-[var(--ds-text)]"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="text-[12.5px] font-semibold text-[var(--ds-accent)] cursor-pointer"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 mt-3.5 mb-1 flex-wrap">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => {
-                  setFilter(f);
-                  setTag(null);
-                  setDay(null);
-                }}
-                className={chip(filter === f)}
-              >
-                {f}
-                <span className="text-[11px] font-semibold opacity-60">{counts[f]}</span>
-              </button>
-            ))}
-            <span className="flex-1" />
-            <button
-              onClick={() => setSortNewest((v) => !v)}
-              className="inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] text-xs transition-colors"
-            >
-              <ArrowDownUp className="w-[13px] h-[13px]" strokeWidth={1.9} />
-              {sortNewest ? "Newest first" : "Oldest first"}
-            </button>
-          </div>
-
-          {groups.length === 0 ? (
-            <div className="mt-[22px] px-6 py-11 rounded-[14px] border border-dashed border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-center flex flex-col items-center">
-              <div className="text-[17px] font-semibold">
-                {selectedJournalId
-                  ? `No entries in "${journalTitle || "this journal"}" yet`
-                  : entries.length === 0
-                    ? "Your journal is empty"
-                    : "Nothing matches that yet"}
-              </div>
-              <p className="text-sm text-[var(--ds-text-muted)] mt-2 max-w-[40ch]">
-                {selectedJournalId
-                  ? "Write reflections and save them to this journal to view them here."
-                  : entries.length === 0
-                    ? "Everything you write, on your own or inside a journey, is kept here."
-                    : "Try a shorter word, or clear the filters to see every entry again."}
-              </p>
-              {selectedJournalId || entries.length === 0 ? (
-                <Link
-                  href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
-                >
-                  {selectedJournalId
-                    ? `Write reflection in ${journalTitle || "this journal"}`
-                    : "Write your first entry"}
-                </Link>
-              ) : (
-                <button
-                  onClick={resetAll}
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
-                >
-                  Reset filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-[26px] mt-[22px]">
-              {groups.map(([month, list]) => (
-                <div key={month}>
-                  <div className="flex items-center gap-3.5">
-                    <span className="text-[11px] font-bold tracking-[0.12em] text-[var(--ds-text-muted)] uppercase whitespace-nowrap">
-                      {month}
-                    </span>
-                    <span className="flex-1 h-px bg-[var(--ds-line)]" />
-                    <span className="text-[11.5px] text-[var(--ds-text-muted)] whitespace-nowrap">
-                      {list.length} {list.length === 1 ? "entry" : "entries"}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-2.5 mt-3">
-                    {list.map((entry) => {
-                      const { kind, source } = entryMeta(entry);
-                      const text = entryText(entry.content);
-                      const isOpen = Boolean(open[entry.id]);
-                      return (
-                        <div key={entry.id} id={`entry-${entry.id}`} className={`${CARD} px-5 pt-[18px] pb-[17px]`}>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[13px] font-semibold whitespace-nowrap">
-                              {new Date(entry.created_at).toLocaleDateString("en-GB", {
-                                weekday: "short",
-                                day: "numeric",
-                                month: "short",
-                              })}
-                            </span>
-                            <span
-                              className={`px-2.5 py-[3px] rounded-full text-[10.5px] font-semibold tracking-[0.04em] whitespace-nowrap ${
-                                kind === "journey"
-                                  ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
-                                  : "bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)]"
-                              }`}
-                            >
-                              {source}
-                            </span>
-                            <span className="flex-1" />
-                            {entry.mood && (
-                              <span className="text-[12.5px] text-[var(--ds-text-muted)] whitespace-nowrap">
-                                {entry.mood}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => toggleFavorite(entry)}
-                              aria-label={entry.favorite ? "Remove from favorites" : "Add to favorites"}
-                              className={`p-1 grid place-items-center ${
-                                entry.favorite
-                                  ? "text-[var(--ds-accent)]"
-                                  : "text-[var(--ds-text-muted)]"
-                              }`}
-                            >
-                              <Heart
-                                className="w-[15px] h-[15px]"
-                                strokeWidth={1.7}
-                                fill={entry.favorite ? "currentColor" : "none"}
-                              />
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => setOpen((p) => ({ ...p, [entry.id]: !p[entry.id] }))}
-                            className="block w-full text-left mt-3 text-[var(--ds-text)]"
-                          >
-                            <span
-                              className={`text-[15px] leading-[1.72] text-[var(--ds-text-mid)] whitespace-pre-line ${
-                                isOpen ? "block" : "line-clamp-2"
-                              }`}
-                            >
-                              {text}
-                            </span>
-                          </button>
-
-                          {entry.photo && isOpen && (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={entry.photo}
-                              alt=""
-                              className="mt-3 max-h-64 rounded-xl border border-[var(--ds-line)]"
-                            />
-                          )}
-
-                          <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            {(entry.tags ?? []).map((t) => (
-                              <span
-                                key={t}
-                                className="px-2.5 py-1 rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] text-[11px]"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                            <span className="flex-1" />
-                            <span className="text-[11px] font-semibold tracking-[0.08em] text-[var(--ds-text-muted)]">
-                              {wordCount(text)} words
-                            </span>
-                            <button
-                              onClick={() => setOpen((p) => ({ ...p, [entry.id]: !p[entry.id] }))}
-                              className="text-[12.5px] font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)]"
-                            >
-                              {isOpen ? "Show less" : "Read entry"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Right rail ── */}
-        <div className="flex flex-col gap-[18px] min-w-0">
-          <div className={`${CARD} p-[18px]`}>
-            <div className="flex items-center gap-2.5">
-              <div className={RAIL_TITLE}>
-                {today.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
-              </div>
-              <span className="flex-1" />
-              <span className="text-[12.5px] text-[var(--ds-text-muted)]">
-                {monthWritten} of {calendar.daysInMonth} days
+      {/* Tablet and desktop: write in place */}
+      <div className="hidden md:block">
+        <section className="hs-composer" aria-label="Write a reflection">
+          <label className="hs-sr-only" htmlFor="composer-title">
+            Title
+          </label>
+          <input
+            id="composer-title"
+            className="hs-title-input"
+            type="text"
+            placeholder="Give it a title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <label className="hs-sr-only" htmlFor="composer-text">
+            Reflection
+          </label>
+          <Textarea
+            id="composer-text"
+            writing
+            rows={4}
+            placeholder="What's on your mind today?"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          {photoFile ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="hs-meta">
+                <Icon icon={Camera} size={16} />
+                {photoFile.name}
               </span>
+              <button
+                type="button"
+                className="hs-link-btn"
+                onClick={() => {
+                  setPhotoFile(null);
+                  if (fileInput.current) fileInput.current.value = "";
+                }}
+              >
+                <Icon icon={X} size={16} />
+                Remove
+              </button>
             </div>
-
-            <div className="grid grid-cols-7 gap-[5px] mt-3.5">
-              {["M", "T", "W", "T", "F", "S", "S"].map((label, i) => (
-                <span
-                  key={`${label}-${i}`}
-                  className="text-center text-[10px] font-bold tracking-[0.06em] text-[var(--ds-text-muted)] pb-[3px]"
-                >
-                  {label}
-                </span>
-              ))}
-              {calendar.cells.map((d, i) => {
-                if (d === null) return <span key={`pad-${i}`} className="h-7" />;
-                const key = dayKey(new Date(calendar.year, calendar.month, d));
-                const has = written.has(key);
-                const selected = day === key;
-                const isToday = d === today.getDate();
-                return (
-                  <button
-                    key={key}
-                    onClick={() => has && setDay(selected ? null : key)}
-                    className={`h-7 rounded-[7px] text-[11.5px] transition-colors ${
-                      selected
-                        ? "bg-[var(--ds-accent)] text-[var(--ds-on-accent)] font-bold"
-                        : has
-                          ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] font-semibold"
-                          : isToday
-                            ? "border border-[var(--ds-line-strong)] text-[var(--ds-text)]"
-                            : "text-[var(--ds-text-muted)] opacity-55 cursor-default"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-3 leading-relaxed">
-              Days with an entry are filled. Pick one to jump to it.
+          ) : null}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+            <label className="hs-meta" htmlFor="composer-journal">
+              Journal
+            </label>
+            <Select
+              id="composer-journal"
+              options={journalOptions}
+              value={composerJournal}
+              onChange={(e) => setComposerJournal(e.target.value)}
+              style={{ width: 200 }}
+            />
+            <input ref={fileInput} type="file" accept="image/*" onChange={onPhoto} className="hs-sr-only" tabIndex={-1} aria-hidden="true" />
+            <Button variant="ghost" icon={Camera} onClick={() => fileInput.current?.click()}>
+              Add photo
+            </Button>
+            <span style={{ flex: 1 }} />
+            <Button onClick={saveReflection} disabled={!draft.trim()} loading={saving}>
+              Save Reflection
+            </Button>
+          </div>
+          {composerError ? (
+            <p className="hs-error" role="alert">
+              {composerError}
             </p>
-          </div>
-
-          {tagCounts.length > 0 && (
-            <div className={`${CARD} p-[18px]`}>
-              <div className={RAIL_TITLE}>Tags</div>
-              <div className="flex flex-wrap gap-[7px] mt-3">
-                {tagCounts.map(([label, count]) => (
-                  <button
-                    key={label}
-                    onClick={() => {
-                      setTag(tag === label ? null : label);
-                      setFilter("All");
-                      setDay(null);
-                    }}
-                    className={chip(tag === label)}
-                  >
-                    {label}
-                    <span className="text-[11px] font-semibold opacity-60">{count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className={`${CARD} p-[18px]`}>
-            <div className={RAIL_TITLE}>Your record</div>
-            <div className="flex mt-3.5">
-              {stats.map((s) => (
-                <span key={s.label} className="flex-1">
-                  <span className="block text-xl font-semibold tracking-[-0.01em]">{s.value}</span>
-                  <span className="block text-[10px] font-semibold tracking-[0.09em] text-[var(--ds-text-muted)] mt-[3px] uppercase">
-                    {s.label}
-                  </span>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2.5 mt-4 pt-[15px] border-t border-[var(--ds-line)]">
-              <button onClick={() => window.print()} className={GHOST_SMALL}>
-                Export as PDF
-              </button>
-              <button onClick={() => window.print()} className={GHOST_SMALL}>
-                Print
-              </button>
-            </div>
-          </div>
-        </div>
+          ) : null}
+        </section>
       </div>
-    </div>
+
+      <section className="hs-sec" aria-labelledby="journal-list" style={{ gap: 20 }}>
+        <div className="hs-sec-head" style={{ alignItems: "center" }}>
+          <h2 id="journal-list" className="text-h3" style={{ margin: 0 }}>
+            {activeJournal ? activeJournal.title : "All reflections"}
+          </h2>
+          <Input
+            icon={Search}
+            placeholder="Search your reflections"
+            aria-label="Search your reflections"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full md:w-[300px]"
+          />
+        </div>
+
+        <div className="hs-scroll-row" role="group" aria-label="Filter by journal">
+          <Chip selected={filter.kind === "all"} onClick={() => setFilter({ kind: "all" })}>
+            All · {counts.all}
+          </Chip>
+          {journals.map((j) => (
+            <Chip
+              key={j.id}
+              icon={BookOpen}
+              selected={filter.kind === "journal" && filter.id === j.id}
+              onClick={() => setFilter({ kind: "journal", id: j.id })}
+            >
+              {j.title} · {counts.byJournal[j.id] ?? 0}
+            </Chip>
+          ))}
+          <Chip icon={Compass} selected={filter.kind === "journeys"} onClick={() => setFilter({ kind: "journeys" })}>
+            From journeys · {counts.journeys}
+          </Chip>
+          <Chip icon={Heart} selected={filter.kind === "favorites"} onClick={() => setFilter({ kind: "favorites" })}>
+            Favorites · {counts.favorites}
+          </Chip>
+          <Chip icon={Plus} selected={creating} onClick={() => setCreating((v) => !v)}>
+            New journal
+          </Chip>
+        </div>
+
+        {creating ? (
+          <form className="hs-filter-sum" onSubmit={createJournal}>
+            <label className="hs-sr-only" htmlFor="new-journal">
+              Journal name
+            </label>
+            <Input
+              id="new-journal"
+              autoFocus
+              placeholder="Name your journal, e.g. Gratitude"
+              value={newJournal}
+              onChange={(e) => setNewJournal(e.target.value)}
+              className="flex-1 min-w-[200px]"
+            />
+            <Button type="submit" disabled={!newJournal.trim()}>
+              Create journal
+            </Button>
+            <Button variant="ghost" onClick={() => setCreating(false)}>
+              Cancel
+            </Button>
+          </form>
+        ) : null}
+
+        {activeJournal ? (
+          renaming ? (
+            <form className="hs-filter-sum" onSubmit={renameJournal}>
+              <label className="hs-sr-only" htmlFor="rename-journal">
+                New name
+              </label>
+              <Input
+                id="rename-journal"
+                autoFocus
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                className="flex-1 min-w-[200px]"
+              />
+              <Button type="submit">Save name</Button>
+              <Button variant="ghost" onClick={() => setRenaming(false)}>
+                Cancel
+              </Button>
+            </form>
+          ) : (
+            <div className="hs-filter-sum" role="status">
+              <Icon icon={BookOpen} size={20} />
+              <span style={{ font: "500 15px/20px var(--hs-font-sans)" }}>Showing {activeJournal.title}</span>
+              <span className="hs-meta">
+                {visible.length} {visible.length === 1 ? "reflection" : "reflections"}
+                {first ? ` · since ${longDate(first.created_at, false)}` : ""}
+              </span>
+              <span style={{ flex: 1 }} />
+              <button
+                type="button"
+                className="hs-link-btn"
+                onClick={() => {
+                  setRenameValue(activeJournal.title);
+                  setRenaming(true);
+                }}
+              >
+                <Icon icon={PenLine} size={16} />
+                Rename
+              </button>
+              <button type="button" className="hs-link-btn" style={{ color: "var(--destructive)" }} onClick={deleteJournal}>
+                <Icon icon={Trash2} size={16} />
+                Delete
+              </button>
+              <button
+                type="button"
+                className="hs-link-btn"
+                style={{ color: "var(--muted-foreground)" }}
+                onClick={() => setFilter({ kind: "all" })}
+              >
+                <Icon icon={X} size={16} />
+                Clear filter
+              </button>
+            </div>
+          )
+        ) : null}
+
+        {journalError ? (
+          <p className="hs-error" role="alert">
+            {journalError}
+          </p>
+        ) : null}
+
+        {groups.length === 0 ? (
+          entries.length === 0 ? (
+            <EmptyState
+              icon={BookOpen}
+              title="Your journal is empty"
+              description="Everything you write, on your own or inside a journey, is kept here."
+              actions={<Button href="/journal/new" icon={PenLine}>Write your first reflection</Button>}
+            />
+          ) : activeJournal ? (
+            <EmptyState
+              icon={BookOpen}
+              title={`Nothing in ${activeJournal.title} yet`}
+              description="Choose this journal when you save a reflection and it will appear here."
+              actions={<Button href={`/journal/new?journal_id=${activeJournal.id}`} icon={PenLine}>Reflect</Button>}
+            />
+          ) : (
+            <EmptyState
+              icon={Search}
+              title="Nothing matches that"
+              description="Try a shorter word, or clear the filter to see every reflection again."
+              actions={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setQuery("");
+                    setFilter({ kind: "all" });
+                  }}
+                >
+                  Clear search and filter
+                </Button>
+              }
+            />
+          )
+        ) : (
+          groups.map(([label, list]) => (
+            <React.Fragment key={label}>
+              <span className="hs-day">{label}</span>
+              {list.map((e) => (
+                <ReflectionCard
+                  key={e.id}
+                  href={`/journal/${e.id}`}
+                  date={longDate(e.created_at)}
+                  title={entryTitle(e)}
+                  text={entryBody(e.content)}
+                  tags={entryLabels(e, journals)}
+                  photo={photos[e.id] || null}
+                  favorite={Boolean(e.favorite)}
+                  onToggleFavorite={() => toggleFavorite(e)}
+                />
+              ))}
+            </React.Fragment>
+          ))
+        )}
+      </section>
+    </>
   );
 }
 
 export default function JournalPage() {
   return (
     <Suspense fallback={null}>
-      <JournalFeed />
+      <JournalPageInner />
     </Suspense>
   );
 }
