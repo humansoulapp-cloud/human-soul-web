@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getJourney } from "@/lib/actions/journeys";
+import { getJourney, getJourneys } from "@/lib/actions/journeys";
+import { journeyImage } from "@/lib/journey-images";
 import { createClient } from "@/lib/supabase/server";
 import JourneyDetailClient from "@/components/JourneyDetailClient";
 import type { ReflectionRow } from "@/lib/journal";
@@ -38,6 +39,12 @@ export default async function JourneyDetailPage({
     subscribed = Boolean(profile?.plan && profile.plan !== "free");
   }
 
+  /* Two journeys to offer when this one is complete: featured first. */
+  const others = (await getJourneys().catch(() => [])).filter((j) => j.id !== journey.id);
+  const suggestions = [...others.filter((j) => j.featured), ...others.filter((j) => !j.featured)]
+    .slice(0, 2)
+    .map((j) => ({ id: j.id, title: j.title, image: journeyImage(j) }));
+
   const initialDay = day ? Number(day) : undefined;
 
   return (
@@ -46,6 +53,7 @@ export default async function JourneyDetailPage({
       reflections={reflections}
       subscribed={subscribed}
       initialDay={Number.isFinite(initialDay) ? initialDay : undefined}
+      suggestions={suggestions}
     />
   );
 }
