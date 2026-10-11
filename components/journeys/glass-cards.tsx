@@ -121,7 +121,6 @@ export function CatalogCard({
           ) : null}
         </div>
       ) : null}
-      {days ? <span className="ct-chip ct-days">{days} days</span> : null}
       <div className="ct-body">
         {category ? <span className="ct-cat">{category}</span> : null}
         <h3 className="text-h3 ct-title">
@@ -129,8 +128,9 @@ export function CatalogCard({
             {title}
           </Link>
         </h3>
-        <div className="ct-row">
-          {tagline ? <p className="ct-tag">{tagline}</p> : <span style={{ flex: 1 }} />}
+        {tagline ? <p className="ct-tag">{tagline}</p> : null}
+        <div className="ct-foot">
+          <span className="ct-meta">{days ? `${days} days` : ""}</span>
           <span className="ct-go" aria-hidden="true">
             <ArrowRight size={18} />
           </span>
