@@ -129,8 +129,8 @@ export function CatalogCard({
             {title}
           </Link>
         </h3>
-        {tagline ? <p className="ct-tag">{tagline}</p> : null}
-        <div className="ct-foot">
+        <div className="ct-row">
+          {tagline ? <p className="ct-tag">{tagline}</p> : <span style={{ flex: 1 }} />}
           <span className="ct-go" aria-hidden="true">
             <ArrowRight size={18} />
           </span>
