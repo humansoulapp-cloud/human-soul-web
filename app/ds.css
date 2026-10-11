@@ -435,11 +435,13 @@ a.hs-day:hover { background: var(--secondary); }
 .hs-nav-item:hover { background: var(--accent); color: var(--accent-foreground); }
 .hs-nav-item[aria-current="page"] { background: var(--foreground); color: var(--background); }
 .hs-tools { justify-self: end; display: flex; align-items: center; gap: 8px; }
-.hs-tools .hs-reflect-label { display: none; }
-@media (min-width: 1024px) { .hs-tools .hs-reflect-label { display: inline; } }
+/* Reflect in the top bar: icon only; the label slides out on hover or keyboard focus. */
 .hs-tools .hs-reflect { display: none; }
-@media (min-width: 768px) { .hs-tools .hs-reflect { display: inline-flex; } }
-@media (min-width: 768px) and (max-width: 1023px) { .hs-tools .hs-reflect { width: 44px; padding: 0; } }
+@media (min-width: 768px) { .hs-tools .hs-reflect { display: inline-flex; gap: 0; min-width: 44px; padding: 0 12px; transition: gap .2s, padding .2s, background-color .15s; } }
+.hs-tools .hs-reflect-label { max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width .2s, opacity .15s; }
+.hs-tools .hs-reflect:hover, .hs-tools .hs-reflect:focus-visible { gap: 8px; padding: 0 18px 0 14px; }
+.hs-tools .hs-reflect:hover .hs-reflect-label, .hs-tools .hs-reflect:focus-visible .hs-reflect-label { max-width: 80px; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .hs-tools .hs-reflect, .hs-tools .hs-reflect-label { transition: none; } }
 .hs-me { position: relative; }
 .hs-me-btn { width: 44px; height: 44px; border-radius: 9999px; border: 0; padding: 0; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .hs-me-btn:hover .hs-avatar { box-shadow: 0 0 0 3px var(--accent); }

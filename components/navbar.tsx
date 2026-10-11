@@ -11,7 +11,7 @@ import { Avatar, Button, Icon, Logo } from "@/components/ds";
 /**
  * Design System v2 navigation.
  * - ≥768px: a sticky top bar — logo, pill navigation, Reflect and the account menu.
- *   Between 768 and 1023px Reflect shows as an icon to make room.
+ *   Reflect shows as an icon; its label slides out on hover or focus.
  * - <768px: logo + account menu on top, a bottom bar with five tabs and a
  *   floating Reflect button above it.
  */
