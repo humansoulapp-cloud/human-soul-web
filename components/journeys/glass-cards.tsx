@@ -91,7 +91,6 @@ export function CatalogCard({
   title,
   tagline,
   days,
-  time,
   featured,
   premium,
 }: {
@@ -105,7 +104,6 @@ export function CatalogCard({
   featured?: boolean | null;
   premium?: boolean | null;
 }) {
-  const meta = [days ? `${days} days` : null, time ? time.replace(/^About/, "about") : null].filter(Boolean).join(" · ");
   return (
     <article className="ct-card">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,6 +121,7 @@ export function CatalogCard({
           ) : null}
         </div>
       ) : null}
+      {days ? <span className="ct-chip ct-days">{days} days</span> : null}
       <div className="ct-body">
         {category ? <span className="ct-cat">{category}</span> : null}
         <h3 className="text-h3 ct-title">
@@ -132,7 +131,6 @@ export function CatalogCard({
         </h3>
         {tagline ? <p className="ct-tag">{tagline}</p> : null}
         <div className="ct-foot">
-          <span className="ct-meta">{meta}</span>
           <span className="ct-go" aria-hidden="true">
             <ArrowRight size={18} />
           </span>
