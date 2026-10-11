@@ -15,8 +15,8 @@ import {
   resolvePhotos,
   type Reflection,
 } from "@/lib/reflections";
-import { Button, Icon, JourneyCard, ReflectionCard } from "@/components/ds";
-import { JourneyProgressCard } from "@/components/journeys/glass-cards";
+import { Button, Icon, ReflectionCard } from "@/components/ds";
+import { CatalogCard, JourneyProgressCard } from "@/components/journeys/glass-cards";
 
 function greeting() {
   const h = new Date().getHours();
@@ -231,9 +231,9 @@ export default function HomePage() {
               <Icon icon={ChevronRight} size={16} />
             </Link>
           </div>
-          <div className="hs-carousel">
+          <div className="ct-grid">
             {forYou.map((j) => (
-              <JourneyCard
+              <CatalogCard
                 key={j.id}
                 href={`/journeys/${j.id}`}
                 image={journeyImage(j)}
@@ -241,6 +241,8 @@ export default function HomePage() {
                 title={j.title}
                 tagline={j.tagline}
                 days={(j.journey_days ?? []).length}
+                time={j.time_required}
+                featured={j.featured}
                 premium={j.premium}
               />
             ))}
