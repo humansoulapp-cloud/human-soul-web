@@ -228,3 +228,44 @@ button.jf-dayrow:hover { background: color-mix(in srgb, var(--foreground) 5%, tr
 .jf-plus { display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 20px; background: color-mix(in srgb, var(--warning, #C9A35A) 12%, var(--card)); }
 .jf-plan { flex: 1; text-align: left; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--fill); color: inherit; cursor: pointer; font: inherit; }
 .jf-plan[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+
+/* ── Home · compact: the essentials above the fold ─────────────── */
+.hc { display: flex; flex-direction: column; gap: 32px; }
+.hc-hello { margin: 0 0 -12px; }
+.hc-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; }
+@media (min-width: 900px) { .hc-top { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 24px; } }
+.hc-top .gl-card.home { min-height: 400px; }
+@media (min-width: 768px) { .hc-top .gl-card.home .gl-body { padding: 24px; gap: 12px; } }
+.hc-journal { display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 24px; background: var(--card); box-shadow: var(--hs-shadow-sm); }
+.hc-prompt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px 8px 8px; border-radius: 9999px; background: var(--writing); color: var(--muted-foreground); text-decoration: none; font: 400 16px/22px var(--hs-font-sans); box-shadow: var(--hs-shadow-sm); }
+.hc-prompt:hover { color: var(--foreground); }
+.hc-prompt:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.hc-prompt-ico { width: 40px; height: 40px; flex: none; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); }
+.hc-journals { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+
+/* compact reflection card */
+.rc { display: flex; flex-direction: column; gap: 6px; height: 100%; box-sizing: border-box; padding: 20px; border-radius: 20px; background: var(--card); box-shadow: var(--hs-shadow-sm); color: var(--foreground); text-decoration: none; transition: background-color .15s; }
+.rc:hover { background: var(--fill); color: var(--foreground); }
+.rc:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.rc-title { font: 500 18px/24px var(--hs-font-serif); letter-spacing: -.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-text { font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; font: 500 12px/16px var(--hs-font-sans); color: var(--muted-foreground); min-width: 0; }
+.rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-fav { margin-left: auto; display: inline-flex; color: var(--primary); }
+
+/* carousels: scroll-snap rows; the next card peeks in */
+.cr { display: grid; grid-auto-flow: column; grid-auto-columns: 82%; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: -8px 0; padding: 8px 0; overscroll-behavior-x: contain; }
+.cr::-webkit-scrollbar { display: none; }
+.cr > * { scroll-snap-align: start; min-width: 0; }
+@media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2.25); } }
+@media (min-width: 1024px) { .cr { gap: 24px; grid-auto-columns: calc((100% - 48px) / 3.25); } }
+.cr-cards .ct-card { min-height: 300px; height: 100%; }
+.cr-cards .ct-tag { -webkit-line-clamp: 1; }
+.cr-nav { display: flex; align-items: center; gap: 8px; }
+.cr-nav .hs-more { margin-right: 8px; }
+.cr-btn { width: 40px; height: 40px; border: 0; border-radius: 9999px; display: none; align-items: center; justify-content: center; background: var(--fill); color: var(--foreground); cursor: pointer; transition: background-color .15s; }
+@media (min-width: 768px) { .cr-btn { display: inline-flex; } }
+.cr-btn:hover:not(:disabled) { background: var(--fill-strong); }
+.cr-btn:disabled { opacity: .4; cursor: default; }
+.cr-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .rc { transition: none; } }
