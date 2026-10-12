@@ -135,12 +135,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="ad-field">
-      <div className="ad-lab">
+    <div className="hsa-field">
+      <div className="hsa-lab">
         <label className="hs-label" htmlFor={htmlFor}>
           {label}
         </label>
-        {where ? <span className="ad-where">{where}</span> : null}
+        {where ? <span className="hsa-where">{where}</span> : null}
       </div>
       {children}
       {hint ? <span className="hs-hint" style={{ fontSize: 13, lineHeight: "18px" }}>{hint}</span> : null}
@@ -150,10 +150,10 @@ function Field({
 
 function Switch({ checked, onChange, title, note }: { checked: boolean; onChange: (v: boolean) => void; title: string; note: string }) {
   return (
-    <label className="ad-switch">
+    <label className="hsa-switch">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="hs-switch" aria-hidden="true" />
-      <span className="ad-switch-t">
+      <span className="hsa-switch-t">
         {title}
         <span>{note}</span>
       </span>
@@ -359,9 +359,9 @@ export default function JourneyEditor({
 
   return (
     <>
-      <div className="ad-head">
-        <div className="ad-head-t">
-          <Link className="ad-back" href="/admin/journeys">
+      <div className="hsa-head">
+        <div className="hsa-head-t">
+          <Link className="hsa-back" href="/admin/journeys">
             <ArrowLeft size={16} aria-hidden="true" />
             Journeys
           </Link>
@@ -369,7 +369,7 @@ export default function JourneyEditor({
             <h1 className="text-h1" style={{ margin: 0 }}>
               {form.title.trim() || "New journey"}
             </h1>
-            <span className={`ad-st ${statusChip}`}>
+            <span className={`hsa-st ${statusChip}`}>
               {form.status === "published" ? <CircleCheck size={14} aria-hidden="true" /> : form.status === "scheduled" ? <CalendarDays size={14} aria-hidden="true" /> : <PenLine size={14} aria-hidden="true" />}
               {STATUS_LABEL[form.status]}
             </span>
@@ -380,8 +380,8 @@ export default function JourneyEditor({
               .join(" · ")}
           </span>
         </div>
-        <div className="ad-head-a">
-          <span className={`ad-saved${dirty ? " dirty" : ""}`} role="status">
+        <div className="hsa-head-a">
+          <span className={`hsa-saved${dirty ? " dirty" : ""}`} role="status">
             {dirty ? <CircleAlert size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
             {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "All changes saved"}
           </span>
@@ -404,7 +404,7 @@ export default function JourneyEditor({
       </div>
 
       {restore ? (
-        <div className="ad-banner" style={{ marginTop: 16, alignItems: "center" }}>
+        <div className="hsa-banner" style={{ marginTop: 16, alignItems: "center" }}>
           <CircleAlert size={18} aria-hidden="true" style={{ color: "var(--warning)" }} />
           <span style={{ flex: 1 }}>
             You have unsaved edits from {new Date(restore.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.
@@ -418,64 +418,64 @@ export default function JourneyEditor({
         </div>
       ) : null}
       {error ? (
-        <div className="ad-banner err" role="alert" style={{ marginTop: 16 }}>
+        <div className="hsa-banner err" role="alert" style={{ marginTop: 16 }}>
           <CircleAlert size={18} aria-hidden="true" />
           <span>{error}</span>
         </div>
       ) : null}
       {notice ? (
-        <div className="ad-banner ok" role="status" style={{ marginTop: 16 }}>
+        <div className="hsa-banner ok" role="status" style={{ marginTop: 16 }}>
           <CircleCheck size={18} aria-hidden="true" />
           <span style={{ flex: 1 }}>{notice}</span>
-          <button type="button" className="ad-icon-btn" aria-label="Dismiss" onClick={() => setNotice(null)} style={{ width: 28, height: 28 }}>
+          <button type="button" className="hsa-icon-btn" aria-label="Dismiss" onClick={() => setNotice(null)} style={{ width: 28, height: 28 }}>
             <X size={16} aria-hidden="true" />
           </button>
         </div>
       ) : null}
 
-      <div className="ad-body">
-        <aside className="ad-side" aria-label="Sections">
+      <div className="hsa-body">
+        <aside className="hsa-side" aria-label="Sections">
           <span className="text-overline" style={{ padding: "0 12px 6px", color: "var(--muted-foreground)" }}>
             On this page
           </span>
-          <a className="ad-out" href="#pub"><span>Publishing</span></a>
-          <a className="ad-out" href="#ov"><span>Cover &amp; basics</span></a>
-          <a className="ad-out" href="#why"><span>Why this journey</span></a>
-          <a className="ad-out" href="#find"><span>What you&apos;ll find</span></a>
-          <a className="ad-out" href="#days">
+          <a className="hsa-out" href="#pub"><span>Publishing</span></a>
+          <a className="hsa-out" href="#ov"><span>Cover &amp; basics</span></a>
+          <a className="hsa-out" href="#why"><span>Why this journey</span></a>
+          <a className="hsa-out" href="#find"><span>What you&apos;ll find</span></a>
+          <a className="hsa-out" href="#days">
             <span>The {form.days.length} {form.days.length === 1 ? "day" : "days"}</span>
             {daysWithIssues ? (
-              <span className="ad-out-warn" title={`${daysWithIssues} to finish`}>
+              <span className="hsa-out-warn" title={`${daysWithIssues} to finish`}>
                 <TriangleAlert size={14} aria-hidden="true" />
               </span>
             ) : null}
           </a>
-          <div className="ad-side-days">
+          <div className="hsa-side-days">
             {form.days.map((d, i) => (
-              <a key={i} className="ad-out ad-out-sub" href="#days" onClick={() => setOpenDay(i)}>
-                <span className="ad-out-n">{String(d.day).padStart(2, "0")}</span>
+              <a key={i} className="hsa-out hsa-out-sub" href="#days" onClick={() => setOpenDay(i)}>
+                <span className="hsa-out-n">{String(d.day).padStart(2, "0")}</span>
                 <span>{d.title || "Untitled"}</span>
                 {dayIssues(d) ? (
-                  <span className="ad-out-warn">
+                  <span className="hsa-out-warn">
                     <TriangleAlert size={12} aria-hidden="true" />
                   </span>
                 ) : null}
               </a>
             ))}
           </div>
-          <a className="ad-out" href="#end"><span>Completion</span></a>
+          <a className="hsa-out" href="#end"><span>Completion</span></a>
         </aside>
 
-        <div className="ad-main">
+        <div className="hsa-main">
           {/* Publishing */}
-          <section className="ad-sec" id="pub" aria-labelledby="pub-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Publishing</span>
+          <section className="hsa-sec" id="pub" aria-labelledby="pub-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Publishing</span>
                 <h2 id="pub-t" className="text-h3" style={{ margin: 0 }}>Who can see this journey, and from when.</h2>
               </div>
             </div>
-            <div className="ad-seg" role="group" aria-label="Status" style={{ alignSelf: "flex-start" }}>
+            <div className="hsa-seg" role="group" aria-label="Status" style={{ alignSelf: "flex-start" }}>
               {(["draft", "scheduled", "published"] as const).map((s) => (
                 <button key={s} type="button" aria-pressed={form.status === s} onClick={() => set("status", s)}>
                   {STATUS_LABEL[s]}
@@ -487,7 +487,7 @@ export default function JourneyEditor({
                 </button>
               ) : null}
             </div>
-            <div className="ad-grid2">
+            <div className="hsa-grid2">
               <Field
                 label="Address"
                 htmlFor="f-id"
@@ -506,7 +506,7 @@ export default function JourneyEditor({
                   <input id="f-when" type="datetime-local" className="hs-control" value={form.scheduled} onChange={(e) => set("scheduled", e.target.value)} />
                 </Field>
               ) : (
-                <div className="ad-field">
+                <div className="hsa-field">
                   <span className="hs-label">{form.status === "published" ? "Live" : form.status === "archived" ? "Archived" : "Draft"}</span>
                   <span className="hs-hint">
                     {form.status === "published"
@@ -521,23 +521,23 @@ export default function JourneyEditor({
           </section>
 
           {/* Cover & basics */}
-          <section className="ad-sec" id="ov" aria-labelledby="ov-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Overview</span>
+          <section className="hsa-sec" id="ov" aria-labelledby="ov-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Overview</span>
                 <h2 id="ov-t" className="text-h3" style={{ margin: 0 }}>Cover &amp; basics</h2>
                 <span className="hs-hint">What people see first: on the cards, the Journeys page and the top of the overview.</span>
               </div>
             </div>
-            <div className="ad-cover">
-              <div className="ad-cover-img">
+            <div className="hsa-cover">
+              <div className="hsa-cover-img">
                 {cover ? <img src={cover} alt="" /> : <ImageIcon size={28} aria-hidden="true" />}
-                <span className="ad-cover-tag">Header · fades into the page</span>
+                <span className="hsa-cover-tag">Header · fades into the page</span>
               </div>
-              <div className="ad-cover-side">
-                <div className="ad-cover-thumb">
+              <div className="hsa-cover-side">
+                <div className="hsa-cover-thumb">
                   {cover ? <img src={cover} alt="" /> : null}
-                  <span className="ad-cover-tag">Card</span>
+                  <span className="hsa-cover-tag">Card</span>
                 </div>
                 <span className="hs-hint" style={{ fontSize: 13, lineHeight: "18px" }}>
                   One photo for the header and the cards. At least 2400 × 1600, calm at the top.
@@ -555,7 +555,7 @@ export default function JourneyEditor({
             <Field label="Title" where="Overview, cards, day header" htmlFor="f-title">
               <input id="f-title" className="hs-control" value={form.title} onChange={(e) => set("title", e.target.value)} />
             </Field>
-            <div className="ad-grid2">
+            <div className="hsa-grid2">
               <Field label="Category" where="Overline, cards" htmlFor="f-cat">
                 <input id="f-cat" className="hs-control" list="f-cats" value={form.category} onChange={(e) => set("category", e.target.value)} />
                 <datalist id="f-cats">
@@ -571,17 +571,17 @@ export default function JourneyEditor({
             <Field label="Tagline" where="Under the title, cards" htmlFor="f-tag">
               <input id="f-tag" className="hs-control" value={form.tagline} onChange={(e) => set("tagline", e.target.value)} />
             </Field>
-            <div className="ad-switches">
+            <div className="hsa-switches">
               <Switch checked={form.featured} onChange={(v) => set("featured", v)} title="Featured" note="Sage chip on the catalog card, first in the list." />
               <Switch checked={form.premium} onChange={(v) => set("premium", v)} title="HumanSoul Plus" note="Day 1 stays free; the rest open with Plus." />
             </div>
           </section>
 
           {/* Why */}
-          <section className="ad-sec" id="why" aria-labelledby="why-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Overview</span>
+          <section className="hsa-sec" id="why" aria-labelledby="why-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Overview</span>
                 <h2 id="why-t" className="text-h3" style={{ margin: 0 }}>Why this journey</h2>
                 <span className="hs-hint">The reason to start, in the journey&apos;s own words. Shown in “More about this journey”.</span>
               </div>
@@ -595,15 +595,15 @@ export default function JourneyEditor({
           </section>
 
           {/* What you'll find */}
-          <section className="ad-sec" id="find" aria-labelledby="find-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Overview</span>
+          <section className="hsa-sec" id="find" aria-labelledby="find-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Overview</span>
                 <h2 id="find-t" className="text-h3" style={{ margin: 0 }}>What you&apos;ll find</h2>
                 <span className="hs-hint">The same four cards for every journey.</span>
               </div>
             </div>
-            <div className="ad-feats">
+            <div className="hsa-feats">
               {[
                 [BookOpen, "A short daily reading", "A few calm paragraphs that frame the day's theme."],
                 [PenLine, "One question to write about", "A single reflection, saved privately in the journal."],
@@ -612,8 +612,8 @@ export default function JourneyEditor({
               ].map(([Icon, t, d]) => {
                 const I = Icon as typeof BookOpen;
                 return (
-                  <div className="ad-feat" key={t as string}>
-                    <span className="ad-feat-ico"><I size={20} aria-hidden="true" /></span>
+                  <div className="hsa-feat" key={t as string}>
+                    <span className="hsa-feat-ico"><I size={20} aria-hidden="true" /></span>
                     <span><b>{t as string}</b><span>{d as string}</span></span>
                   </div>
                 );
@@ -622,38 +622,38 @@ export default function JourneyEditor({
           </section>
 
           {/* Days */}
-          <section className="ad-sec" id="days" aria-labelledby="days-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Days</span>
+          <section className="hsa-sec" id="days" aria-labelledby="days-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Days</span>
                 <h2 id="days-t" className="text-h3" style={{ margin: 0 }}>
                   The {form.days.length} {form.days.length === 1 ? "day" : "days"}
                 </h2>
                 <span className="hs-hint">Each day: a title, a reading, why it matters and a question to go deeper.</span>
               </div>
             </div>
-            <ul className="ad-days">
+            <ul className="hsa-days">
               {form.days.map((d, i) => {
                 const issue = dayIssues(d);
                 const head = (
-                  <button type="button" className="ad-day" aria-expanded={openDay === i} onClick={() => setOpenDay(openDay === i ? null : i)}>
-                    <span className="ad-day-num">{String(d.day).padStart(2, "0")}</span>
-                    <span className="ad-day-text">
-                      <span className="ad-day-title">{d.title || "Untitled day"}</span>
-                      {openDay === i ? null : <span className="ad-day-sum">{d.purpose || d.prompt.split("\n")[0] || "No reading yet"}</span>}
+                  <button type="button" className="hsa-day" aria-expanded={openDay === i} onClick={() => setOpenDay(openDay === i ? null : i)}>
+                    <span className="hsa-day-num">{String(d.day).padStart(2, "0")}</span>
+                    <span className="hsa-day-text">
+                      <span className="hsa-day-title">{d.title || "Untitled day"}</span>
+                      {openDay === i ? null : <span className="hsa-day-sum">{d.purpose || d.prompt.split("\n")[0] || "No reading yet"}</span>}
                     </span>
                     {issue ? (
-                      <span className="ad-warn"><TriangleAlert size={14} aria-hidden="true" />{issue}</span>
+                      <span className="hsa-warn"><TriangleAlert size={14} aria-hidden="true" />{issue}</span>
                     ) : (
-                      <span className="ad-ok"><CircleCheck size={14} aria-hidden="true" className="ai" />Ready</span>
+                      <span className="hsa-ok"><CircleCheck size={14} aria-hidden="true" className="ai" />Ready</span>
                     )}
-                    <span className="ad-soft" style={{ width: 52, textAlign: "right" }}>{openDay === i ? "Close" : "Edit"}</span>
+                    <span className="hsa-soft" style={{ width: 52, textAlign: "right" }}>{openDay === i ? "Close" : "Edit"}</span>
                   </button>
                 );
                 return openDay === i ? (
-                  <li key={i} className="ad-day-open">
+                  <li key={i} className="hsa-day-open">
                     {head}
-                    <div className="ad-day-body">
+                    <div className="hsa-day-body">
                       <Field label="Day title" where="Day header, index" htmlFor={`d-t-${i}`}>
                         <input id={`d-t-${i}`} className="hs-control" value={d.title} onChange={(e) => setDay(i, "title", e.target.value)} />
                       </Field>
@@ -666,7 +666,7 @@ export default function JourneyEditor({
                       <Field label="Go deeper · optional" where="Folded until opened" htmlFor={`d-g-${i}`}>
                         <input id={`d-g-${i}`} className="hs-control" value={d.deeper} onChange={(e) => setDay(i, "deeper", e.target.value)} />
                       </Field>
-                      <div className="ad-row-actions">
+                      <div className="hsa-row-actions">
                         <button type="button" className="hs-btn hs-btn-ghost hs-btn-sm" disabled={i === 0} onClick={() => moveDay(i, -1)}>
                           <ArrowUp size={16} aria-hidden="true" />Move up
                         </button>
@@ -689,15 +689,15 @@ export default function JourneyEditor({
               <button type="button" className="hs-btn hs-btn-secondary hs-btn-sm" onClick={addDay}>
                 <Plus size={16} aria-hidden="true" />Add a day
               </button>
-              <span className="ad-note">Each day opens after the one before is written.</span>
+              <span className="hsa-note">Each day opens after the one before is written.</span>
             </div>
           </section>
 
           {/* Completion */}
-          <section className="ad-sec" id="end" aria-labelledby="end-t">
-            <div className="ad-sec-head">
-              <div className="ad-sec-text">
-                <span className="text-overline ad-over">Completion</span>
+          <section className="hsa-sec" id="end" aria-labelledby="end-t">
+            <div className="hsa-sec-head">
+              <div className="hsa-sec-text">
+                <span className="text-overline hsa-over">Completion</span>
                 <h2 id="end-t" className="text-h3" style={{ margin: 0 }}>When the journey ends</h2>
                 <span className="hs-hint">What people read after the last day.</span>
               </div>
@@ -705,12 +705,12 @@ export default function JourneyEditor({
             <Field label="Closing message" where="Journey complete" htmlFor="f-close" hint="Leave a blank line between paragraphs.">
               <textarea id="f-close" className="hs-control hs-textarea" rows={6} value={form.completion_message} onChange={(e) => set("completion_message", e.target.value)} />
             </Field>
-            <div className="ad-field">
-              <div className="ad-lab">
+            <div className="hsa-field">
+              <div className="hsa-lab">
                 <span className="hs-label">Closing questions</span>
-                <span className="ad-where">A closing reflection · choose one</span>
+                <span className="hsa-where">A closing reflection · choose one</span>
               </div>
-              <div className="ad-list-in">
+              <div className="hsa-list-in">
                 {form.reflection_questions.map((q, i) => (
                   <div key={i}>
                     <input
@@ -721,7 +721,7 @@ export default function JourneyEditor({
                     />
                     <button
                       type="button"
-                      className="ad-icon-btn"
+                      className="hsa-icon-btn"
                       aria-label={`Remove question ${i + 1}`}
                       onClick={() => set("reflection_questions", form.reflection_questions.length > 1 ? form.reflection_questions.filter((_, n) => n !== i) : [""])}
                     >

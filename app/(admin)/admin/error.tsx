@@ -8,11 +8,11 @@ export default function AdminError({ error, reset }: { error: Error & { digest?:
     console.error(error);
   }, [error]);
   return (
-    <div className="ad-card ad-pad" role="alert" style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="hsa-card hsa-pad" role="alert" style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
       <h1 className="text-h3" style={{ margin: 0 }}>
         This page couldn&apos;t load
       </h1>
-      <p className="ad-soft" style={{ margin: 0, fontSize: 14 }}>
+      <p className="hsa-soft" style={{ margin: 0, fontSize: 14 }}>
         {error.message || "Something went wrong on the server."}
         {error.digest ? ` · Reference ${error.digest}` : ""}
       </p>

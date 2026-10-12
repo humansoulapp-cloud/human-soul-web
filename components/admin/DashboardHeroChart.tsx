@@ -18,9 +18,9 @@ export default function DashboardHeroChart({ series }: { series: { label: string
   const h = hover;
 
   return (
-    <div className="ad-chart-box">
+    <div className="hsa-chart-box">
       <svg
-        className="ad-chart"
+        className="hsa-chart"
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
         role="img"
@@ -67,13 +67,13 @@ export default function DashboardHeroChart({ series }: { series: { label: string
         ))}
       </svg>
       {h !== null ? (
-        <div className="ad-tt" style={{ left: `${(X(h) / W) * 100}%`, top: `${(Y(series[h].count) / H) * 100}%` }}>
-          <span className="ad-tt-k">Week of {series[h].label}</span>
-          <span className="ad-tt-v">
+        <div className="hsa-tt" style={{ left: `${(X(h) / W) * 100}%`, top: `${(Y(series[h].count) / H) * 100}%` }}>
+          <span className="hsa-tt-k">Week of {series[h].label}</span>
+          <span className="hsa-tt-v">
             {series[h].count} {series[h].count === 1 ? "writer" : "writers"}
           </span>
           {h > 0 && series[h - 1].count ? (
-            <span className="ad-tt-n">
+            <span className="hsa-tt-n">
               {(() => {
                 const d = Math.round(((series[h].count - series[h - 1].count) / series[h - 1].count) * 100);
                 return `${d > 0 ? "+" : d < 0 ? "−" : "±"}${Math.abs(d)}% on the week before`;

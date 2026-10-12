@@ -20,15 +20,15 @@ import DashboardHeroChart from "@/components/admin/DashboardHeroChart";
 const PERIODS = [7, 30, 90] as const;
 
 function DeltaTag({ d, note }: { d: Delta; note: string }) {
-  if (!d) return <span className="ad-dl-note" style={{ marginLeft: 0 }}>{note}</span>;
+  if (!d) return <span className="hsa-dl-note" style={{ marginLeft: 0 }}>{note}</span>;
   const Icon = d.dir === "up" ? ArrowUp : d.dir === "down" ? ArrowDown : Minus;
   return (
     <>
-      <span className={`ad-dl ${d.dir === "flat" ? "flat" : d.good ? "up" : "down"}`}>
+      <span className={`hsa-dl ${d.dir === "flat" ? "flat" : d.good ? "up" : "down"}`}>
         <Icon size={14} aria-hidden="true" />
         {d.text}
       </span>
-      <span className="ad-dl-note">{note}</span>
+      <span className="hsa-dl-note">{note}</span>
     </>
   );
 }
@@ -39,7 +39,7 @@ function Spark({ values }: { values: number[] }) {
   const y = (v: number) => h - 4 - ((v - mn) / (mx - mn || 1)) * (h - 8);
   const pts = values.map((v, i) => `${((i * (w - 8)) / (values.length - 1) + 4).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   return (
-    <svg className="ad-spark" viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true">
+    <svg className="hsa-spark" viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true">
       <polyline points={pts} />
       <circle cx={w - 4} cy={y(values[values.length - 1])} r={3.5} />
     </svg>
@@ -48,14 +48,14 @@ function Spark({ values }: { values: number[] }) {
 
 function Tile({ label, value, note, delta, deltaNote, spark }: { label: string; value: string; note: string; delta: Delta; deltaNote: string; spark?: number[] }) {
   return (
-    <div className="ad-card ad-tile">
-      <span className="ad-tile-l">{label}</span>
-      <div className="ad-tile-row">
-        <span className="ad-tile-v">{value}</span>
+    <div className="hsa-card hsa-tile">
+      <span className="hsa-tile-l">{label}</span>
+      <div className="hsa-tile-row">
+        <span className="hsa-tile-v">{value}</span>
         {spark && spark.some((v) => v) ? <Spark values={spark} /> : null}
       </div>
-      <span className="ad-tile-n">{note}</span>
-      <span className="ad-tile-d">
+      <span className="hsa-tile-n">{note}</span>
+      <span className="hsa-tile-d">
         <DeltaTag d={delta} note={deltaNote} />
       </span>
     </div>
@@ -72,7 +72,7 @@ function MiniCurve({ curve, worst }: { curve: number[]; worst: number }) {
         return (
           <path
             key={i}
-            className={`ad-mb${i === worst ? " warn" : ""}`}
+            className={`hsa-mb${i === worst ? " warn" : ""}`}
             d={`M${x},${h} V${y + 4} Q${x},${y} ${x + 4},${y} H${x + bw - 4} Q${x + bw},${y} ${x + bw},${y + 4} V${h} Z`}
           >
             <title>{`Day ${i + 1}: ${v}% still writing`}</title>
@@ -146,14 +146,14 @@ export default async function AdminDashboardPage({
 
   return (
     <>
-      <div className="ad-head">
-        <div className="ad-head-t">
+      <div className="hsa-head">
+        <div className="hsa-head-t">
           <h1 className="text-h1" style={{ margin: 0 }}>
             Dashboard
           </h1>
-          <span className="ad-sub">{today} · Are people finding a writing habit here?</span>
+          <span className="hsa-sub">{today} · Are people finding a writing habit here?</span>
         </div>
-        <nav className="ad-seg" aria-label="Period">
+        <nav className="hsa-seg" aria-label="Period">
           {PERIODS.map((p) => (
             <Link key={p} href={`/admin?period=${p}`} aria-current={p === period ? "true" : undefined} scroll={false}>
               {p} days
@@ -162,20 +162,20 @@ export default async function AdminDashboardPage({
         </nav>
       </div>
 
-      <div className="ad-top2">
-        <section className="ad-card ad-hero" aria-labelledby="h-waw">
-          <span className="ad-hero-l" id="h-waw">
+      <div className="hsa-top2">
+        <section className="hsa-card hsa-hero" aria-labelledby="h-waw">
+          <span className="hsa-hero-l" id="h-waw">
             <Users size={16} aria-hidden="true" />
             Weekly active writers
           </span>
-          <div className="ad-hero-v">
+          <div className="hsa-hero-v">
             <b>{num(d.waw)}</b>
             <DeltaTag d={d.wawDelta} note="vs previous 7 days" />
           </div>
-          <span className="ad-hero-def">People who wrote at least once in the last 7 days.</span>
+          <span className="hsa-hero-def">People who wrote at least once in the last 7 days.</span>
           <DashboardHeroChart series={d.wawSeries} />
         </section>
-        <div className="ad-tiles">
+        <div className="hsa-tiles">
           <Tile label="New sign-ups" value={num(d.signups)} note={`Last ${period} days`} delta={d.signupsDelta} deltaNote={prevNote} spark={d.signupSpark} />
           <Tile label="Activation" value={orDash(d.activation)} note="Wrote a first entry within 24 h" delta={d.activationDelta} deltaNote={prevNote} spark={d.activationSpark} />
           <Tile label="Coming back" value={orDash(d.back)} note="Weekly ÷ monthly writers" delta={d.backDelta} deltaNote="vs a week ago" spark={d.backSpark} />
@@ -183,39 +183,39 @@ export default async function AdminDashboardPage({
         </div>
       </div>
 
-      <section className="ad-dsec" aria-labelledby="s-act">
-        <div className="ad-dsec-h">
+      <section className="hsa-dsec" aria-labelledby="s-act">
+        <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-act">Activation &amp; retention</h2>
-          <span className="ad-dsec-q">Do new people start writing, and do they come back?</span>
+          <span className="hsa-dsec-q">Do new people start writing, and do they come back?</span>
         </div>
-        <div className="ad-g2">
-          <div className="ad-card ad-pad">
-            <div className="ad-card-h">
-              <span className="ad-card-t">From sign-up to habit</span>
-              <span className="ad-card-n">Signed up {d.funnelRange}</span>
+        <div className="hsa-g2">
+          <div className="hsa-card hsa-pad">
+            <div className="hsa-card-h">
+              <span className="hsa-card-t">From sign-up to habit</span>
+              <span className="hsa-card-n">Signed up {d.funnelRange}</span>
             </div>
             {d.funnel[0].n ? (
               <>
-                <ul className="ad-fns">
+                <ul className="hsa-fns">
                   {d.funnel.map((s, i) => {
                     const p = Math.round((s.n / d.funnel[0].n) * 100);
                     const lost = i ? d.funnel[i - 1].n - s.n : 0;
                     const big = i === biggestFunnelDrop.i && lost > 0;
                     return (
                       <li key={s.label}>
-                        <div className="ad-fn-top">
-                          <span className="ad-fn-k">{s.label}</span>
+                        <div className="hsa-fn-top">
+                          <span className="hsa-fn-k">{s.label}</span>
                           {i && lost > 0 ? (
-                            <span className={`ad-fn-drop${big ? " big" : ""}`}>
+                            <span className={`hsa-fn-drop${big ? " big" : ""}`}>
                               {big ? <CircleAlert size={14} aria-hidden="true" /> : null}−{lost} ({Math.round((lost / Math.max(1, d.funnel[i - 1].n)) * 100)}%)
                             </span>
                           ) : null}
-                          <span className="ad-fn-v">
+                          <span className="hsa-fn-v">
                             {s.n}
-                            <span className="ad-fn-p">{p}%</span>
+                            <span className="hsa-fn-p">{p}%</span>
                           </span>
                         </div>
-                        <div className="ad-track">
+                        <div className="hsa-track">
                           <span style={{ width: `${p}%` }} />
                         </div>
                       </li>
@@ -223,23 +223,23 @@ export default async function AdminDashboardPage({
                   })}
                 </ul>
                 {lostAtFirst >= 30 ? (
-                  <div className="ad-callout">
+                  <div className="hsa-callout">
                     <CircleAlert size={16} aria-hidden="true" className="ai" />
                     <span>{lostAtFirst}% of the people who sign up never write a first entry. The blank page is where most are lost.</span>
                   </div>
                 ) : null}
               </>
             ) : (
-              <p className="ad-soft" style={{ margin: 0 }}>No sign-ups in that window yet.</p>
+              <p className="hsa-soft" style={{ margin: 0 }}>No sign-ups in that window yet.</p>
             )}
-            <p className="ad-soft" style={{ margin: "14px 0 0" }}>Counts people who signed up two to {period === 7 ? "three" : period === 30 ? "six" : "fifteen"} weeks ago, so week 2 has happened for all of them.</p>
+            <p className="hsa-soft" style={{ margin: "14px 0 0" }}>Counts people who signed up two to {period === 7 ? "three" : period === 30 ? "six" : "fifteen"} weeks ago, so week 2 has happened for all of them.</p>
           </div>
-          <div className="ad-card ad-pad">
-            <div className="ad-card-h">
-              <span className="ad-card-t">Still writing, by sign-up week</span>
-              <span className="ad-card-n">% who wrote in that week</span>
+          <div className="hsa-card hsa-pad">
+            <div className="hsa-card-h">
+              <span className="hsa-card-t">Still writing, by sign-up week</span>
+              <span className="hsa-card-n">% who wrote in that week</span>
             </div>
-            <table className="ad-coh">
+            <table className="hsa-coh">
               <thead>
                 <tr>
                   <th scope="col">Signed up</th>
@@ -259,9 +259,9 @@ export default async function AdminDashboardPage({
                     {c.cells.map((v, i) => (
                       <td key={i}>
                         {v === null ? (
-                          <span className="ad-c empty">—</span>
+                          <span className="hsa-c empty">—</span>
                         ) : (
-                          <span className="ad-c" style={{ background: `color-mix(in oklab, var(--primary) ${Math.round(10 + v * 0.75)}%, var(--card))` }}>
+                          <span className="hsa-c" style={{ background: `color-mix(in oklab, var(--primary) ${Math.round(10 + v * 0.75)}%, var(--card))` }}>
                             {v}%
                           </span>
                         )}
@@ -271,7 +271,7 @@ export default async function AdminDashboardPage({
                 ))}
               </tbody>
             </table>
-            <div className="ad-legend">
+            <div className="hsa-legend">
               <span>0%</span>
               <i />
               <span>100%</span>
@@ -281,14 +281,14 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      <section className="ad-dsec" aria-labelledby="s-j">
-        <div className="ad-dsec-h">
+      <section className="hsa-dsec" aria-labelledby="s-j">
+        <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-j">Journeys</h2>
-          <span className="ad-dsec-q">Do people finish them, and where do they stop?</span>
+          <span className="hsa-dsec-q">Do people finish them, and where do they stop?</span>
         </div>
-        <div className="ad-card ad-pad">
+        <div className="hsa-card hsa-pad">
           {d.journeyRows.length ? (
-            <table className="ad-jt">
+            <table className="hsa-jt">
               <thead>
                 <tr>
                   <th scope="col">Journey</th>
@@ -303,8 +303,8 @@ export default async function AdminDashboardPage({
                   <tr key={j.id}>
                     <th scope="row">
                       <Link href={`/admin/journeys/${j.id}`}>
-                        <span className="ad-j-t">{j.title}</span>
-                        <span className="ad-j-s">{j.days} days</span>
+                        <span className="hsa-j-t">{j.title}</span>
+                        <span className="hsa-j-s">{j.days} days</span>
                       </Link>
                     </th>
                     <td className="num">{j.starts}</td>
@@ -316,12 +316,12 @@ export default async function AdminDashboardPage({
                     </td>
                     <td>
                       {j.worst > 0 ? (
-                        <span className="ad-warn">
+                        <span className="hsa-warn">
                           <CircleAlert size={14} aria-hidden="true" />
                           Day {j.worst + 1} · −{j.loss} pts
                         </span>
                       ) : (
-                        <span className="ad-dash">—</span>
+                        <span className="hsa-dash">—</span>
                       )}
                     </td>
                   </tr>
@@ -329,53 +329,53 @@ export default async function AdminDashboardPage({
               </tbody>
             </table>
           ) : (
-            <p className="ad-soft" style={{ margin: 0 }}>Nobody has started a journey yet.</p>
+            <p className="hsa-soft" style={{ margin: 0 }}>Nobody has started a journey yet.</p>
           )}
         </div>
       </section>
 
-      <section className="ad-dsec" aria-labelledby="s-w">
-        <div className="ad-dsec-h">
+      <section className="hsa-dsec" aria-labelledby="s-w">
+        <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-w">Writing</h2>
-          <span className="ad-dsec-q">How much, when, and how often people write · last {period} days</span>
+          <span className="hsa-dsec-q">How much, when, and how often people write · last {period} days</span>
         </div>
-        <div className="ad-g3">
-          <div className="ad-card ad-pad">
-            <div className="ad-card-h">
-              <span className="ad-card-t">Last {period} days</span>
+        <div className="hsa-g3">
+          <div className="hsa-card hsa-pad">
+            <div className="hsa-card-h">
+              <span className="hsa-card-t">Last {period} days</span>
             </div>
-            <div className="ad-stats">
-              <div className="ad-stat"><span className="ad-stat-v">{num(d.writing.entries)}</span><span className="ad-stat-l">Entries written</span></div>
-              <div className="ad-stat"><span className="ad-stat-v">{d.writing.perWriter.toFixed(1)}</span><span className="ad-stat-l">Entries per writer</span></div>
-              <div className="ad-stat"><span className="ad-stat-v">{num(d.writing.words)}</span><span className="ad-stat-l">Words per entry</span></div>
-              <div className="ad-stat"><span className="ad-stat-v">{orDash(d.writing.photo)}</span><span className="ad-stat-l">With a photo</span></div>
+            <div className="hsa-stats">
+              <div className="hsa-stat"><span className="hsa-stat-v">{num(d.writing.entries)}</span><span className="hsa-stat-l">Entries written</span></div>
+              <div className="hsa-stat"><span className="hsa-stat-v">{d.writing.perWriter.toFixed(1)}</span><span className="hsa-stat-l">Entries per writer</span></div>
+              <div className="hsa-stat"><span className="hsa-stat-v">{num(d.writing.words)}</span><span className="hsa-stat-l">Words per entry</span></div>
+              <div className="hsa-stat"><span className="hsa-stat-v">{orDash(d.writing.photo)}</span><span className="hsa-stat-l">With a photo</span></div>
             </div>
             {d.writing.journeyShare !== null ? (
-              <div className="ad-split">
-                <div className="ad-split-bar" role="img" aria-label={`${d.writing.journeyShare}% from journeys, ${100 - d.writing.journeyShare}% free writing`}>
+              <div className="hsa-split">
+                <div className="hsa-split-bar" role="img" aria-label={`${d.writing.journeyShare}% from journeys, ${100 - d.writing.journeyShare}% free writing`}>
                   <span style={{ width: `${d.writing.journeyShare}%` }} />
                   <span style={{ width: `${100 - d.writing.journeyShare}%` }} />
                 </div>
-                <div className="ad-split-k">
-                  <span><i className="ad-sw" style={{ background: "var(--primary)" }} /><b>{d.writing.journeyShare}%</b>From journeys</span>
-                  <span><i className="ad-sw" style={{ background: "color-mix(in oklab, var(--primary) 40%, var(--card))" }} /><b>{100 - d.writing.journeyShare}%</b>Free writing</span>
+                <div className="hsa-split-k">
+                  <span><i className="hsa-sw" style={{ background: "var(--primary)" }} /><b>{d.writing.journeyShare}%</b>From journeys</span>
+                  <span><i className="hsa-sw" style={{ background: "color-mix(in oklab, var(--primary) 40%, var(--card))" }} /><b>{100 - d.writing.journeyShare}%</b>Free writing</span>
                 </div>
               </div>
             ) : null}
           </div>
-          <div className="ad-card ad-pad">
-            <div className="ad-card-h">
-              <span className="ad-card-t">When people write</span>
-              <span className="ad-card-n">Madrid time</span>
+          <div className="hsa-card hsa-pad">
+            <div className="hsa-card-h">
+              <span className="hsa-card-t">When people write</span>
+              <span className="hsa-card-n">Madrid time</span>
             </div>
-            <div className="ad-heat" role="img" aria-label="Entries by weekday and time of day">
+            <div className="hsa-heat" role="img" aria-label="Entries by weekday and time of day">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, di) => (
                 <React.Fragment key={day}>
-                  <span className="ad-hd">{day}</span>
+                  <span className="hsa-hd">{day}</span>
                   {d.heat[di].map((v, bi) => (
                     <span
                       key={bi}
-                      className="ad-hc"
+                      className="hsa-hc"
                       title={`${day} ${bi * 3}–${bi * 3 + 3}h · ${v} ${v === 1 ? "entry" : "entries"}`}
                       style={{ background: `color-mix(in oklab, var(--primary) ${Math.round(6 + (v / d.heatMax) * 86)}%, var(--secondary))` }}
                     />
@@ -384,31 +384,31 @@ export default async function AdminDashboardPage({
               ))}
               <span />
               {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => (
-                <span key={h} className="ad-hb">{h}h</span>
+                <span key={h} className="hsa-hb">{h}h</span>
               ))}
             </div>
-            <div className="ad-legend">
+            <div className="hsa-legend">
               <span>Fewer</span>
               <i />
               <span>More</span>
             </div>
           </div>
-          <div className="ad-card ad-pad">
-            <div className="ad-card-h">
-              <span className="ad-card-t">Writing streaks</span>
-              <span className="ad-card-n">Writers, last 30 days</span>
+          <div className="hsa-card hsa-pad">
+            <div className="hsa-card-h">
+              <span className="hsa-card-t">Writing streaks</span>
+              <span className="hsa-card-n">Writers, last 30 days</span>
             </div>
-            <ul className="ad-sts">
+            <ul className="hsa-sts">
               {d.streaks.map((s) => (
                 <li key={s.label}>
-                  <span className="ad-st-k">{s.label}</span>
-                  <span className="ad-track"><span style={{ width: `${s.pct}%` }} /></span>
-                  <span className="ad-st-v">{s.pct}%</span>
+                  <span className="hsa-st-k">{s.label}</span>
+                  <span className="hsa-track"><span style={{ width: `${s.pct}%` }} /></span>
+                  <span className="hsa-st-v">{s.pct}%</span>
                 </li>
               ))}
             </ul>
             {d.reminders.share !== null ? (
-              <div className="ad-callout" style={{ marginTop: 22 }}>
+              <div className="hsa-callout" style={{ marginTop: 22 }}>
                 <Bell size={16} aria-hidden="true" className="ai" style={{ color: "var(--primary)" }} />
                 <span>
                   {d.reminders.ratio && d.reminders.ratio >= 1.05
@@ -422,55 +422,55 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      <section className="ad-dsec" aria-labelledby="s-r">
-        <div className="ad-dsec-h">
+      <section className="hsa-dsec" aria-labelledby="s-r">
+        <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-r">Plus</h2>
-          <span className="ad-src">
+          <span className="hsa-src">
             <CreditCard size={14} aria-hidden="true" />
             Members from profiles · revenue needs Stripe
           </span>
         </div>
-        <div className="ad-rev">
-          <div className="ad-card ad-tile">
-            <span className="ad-tile-l">Plus members</span>
-            <span className="ad-tile-v">{num(d.plus)}</span>
-            <span className="ad-soft">{num(d.totalUsers)} accounts in total</span>
+        <div className="hsa-rev">
+          <div className="hsa-card hsa-tile">
+            <span className="hsa-tile-l">Plus members</span>
+            <span className="hsa-tile-v">{num(d.plus)}</span>
+            <span className="hsa-soft">{num(d.totalUsers)} accounts in total</span>
           </div>
-          <div className="ad-card ad-tile">
-            <span className="ad-tile-l">Free to Plus</span>
-            <span className="ad-tile-v">{orDash(d.freeToPlus)}</span>
-            <span className="ad-soft">Of all accounts</span>
+          <div className="hsa-card hsa-tile">
+            <span className="hsa-tile-l">Free to Plus</span>
+            <span className="hsa-tile-v">{orDash(d.freeToPlus)}</span>
+            <span className="hsa-soft">Of all accounts</span>
           </div>
           {["Monthly revenue", "Cancelled"].map((k) => (
-            <div key={k} className="ad-nt" style={{ gap: 6 }}>
-              <span className="ad-nt-tag">
+            <div key={k} className="hsa-nt" style={{ gap: 6 }}>
+              <span className="hsa-nt-tag">
                 <CreditCard size={14} aria-hidden="true" />
                 Needs Stripe
               </span>
-              <span className="ad-nt-t">{k}</span>
-              <span className="ad-nt-d">Shows once payments are connected.</span>
+              <span className="hsa-nt-t">{k}</span>
+              <span className="hsa-nt-d">Shows once payments are connected.</span>
             </div>
           ))}
         </div>
       </section>
 
       {attention.length ? (
-        <section className="ad-dsec" aria-labelledby="s-a">
-          <div className="ad-dsec-h">
+        <section className="hsa-dsec" aria-labelledby="s-a">
+          <div className="hsa-dsec-h">
             <h2 className="text-h3" id="s-a">Needs attention</h2>
           </div>
-          <div className="ad-att">
+          <div className="hsa-att">
             {attention.map((a) => (
-              <div key={a.title} className="ad-att-row">
-                <span className={`ad-att-ico${a.warn ? " w" : ""}`}>
+              <div key={a.title} className="hsa-att-row">
+                <span className={`hsa-att-ico${a.warn ? " w" : ""}`}>
                   <a.icon size={20} aria-hidden="true" />
                 </span>
                 <div>
-                  <div className="ad-att-t">{a.title}</div>
-                  <div className="ad-att-m">{a.meta}</div>
+                  <div className="hsa-att-t">{a.title}</div>
+                  <div className="hsa-att-m">{a.meta}</div>
                 </div>
                 {a.href ? (
-                  <Link className="ad-att-a" href={a.href}>
+                  <Link className="hsa-att-a" href={a.href}>
                     {a.action}
                     <ArrowRight size={14} aria-hidden="true" />
                   </Link>
@@ -483,31 +483,31 @@ export default async function AdminDashboardPage({
         </section>
       ) : null}
 
-      <section className="ad-dsec" aria-labelledby="s-t">
-        <div className="ad-dsec-h">
+      <section className="hsa-dsec" aria-labelledby="s-t">
+        <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-t">Coming with event tracking</h2>
-          <span className="ad-dsec-q">Not measured yet — needs a small events table</span>
+          <span className="hsa-dsec-q">Not measured yet — needs a small events table</span>
         </div>
-        <div className="ad-g3">
+        <div className="hsa-g3">
           {[
             ["Opened without writing", "Daily app opens versus entries — shows people who visit but don't write."],
             ["Closed the blank page", "How often the writer opens and closes without saving — does the blank page intimidate?"],
             ["Where sign-ups come from", "Search, social, invites or press, to see which channel brings writers, not just sign-ups."],
           ].map(([t, desc]) => (
-            <div key={t} className="ad-nt">
-              <span className="ad-nt-tag">
+            <div key={t} className="hsa-nt">
+              <span className="hsa-nt-tag">
                 <Radar size={14} aria-hidden="true" />
                 Needs tracking
               </span>
-              <span className="ad-nt-t">{t}</span>
-              <span className="ad-nt-d">{desc}</span>
-              <div className="ad-nt-sk" />
+              <span className="hsa-nt-t">{t}</span>
+              <span className="hsa-nt-d">{desc}</span>
+              <div className="hsa-nt-sk" />
             </div>
           ))}
         </div>
       </section>
 
-      <p className="ad-priv">
+      <p className="hsa-priv">
         <Lock size={14} aria-hidden="true" />
         Only totals are shown here. Entries stay private and are never visible in Admin.
       </p>

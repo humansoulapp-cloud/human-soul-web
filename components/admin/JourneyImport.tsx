@@ -91,10 +91,10 @@ export function ImportDialog({
   };
 
   return (
-    <div className="ad-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <section className="ad-dlg" role="dialog" aria-modal="true" aria-labelledby="imp-t">
-        <div className="ad-dlg-h">
-          <div className="ad-dlg-t">
+    <div className="hsa-scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <section className="hsa-dlg" role="dialog" aria-modal="true" aria-labelledby="imp-t">
+        <div className="hsa-dlg-h">
+          <div className="hsa-dlg-t">
             <h2 id="imp-t" className="text-h3" style={{ margin: 0 }}>
               Import from a document
             </h2>
@@ -103,13 +103,13 @@ export function ImportDialog({
               it changes.
             </span>
           </div>
-          <button type="button" className="ad-icon-btn" aria-label="Close" onClick={onClose} style={{ margin: "-6px -6px 0 0" }}>
+          <button type="button" className="hsa-icon-btn" aria-label="Close" onClick={onClose} style={{ margin: "-6px -6px 0 0" }}>
             <X size={20} aria-hidden="true" />
           </button>
         </div>
 
         <div
-          className={`ad-drop-zone${over ? " over" : ""}`}
+          className={`hsa-drop-zone${over ? " over" : ""}`}
           role="button"
           tabIndex={0}
           onClick={() => fileRef.current?.click()}
@@ -126,10 +126,10 @@ export function ImportDialog({
             if (f) readFile(f);
           }}
         >
-          <span className="ad-drop-ico">
+          <span className="hsa-drop-ico">
             <Upload size={22} aria-hidden="true" />
           </span>
-          <span className="ad-drop-t">{busy ? "Reading…" : "Drop a Word file here"}</span>
+          <span className="hsa-drop-t">{busy ? "Reading…" : "Drop a Word file here"}</span>
           <span className="hs-hint">
             or <span style={{ color: "var(--primary)", fontWeight: 500 }}>choose a .docx</span> · a Google Doc
             downloaded as Word works too
@@ -147,18 +147,18 @@ export function ImportDialog({
           />
         </div>
 
-        <div className="ad-or">or</div>
+        <div className="hsa-or">or</div>
 
-        <div className="ad-field">
+        <div className="hsa-field">
           <label className="hs-label" htmlFor="imp-link">
             Google Docs link
           </label>
-          <div className="ad-inrow">
+          <div className="hsa-inrow">
             <div className="hs-input-wrap" style={{ flex: 1 }}>
               <Link2 size={18} className="hs-lead" aria-hidden="true" />
               <input
                 id="imp-link"
-                className="ad-in"
+                className="hsa-in"
                 placeholder="https://docs.google.com/document/d/…"
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
@@ -175,19 +175,19 @@ export function ImportDialog({
         </div>
 
         {error ? (
-          <div className="ad-banner err" role="alert">
+          <div className="hsa-banner err" role="alert">
             <CircleAlert size={18} aria-hidden="true" className="ai" />
             <span>{error}</span>
           </div>
         ) : null}
 
-        <div className="ad-tpl">
-          <span className="ad-tpl-ico">
+        <div className="hsa-tpl">
+          <span className="hsa-tpl-ico">
             <FileText size={20} aria-hidden="true" />
           </span>
           <div>
             <div style={{ font: "500 14px/20px var(--hs-font-sans)" }}>No document yet?</div>
-            <div className="ad-soft">Start from the template{onExport ? ", or export this journey and edit it" : ""}.</div>
+            <div className="hsa-soft">Start from the template{onExport ? ", or export this journey and edit it" : ""}.</div>
             <div style={{ display: "flex", gap: 4, margin: "8px 0 0 -14px", flexWrap: "wrap" }}>
               <a className="hs-btn hs-btn-ghost hs-btn-sm" href="/templates/HumanSoul-journey-template.docx" download>
                 <Download size={16} aria-hidden="true" />
@@ -203,7 +203,7 @@ export function ImportDialog({
           </div>
         </div>
 
-        <div className="ad-safe">
+        <div className="hsa-safe">
           <Lock size={16} aria-hidden="true" className="ai" />
           <span>Nothing is saved yet. The cover image, address and publishing stay as they are.</span>
         </div>
@@ -327,16 +327,16 @@ export function ImportReview({
 
   return (
     <>
-      <div className="ad-head">
-        <div className="ad-head-t">
-          <button type="button" className="ad-back" onClick={onCancel} style={{ border: 0, background: "none", cursor: "pointer", padding: 0 }}>
+      <div className="hsa-head">
+        <div className="hsa-head-t">
+          <button type="button" className="hsa-back" onClick={onCancel} style={{ border: 0, background: "none", cursor: "pointer", padding: 0 }}>
             <ArrowLeft size={16} aria-hidden="true" />
             {journeyTitle}
           </button>
           <h1 className="text-h1" style={{ margin: 0 }}>
             Check the import
           </h1>
-          <span className="ad-soft" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+          <span className="hsa-soft" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14 }}>
             <FileText size={16} aria-hidden="true" />
             <b style={{ fontWeight: 500, color: "var(--foreground)" }}>{source}</b> · template v1 · read just now
           </span>
@@ -347,53 +347,53 @@ export function ImportReview({
         </button>
       </div>
 
-      <div className="ad-sum">
-        <div className="ad-card ad-sum-c">
-          <span className="ad-sum-i ok">
+      <div className="hsa-sum">
+        <div className="hsa-card hsa-sum-c">
+          <span className="hsa-sum-i ok">
             <CircleCheck size={20} aria-hidden="true" />
           </span>
           <div>
-            <div className="ad-sum-v">{fieldCount} fields read</div>
-            <div className="ad-sum-l">
+            <div className="hsa-sum-v">{fieldCount} fields read</div>
+            <div className="hsa-sum-l">
               {changeCount} {changeCount === 1 ? "of them changes" : "of them change"} something
             </div>
           </div>
         </div>
-        <div className="ad-card ad-sum-c">
-          <span className={`ad-sum-i ${errors.length ? "er" : "ok"}`}>
+        <div className="hsa-card hsa-sum-c">
+          <span className={`hsa-sum-i ${errors.length ? "er" : "ok"}`}>
             <CircleAlert size={20} aria-hidden="true" />
           </span>
           <div>
-            <div className="ad-sum-v">{errors.length ? `${errors.length} to fix` : "Nothing to fix"}</div>
-            <div className="ad-sum-l">{errors.length ? "Nothing is applied until they're fixed" : "Ready to apply"}</div>
+            <div className="hsa-sum-v">{errors.length ? `${errors.length} to fix` : "Nothing to fix"}</div>
+            <div className="hsa-sum-l">{errors.length ? "Nothing is applied until they're fixed" : "Ready to apply"}</div>
           </div>
         </div>
-        <div className="ad-card ad-sum-c">
-          <span className={`ad-sum-i ${warnings.length ? "wa" : "ok"}`}>
+        <div className="hsa-card hsa-sum-c">
+          <span className={`hsa-sum-i ${warnings.length ? "wa" : "ok"}`}>
             <TriangleAlert size={20} aria-hidden="true" />
           </span>
           <div>
-            <div className="ad-sum-v">{warnings.length ? `${warnings.length} to check` : "No warnings"}</div>
-            <div className="ad-sum-l">{warnings.length ? "Can be applied as it is" : " "}</div>
+            <div className="hsa-sum-v">{warnings.length ? `${warnings.length} to check` : "No warnings"}</div>
+            <div className="hsa-sum-l">{warnings.length ? "Can be applied as it is" : " "}</div>
           </div>
         </div>
       </div>
 
       {live.length || Object.keys(picked).length ? (
-        <section className="ad-rsec" aria-labelledby="r-fix">
-          <div className="ad-rsec-h">
+        <section className="hsa-rsec" aria-labelledby="r-fix">
+          <div className="hsa-rsec-h">
             <h2 id="r-fix" className="text-h3">
               To fix
             </h2>
-            <span className="ad-soft" style={{ fontSize: 14 }}>
+            <span className="hsa-soft" style={{ fontSize: 14 }}>
               Fix them in the document and read it again, or choose here
             </span>
           </div>
           {parse.issues.map((i, n) => {
             const solved = Boolean(i.field && picked[i.field]);
             return (
-              <div className="ad-iss" key={n}>
-                <span className={`ad-sum-i ${solved ? "ok" : i.level === "error" ? "er" : "wa"}`}>
+              <div className="hsa-iss" key={n}>
+                <span className={`hsa-sum-i ${solved ? "ok" : i.level === "error" ? "er" : "wa"}`}>
                   {solved ? (
                     <CircleCheck size={20} aria-hidden="true" />
                   ) : i.level === "error" ? (
@@ -403,10 +403,10 @@ export function ImportReview({
                   )}
                 </span>
                 <div>
-                  <div className="ad-iss-t">{i.title}</div>
-                  <div className="ad-iss-m">{solved ? `Using “${picked[i.field!]}”.` : i.detail}</div>
+                  <div className="hsa-iss-t">{i.title}</div>
+                  <div className="hsa-iss-m">{solved ? `Using “${picked[i.field!]}”.` : i.detail}</div>
                   {i.choices && i.field ? (
-                    <div className="ad-fix">
+                    <div className="hsa-fix">
                       {i.choices.map((c) => (
                         <button
                           key={c}
@@ -421,23 +421,23 @@ export function ImportReview({
                     </div>
                   ) : null}
                 </div>
-                <span className="ad-line">{i.line ? `Line ${i.line}` : ""}</span>
+                <span className="hsa-line">{i.line ? `Line ${i.line}` : ""}</span>
               </div>
             );
           })}
         </section>
       ) : null}
 
-      <section className="ad-rsec" aria-labelledby="r-what">
-        <div className="ad-rsec-h">
+      <section className="hsa-rsec" aria-labelledby="r-what">
+        <div className="hsa-rsec-h">
           <h2 id="r-what" className="text-h3">
             What will change
           </h2>
-          <span className="ad-soft" style={{ fontSize: 14 }}>
+          <span className="hsa-soft" style={{ fontSize: 14 }}>
             Same order as the edit page
           </span>
         </div>
-        <div className="ad-card ad-rcard">
+        <div className="hsa-card hsa-rcard">
           {groups.map((g) => {
             const hasErr = g.issues.some((i) => i.level === "error");
             const hasWarn = g.issues.some((i) => i.level === "warning");
@@ -454,11 +454,11 @@ export function ImportReview({
               <div key={g.key} style={{ display: "contents" }}>
                 <button
                   type="button"
-                  className="ad-rrow"
+                  className="hsa-rrow"
                   aria-expanded={isOpen}
                   onClick={() => setOpen((o) => ({ ...o, [g.key]: !isOpen }))}
                 >
-                  <span className={`ad-ic${hasErr ? " e" : hasWarn ? " w" : empty ? " s" : ""}`}>
+                  <span className={`hsa-ic${hasErr ? " e" : hasWarn ? " w" : empty ? " s" : ""}`}>
                     {hasErr ? (
                       <CircleAlert size={20} aria-hidden="true" />
                     ) : hasWarn ? (
@@ -469,14 +469,14 @@ export function ImportReview({
                       <CircleCheck size={20} aria-hidden="true" />
                     )}
                   </span>
-                  <span className="ad-rrow-t">{g.title}</span>
-                  <span className="ad-rrow-n">{note}</span>
-                  <span className="ad-ic s">{isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</span>
+                  <span className="hsa-rrow-t">{g.title}</span>
+                  <span className="hsa-rrow-n">{note}</span>
+                  <span className="hsa-ic s">{isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}</span>
                 </button>
                 {isOpen ? (
-                  <div className="ad-det">
+                  <div className="hsa-det">
                     {g.days ? (
-                      <div className="ad-kept">
+                      <div className="hsa-kept">
                         {g.days.map((d) => (
                           <span
                             key={d.day}
@@ -500,16 +500,16 @@ export function ImportReview({
                       </div>
                     ) : null}
                     {g.changes.map((c, n) => (
-                      <div className="ad-diff" key={n}>
-                        <span className="ad-diff-k">{c.label}</span>
-                        <div className="ad-diff-v">
-                          {c.was ? <span className="ad-was">{c.was}</span> : null}
-                          <span className="ad-now">{c.now || "(empty)"}</span>
+                      <div className="hsa-diff" key={n}>
+                        <span className="hsa-diff-k">{c.label}</span>
+                        <div className="hsa-diff-v">
+                          {c.was ? <span className="hsa-was">{c.was}</span> : null}
+                          <span className="hsa-now">{c.now || "(empty)"}</span>
                         </div>
                       </div>
                     ))}
-                    {g.same.length ? <span className="ad-soft">{g.same.join(", ")} stay the same.</span> : null}
-                    {empty && !g.same.length && !g.days ? <span className="ad-soft">Not in the document. Stays as it is.</span> : null}
+                    {g.same.length ? <span className="hsa-soft">{g.same.join(", ")} stay the same.</span> : null}
+                    {empty && !g.same.length && !g.days ? <span className="hsa-soft">Not in the document. Stays as it is.</span> : null}
                   </div>
                 ) : null}
               </div>
@@ -518,16 +518,16 @@ export function ImportReview({
         </div>
       </section>
 
-      <section className="ad-rsec" aria-labelledby="r-kept">
-        <div className="ad-rsec-h">
+      <section className="hsa-rsec" aria-labelledby="r-kept">
+        <div className="hsa-rsec-h">
           <h2 id="r-kept" className="text-h3">
             Not in the document
           </h2>
-          <span className="ad-soft" style={{ fontSize: 14 }}>
+          <span className="hsa-soft" style={{ fontSize: 14 }}>
             These stay exactly as they are
           </span>
         </div>
-        <div className="ad-kept">
+        <div className="hsa-kept">
           {["Cover image", "Address", "Status & publish date"].map((k) => (
             <span key={k}>
               <Lock size={14} aria-hidden="true" />
@@ -536,20 +536,20 @@ export function ImportReview({
           ))}
         </div>
         {parse.notStored.length ? (
-          <p className="ad-soft" style={{ margin: 0 }}>
+          <p className="hsa-soft" style={{ margin: 0 }}>
             Read but not saved yet (the app has no place for them): {parse.notStored.join(", ")}.
           </p>
         ) : null}
       </section>
 
-      <div className="ad-bar">
+      <div className="hsa-bar">
         {errors.length ? (
-          <span className="ad-bar-m">
+          <span className="hsa-bar-m">
             <CircleAlert size={16} aria-hidden="true" />
             Fix the {errors.length === 1 ? "issue" : `${errors.length} issues`} above to apply
           </span>
         ) : (
-          <span className="ad-bar-m ok">
+          <span className="hsa-bar-m ok">
             <CircleCheck size={16} aria-hidden="true" />
             Applying fills the form. Nothing is saved until you press Save.
           </span>

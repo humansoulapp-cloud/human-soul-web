@@ -25,10 +25,10 @@ export default async function AdminLayout({
   /* Admin runs on the app's own tokens, in dark. `admin-panel` still carries the
      older --admin-* variables for the screens that haven't moved yet (Users). */
   return (
-    <div className="dark admin-panel ad hs">
+    <div className="dark admin-panel hsa hs">
       <AdminTopBar />
-      <main className="ad-page">
-        <div className="ad-wrap">{children}</div>
+      <main className="hsa-page">
+        <div className="hsa-wrap">{children}</div>
       </main>
     </div>
   );

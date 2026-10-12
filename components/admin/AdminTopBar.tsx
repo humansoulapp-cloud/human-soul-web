@@ -14,10 +14,10 @@ const NAV = [
 export default function AdminTopBar() {
   const pathname = usePathname();
   return (
-    <header className="ad-top">
-      <div className="ad-top-in">
-        <Link className="ad-brand" href="/admin" aria-label="HumanSoul Admin">
-          <span className="ad-logo">
+    <header className="hsa-top">
+      <div className="hsa-top-in">
+        <Link className="hsa-brand" href="/admin" aria-label="HumanSoul Admin">
+          <span className="hsa-logo">
             <span className="hs-logo-human">Human</span>
             <span className="hs-logo-soul">Soul</span>
           </span>
@@ -25,7 +25,7 @@ export default function AdminTopBar() {
             Admin
           </span>
         </Link>
-        <nav className="ad-nav" aria-label="Admin">
+        <nav className="hsa-nav" aria-label="Admin">
           {NAV.map((item) => {
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
@@ -35,7 +35,7 @@ export default function AdminTopBar() {
             );
           })}
         </nav>
-        <Link className="ad-exit" href="/dashboard">
+        <Link className="hsa-exit" href="/dashboard">
           <LogOut size={16} aria-hidden="true" className="ai" />
           Exit to app
         </Link>

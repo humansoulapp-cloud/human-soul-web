@@ -58,7 +58,7 @@ const VIEW_KEY = "humansoul:admin-journeys-view";
 function StatusChip({ status, glass = false }: { status: StatusKey; glass?: boolean }) {
   const { label, icon: Icon } = STATUS[status];
   return (
-    <span className={`${glass ? "ad-glass" : "ad-st"} ${status}`}>
+    <span className={`${glass ? "hsa-glass" : "hsa-st"} ${status}`}>
       <Icon size={14} aria-hidden="true" className="ai" />
       {label}
     </span>
@@ -94,10 +94,10 @@ function RowMenu({ item }: { item: AdminJourneyItem }) {
     });
 
   return (
-    <div className="ad-menu-wrap" ref={ref}>
+    <div className="hsa-menu-wrap" ref={ref}>
       <button
         type="button"
-        className="ad-icon-btn"
+        className="hsa-icon-btn"
         aria-label={`More actions for ${item.title}`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -107,7 +107,7 @@ function RowMenu({ item }: { item: AdminJourneyItem }) {
         <MoreHorizontal size={18} aria-hidden="true" />
       </button>
       {open ? (
-        <div className="ad-menu" role="menu">
+        <div className="hsa-menu" role="menu">
           <Link role="menuitem" href={`/admin/journeys/${item.id}`}>
             <PenLine size={16} className="ai" aria-hidden="true" />
             Edit
@@ -158,13 +158,13 @@ function Flags({ item }: { item: AdminJourneyItem }) {
   return (
     <>
       {item.featured ? (
-        <span className="ad-tg">
+        <span className="hsa-tg">
           <Star size={13} aria-hidden="true" />
           Featured
         </span>
       ) : null}
       {item.premium ? (
-        <span className="ad-tg">
+        <span className="hsa-tg">
           <Gem size={13} aria-hidden="true" />
           Plus
         </span>
@@ -238,14 +238,14 @@ export default function AdminJourneysBrowser({
 
   return (
     <>
-      <div className="ad-head">
-        <div className="ad-head-t">
+      <div className="hsa-head">
+        <div className="hsa-head-t">
           <h1 className="text-h1" style={{ margin: 0 }}>
             Journeys
           </h1>
           <span className="hs-hint">{summary}</span>
         </div>
-        <div className="ad-head-a">
+        <div className="hsa-head-a">
           <Link href="/admin/journeys/new?import=open" className="hs-btn hs-btn-secondary">
             <Upload size={16} aria-hidden="true" />
             Import from a document
@@ -257,8 +257,8 @@ export default function AdminJourneysBrowser({
         </div>
       </div>
 
-      <div className="ad-tools">
-        <label className="ad-srch">
+      <div className="hsa-tools">
+        <label className="hsa-srch">
           <span className="sr-only">Search journeys</span>
           <Search size={18} className="ai" aria-hidden="true" />
           <input
@@ -268,7 +268,7 @@ export default function AdminJourneysBrowser({
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        <div className="ad-seg" role="group" aria-label="Status">
+        <div className="hsa-seg" role="group" aria-label="Status">
           <button type="button" aria-pressed={status === "all"} onClick={() => setStatus("all")}>
             All<span className="n">{items.length}</span>
           </button>
@@ -279,7 +279,7 @@ export default function AdminJourneysBrowser({
             </button>
           ))}
         </div>
-        <label className="ad-pill">
+        <label className="hsa-pill">
           <span className="sr-only">Category</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="all">All categories</option>
@@ -291,7 +291,7 @@ export default function AdminJourneysBrowser({
           </select>
           <ChevronDown size={16} className="ai" aria-hidden="true" />
         </label>
-        <div className="ad-views" role="group" aria-label="View">
+        <div className="hsa-views" role="group" aria-label="View">
           <button type="button" aria-pressed={view === "list"} aria-label="List" onClick={() => changeView("list")}>
             <List size={18} aria-hidden="true" />
           </button>
@@ -302,12 +302,12 @@ export default function AdminJourneysBrowser({
       </div>
 
       {shown.length === 0 ? (
-        <div className="ad-card ad-empty" style={{ marginTop: 16 }}>
+        <div className="hsa-card hsa-empty" style={{ marginTop: 16 }}>
           No journeys match. Try another status or clear the search.
         </div>
       ) : view === "list" ? (
-        <section className="ad-card ad-list" aria-label="Journeys">
-          <div className="ad-cols" aria-hidden="true">
+        <section className="hsa-card hsa-list" aria-label="Journeys">
+          <div className="hsa-cols" aria-hidden="true">
             <span>Journey</span>
             <span>Status</span>
             <span className="num">
@@ -318,77 +318,77 @@ export default function AdminJourneysBrowser({
             <span>Biggest drop</span>
             <span />
           </div>
-          <ul className="ad-rows">
+          <ul className="hsa-rows">
             {shown.map((item) => (
-              <li key={item.id} className={`ad-row${item.status === "archived" ? " arch" : ""}`}>
-                <Link className="ad-r-main" href={`/admin/journeys/${item.id}`}>
-                  <span className="ad-cov">
+              <li key={item.id} className={`hsa-row${item.status === "archived" ? " arch" : ""}`}>
+                <Link className="hsa-r-main" href={`/admin/journeys/${item.id}`}>
+                  <span className="hsa-cov">
                     {item.image ? <img src={item.image} alt="" /> : <ImageIcon size={18} aria-hidden="true" />}
                   </span>
-                  <span className="ad-r-txt">
-                    <span className="ad-r-t">{item.title}</span>
-                    <span className="ad-r-m">
+                  <span className="hsa-r-txt">
+                    <span className="hsa-r-t">{item.title}</span>
+                    <span className="hsa-r-m">
                       {meta(item)}
                       <Flags item={item} />
                     </span>
                     {item.warning ? (
-                      <span className="ad-warn">
+                      <span className="hsa-warn">
                         <TriangleAlert size={14} aria-hidden="true" />
                         {item.warning}
                       </span>
                     ) : null}
                   </span>
                 </Link>
-                <div className="ad-stc">
+                <div className="hsa-stc">
                   <StatusChip status={item.status} />
-                  {item.note ? <span className="ad-st-n">{item.note}</span> : null}
+                  {item.note ? <span className="hsa-st-n">{item.note}</span> : null}
                 </div>
                 <span className="num">
-                  {item.status === "scheduled" || item.status === "draft" ? <span className="ad-dash">—</span> : item.started}
+                  {item.status === "scheduled" || item.status === "draft" ? <span className="hsa-dash">—</span> : item.started}
                 </span>
                 {item.finishedPct !== null ? (
-                  <div className="ad-fin">
-                    <span className="ad-fin-v">{item.finishedPct}%</span>
-                    <span className="ad-fin-t">
+                  <div className="hsa-fin">
+                    <span className="hsa-fin-v">{item.finishedPct}%</span>
+                    <span className="hsa-fin-t">
                       <span style={{ width: `${item.finishedPct}%` }} />
                     </span>
                   </div>
                 ) : item.tooEarly ? (
-                  <span className="ad-soft">Too early</span>
+                  <span className="hsa-soft">Too early</span>
                 ) : (
-                  <span className="ad-dash">—</span>
+                  <span className="hsa-dash">—</span>
                 )}
-                {item.drop ? <span className="ad-drop">{item.drop}</span> : <span className="ad-dash">—</span>}
+                {item.drop ? <span className="hsa-drop">{item.drop}</span> : <span className="hsa-dash">—</span>}
                 <RowMenu item={item} />
               </li>
             ))}
           </ul>
         </section>
       ) : (
-        <ul className="ad-grid" aria-label="Journeys">
+        <ul className="hsa-grid" aria-label="Journeys">
           {shown.map((item) => (
-            <li key={item.id} className={`ad-gc${item.status === "archived" ? " arch" : ""}`}>
+            <li key={item.id} className={`hsa-gc${item.status === "archived" ? " arch" : ""}`}>
               <Link href={`/admin/journeys/${item.id}`}>
-                <div className="ad-gc-img">
+                <div className="hsa-gc-img">
                   {item.image ? (
                     <img src={item.image} alt="" />
                   ) : (
-                    <span className="ad-noimg">
+                    <span className="hsa-noimg">
                       <ImageIcon size={28} aria-hidden="true" />
                       No cover yet
                     </span>
                   )}
-                  <div className="ad-gc-top">
+                  <div className="hsa-gc-top">
                     <StatusChip status={item.status} glass />
-                    <span className="ad-gc-flags">
+                    <span className="hsa-gc-flags">
                       {item.featured ? (
-                        <span className="ad-glass">
+                        <span className="hsa-glass">
                           <Star size={14} aria-hidden="true" />
                           Featured
                         </span>
                       ) : null}
                       {item.premium ? (
-                        <span className="ad-glass">
+                        <span className="hsa-glass">
                           <Gem size={14} aria-hidden="true" />
                           Plus
                         </span>
@@ -396,36 +396,36 @@ export default function AdminJourneysBrowser({
                     </span>
                   </div>
                 </div>
-                <div className="ad-gc-b">
-                  <span className="ad-r-t">{item.title}</span>
-                  <span className="ad-r-m">{meta(item)}</span>
+                <div className="hsa-gc-b">
+                  <span className="hsa-r-t">{item.title}</span>
+                  <span className="hsa-r-m">{meta(item)}</span>
                   {item.warning ? (
-                    <span className="ad-warn">
+                    <span className="hsa-warn">
                       <TriangleAlert size={14} aria-hidden="true" />
                       {item.warning}
                     </span>
                   ) : null}
-                  <div className="ad-gs">
+                  <div className="hsa-gs">
                     {item.status === "live" || item.status === "archived" ? (
                       <div>
-                        <span className="ad-gs-v">{item.started}</span>
-                        <span className="ad-gs-l">started</span>
+                        <span className="hsa-gs-v">{item.started}</span>
+                        <span className="hsa-gs-l">started</span>
                       </div>
                     ) : null}
                     {item.finishedPct !== null ? (
                       <div>
-                        <span className="ad-gs-v">{item.finishedPct}%</span>
-                        <span className="ad-gs-l">finished</span>
+                        <span className="hsa-gs-v">{item.finishedPct}%</span>
+                        <span className="hsa-gs-l">finished</span>
                       </div>
                     ) : null}
                     {item.drop && item.status === "live" ? (
                       <div>
-                        <span className="ad-gs-v">{item.drop}</span>
-                        <span className="ad-gs-l">biggest drop</span>
+                        <span className="hsa-gs-v">{item.drop}</span>
+                        <span className="hsa-gs-l">biggest drop</span>
                       </div>
                     ) : null}
                     {item.note || item.tooEarly ? (
-                      <div className="ad-soft">
+                      <div className="hsa-soft">
                         {item.status === "scheduled" ? `Publishes ${item.note}` : item.note}
                         {item.tooEarly ? `${item.note ? " · " : ""}too early for finishes` : ""}
                       </div>
@@ -438,7 +438,7 @@ export default function AdminJourneysBrowser({
           ))}
         </ul>
       )}
-      <div className="ad-foot">
+      <div className="hsa-foot">
         <span>Grouped by status, then most started · started and finished count people</span>
         <span>
           Showing {shown.length} of {items.length}
