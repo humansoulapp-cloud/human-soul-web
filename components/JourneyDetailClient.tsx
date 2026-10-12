@@ -910,7 +910,7 @@ export default function JourneyDetailClient({
               <Button variant="secondary" icon={PenLine} onClick={() => setEditing(true)} full={false}>
                 Edit
               </Button>
-              {days[dayIndex + 1] && (statusOf(dayIndex + 1) === "today" || statusOf(dayIndex + 1) === "done") ? (
+              {!returnTo && days[dayIndex + 1] && (statusOf(dayIndex + 1) === "today" || statusOf(dayIndex + 1) === "done") ? (
                 <Button onClick={() => openDay(dayIndex + 1)} full={false}>
                   Day {days[dayIndex + 1].day}
                   <ChevronRight size={16} aria-hidden="true" />
