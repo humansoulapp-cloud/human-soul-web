@@ -13,7 +13,6 @@ import {
   CircleCheck,
   Clock,
   Compass,
-  Heart,
   Layers,
   Loader2,
   Lock,
@@ -212,16 +211,17 @@ export default function JourneyDetailClient({
   }, [toast]);
 
   useEffect(() => {
-    if (!indexOpen && !paywallOpen) return;
+    if (!indexOpen && !paywallOpen && !aboutOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIndexOpen(false);
         setPaywallOpen(false);
+        setAboutOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [indexOpen, paywallOpen]);
+  }, [indexOpen, paywallOpen, aboutOpen]);
 
   const openDay = useCallback(
     (index: number) => {
@@ -372,41 +372,31 @@ export default function JourneyDetailClient({
     : { label: `${started ? "Continue" : "Begin"} Day ${startDay?.day ?? 1}`, onClick: () => openDay(startIndex) };
   const overline = [journey.category, journey.featured ? "Featured" : null, journey.premium ? "Plus" : null].filter(Boolean).join(" · ");
 
+  /* At a glance: the journey on the left, its days on a glass card on the right.
+     Everything else lives in the «More about this journey» sheet. */
   const overview = (
-    <main className="jf-main">
-      <section aria-labelledby="jf-title" className="jf-stack" style={{ gap: 16 }}>
+    <main className="jf-ov">
+      <section aria-labelledby="jf-title" className="jf-ov-hero">
         {overline ? <span className="text-overline jf-over">{overline}</span> : null}
         <h1 id="jf-title" className="jf-display">
           {journey.title}
         </h1>
         {journey.tagline ? <p className="jf-lede">{journey.tagline}</p> : null}
-        <div className="jf-strip" role="list" aria-label="At a glance" style={{ marginTop: 16 }}>
-          <span className="jf-cell" role="listitem">
-            <Layers size={18} aria-hidden="true" />
-            {total} days, one theme each
-          </span>
-          <span className="jf-cell" role="listitem">
-            <Clock size={18} aria-hidden="true" />
+        <ul className="jf-facts" role="list" aria-label="At a glance">
+          <li>
+            <Layers size={16} aria-hidden="true" />
+            {total} days
+          </li>
+          <li>
+            <Clock size={16} aria-hidden="true" />
             {timeText} a day
-          </span>
-          <span className="jf-cell" role="listitem">
-            <Lock size={18} aria-hidden="true" />
-            One day opens at a time
-          </span>
-          <span className="jf-cell" role="listitem">
-            <BookOpen size={18} aria-hidden="true" />
-            Saved in your journal
-          </span>
-          <span className="jf-cell" role="listitem">
-            <ShieldCheck size={18} aria-hidden="true" />
-            Private. Only you can read it
-          </span>
-          <span className="jf-cell" role="listitem">
-            <Heart size={18} aria-hidden="true" />
-            No streaks, no scores
-          </span>
-        </div>
-        <div className="jf-actions" style={{ marginTop: 12 }}>
+          </li>
+          <li>
+            <BookOpen size={16} aria-hidden="true" />
+            Saved privately in your journal
+          </li>
+        </ul>
+        <div className="jf-actions" style={{ marginTop: 16 }}>
           <Button size="lg" onClick={overviewCta.onClick}>
             {overviewCta.label}
           </Button>
@@ -415,130 +405,59 @@ export default function JourneyDetailClient({
               Day 1 is free. Plus opens the rest
               <ChevronRight size={14} aria-hidden="true" />
             </button>
-          ) : (
+          ) : started ? (
             <span className="text-body-sm" style={{ color: "var(--muted-foreground)" }}>
-              {started && !allDone
-                ? `${doneCount} of ${total} days written. Your place is kept.`
-                : allDone
-                  ? `All ${total} days written.`
-                  : "You can pause at any time. Your progress waits for you."}
+              {allDone ? `All ${total} days written.` : `${doneCount} of ${total} days written. Your place is kept.`}
             </span>
-          )}
+          ) : null}
         </div>
+        <button
+          type="button"
+          className="jf-more"
+          aria-haspopup="dialog"
+          aria-expanded={aboutOpen}
+          aria-controls="jf-sheet"
+          onClick={() => setAboutOpen(true)}
+        >
+          More about this journey
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
       </section>
 
-      {journey.purpose || aboutParas.length > 0 ? (
-        <section aria-labelledby="jf-why" className="jf-sec">
-          <span className="text-overline jf-over-primary">Why this journey</span>
-          {journey.purpose ? (
-            <h2 id="jf-why" className="jf-h2">
-              {journey.purpose}
-            </h2>
-          ) : null}
-          {aboutParas.length > 0 ? (
-            <>
-              <div className={`jf-intro${!aboutOpen && aboutParas.length > 3 ? " clamped" : ""}`}>
-                {aboutParas.map((text, i) => (
-                  <p key={i}>{text}</p>
-                ))}
-              </div>
-              {aboutParas.length > 3 ? (
-                <div>
-                  <button type="button" className="jf-link" onClick={() => setAboutOpen((v) => !v)} aria-expanded={aboutOpen}>
-                    {aboutOpen ? "Show less" : "Read more"}
-                    <ChevronDown size={14} aria-hidden="true" style={{ transform: aboutOpen ? "rotate(180deg)" : undefined }} />
-                  </button>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section aria-labelledby="jf-find" className="jf-sec">
-        <span className="text-overline jf-over-primary">What you&apos;ll find</span>
-        <h2 id="jf-find" className="jf-h2">
-          {journey.time_required ? `Each day takes ${journey.time_required.toLowerCase()}.` : "Every day has the same quiet shape."}
-        </h2>
-        <div className="jf-feats">
-          <div className="jf-feat">
-            <span className="jf-feat-ico" aria-hidden="true">
-              <BookOpen size={20} />
-            </span>
-            <span className="jf-feat-title">A short daily reading</span>
-            <span className="jf-feat-text">A few calm paragraphs that frame the day&apos;s theme.</span>
-          </div>
-          <div className="jf-feat">
-            <span className="jf-feat-ico" aria-hidden="true">
-              <PenLine size={20} />
-            </span>
-            <span className="jf-feat-title">One question to write about</span>
-            <span className="jf-feat-text">A single reflection, saved privately in your journal and tagged with the journey.</span>
-          </div>
-          <div className="jf-feat">
-            <span className="jf-feat-ico" aria-hidden="true">
-              <Sparkles size={20} />
-            </span>
-            <span className="jf-feat-title">Go deeper, if you want</span>
-            <span className="jf-feat-text">An extra question for the days you want to stay a little longer.</span>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="jf-days" className="jf-sec" style={{ gap: 8 }}>
-        <span className="text-overline jf-over-primary">The {NUMBER_WORDS[total] ?? total} days</span>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "8px 16px", paddingBottom: 12 }}>
-          <h2 id="jf-days" className="jf-h2">
-            What each day explores
-          </h2>
-          <span className="jf-meta jf-meta-soft">
+      <section aria-labelledby="jf-days" className="jf-glass">
+        <div className="jf-glass-head">
+          <h2 id="jf-days">The {NUMBER_WORDS[total] ?? total} days</h2>
+          <span>
             <Lock size={14} aria-hidden="true" />
-            Opens one day at a time
+            One opens each day
           </span>
         </div>
-        <ol role="list" className="jf-days">
+        <ol role="list" className="jf-gdays">
           {days.map((d, i) => {
             const status = statusOf(i);
             const open = status === "done" || status === "today";
-            const state =
-              status === "done" ? (
-                <>
-                  <CircleCheck size={16} aria-hidden="true" />
-                  Written
-                </>
-              ) : status === "today" ? (
-                started ? "Up next" : "Start here"
-              ) : status === "plus" ? (
-                <>
-                  <Lock size={14} aria-hidden="true" />
-                  Plus
-                </>
-              ) : (
-                <Lock size={14} aria-label="Not open yet" />
-              );
+            const mark =
+              status === "done" ? <Check size={14} aria-hidden="true" /> : status === "plus" ? <Lock size={13} aria-hidden="true" /> : d.day;
+            const caption =
+              status === "today" ? (started ? "Up next" : "First") : status === "done" ? "Written" : status === "plus" ? "Plus" : null;
             const inner = (
               <>
-                <span className="jf-num">{String(d.day).padStart(2, "0")}</span>
-                <span style={{ minWidth: 0 }}>
-                  <span className="jf-daytitle">{d.title}</span>
-                  {d.purpose ? <span className="jf-daytext">{d.purpose}</span> : null}
+                <span className="jf-gnum" aria-hidden="true">
+                  {mark}
                 </span>
-                <span className="jf-daystate">{state}</span>
+                <span className="jf-gtitle">{d.title}</span>
+                {caption ? <span className="jf-gcap">{caption}</span> : <span className="hs-sr-only">Not open yet</span>}
               </>
             );
+            const cls = `jf-gday${status === "today" ? " now" : ""}${status === "done" ? " done" : ""}`;
             return (
               <li key={d.day}>
                 {open || status === "plus" ? (
-                  <button
-                    type="button"
-                    className="jf-dayrow"
-                    aria-current={status === "today" ? "step" : undefined}
-                    onClick={() => openDay(i)}
-                  >
+                  <button type="button" className={cls} aria-current={status === "today" ? "step" : undefined} onClick={() => openDay(i)}>
                     {inner}
                   </button>
                 ) : (
-                  <div className="jf-dayrow" aria-disabled="true">
+                  <div className={`${cls} later`} aria-disabled="true">
                     {inner}
                   </div>
                 )}
@@ -550,40 +469,143 @@ export default function JourneyDetailClient({
     </main>
   );
 
+  /* «More about this journey»: a side sheet, so the overview stays at a glance. */
+  const sheet = aboutOpen ? (
+    <div className="jf-sheet-scrim" onClick={() => setAboutOpen(false)}>
+      <aside
+        id="jf-sheet"
+        className="jf-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jf-sheet-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="jf-sheet-head">
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+            <span className="text-overline jf-over">{journey.title}</span>
+            <h2 id="jf-sheet-title" className="jf-sheet-title">
+              About this journey
+            </h2>
+          </div>
+          <Button variant="ghost" size="icon" icon={X} aria-label="Close" onClick={() => setAboutOpen(false)} />
+        </div>
+        <div className="jf-sheet-body">
+          {journey.purpose || aboutParas.length > 0 ? (
+            <section className="jf-sheet-sec" aria-labelledby={journey.purpose ? "jf-sh-why" : undefined}>
+              {journey.purpose ? (
+                <h3 id="jf-sh-why" className="jf-sheet-h">
+                  {journey.purpose}
+                </h3>
+              ) : null}
+              {aboutParas.map((text, i) => (
+                <p key={i} className="jf-sheet-p">
+                  {text}
+                </p>
+              ))}
+            </section>
+          ) : null}
+          <section className="jf-sheet-sec" aria-labelledby="jf-sh-find">
+            <h3 id="jf-sh-find" className="jf-sheet-h">
+              What you&apos;ll find each day
+            </h3>
+            <div className="jf-sheet-feats">
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <BookOpen size={20} />
+                </span>
+                <span>
+                  <b>A short daily reading</b>
+                  <span>A few calm paragraphs that frame the day&apos;s theme.</span>
+                </span>
+              </div>
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <PenLine size={20} />
+                </span>
+                <span>
+                  <b>One question to write about</b>
+                  <span>A single reflection, saved privately in your journal and tagged with the journey.</span>
+                </span>
+              </div>
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <Sparkles size={20} />
+                </span>
+                <span>
+                  <b>Go deeper, if you want</b>
+                  <span>An extra question for the days you want to stay a little longer.</span>
+                </span>
+              </div>
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <ShieldCheck size={20} />
+                </span>
+                <span>
+                  <b>Private, at your pace</b>
+                  <span>Only you can read it. No streaks, no scores. One day opens at a time.</span>
+                </span>
+              </div>
+            </div>
+          </section>
+        </div>
+        {startDay ? (
+          <div className="jf-sheet-foot">
+            <span className="jf-bar-text">
+              <b>{allDone ? "Journey complete" : started ? "Your place is kept" : "Ready when you are"}</b>
+              <span>
+                Day {startDay.day} · {startDay.title} · {timeText.toLowerCase()}
+              </span>
+            </span>
+            <Button
+              onClick={() => {
+                setAboutOpen(false);
+                overviewCta.onClick();
+              }}
+            >
+              {overviewCta.label}
+            </Button>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  ) : null;
+
   /* ── Day: read, then write ──────────────────────────────────── */
   const dayView = day ? (
-    <main className="jf-main">
-      <div className="jf-stack">
-        <span className="text-overline jf-over">
-          Day {day.day} of {total}
-        </span>
-        <h1 id="jf-title" className="jf-h1">
-          {day.title}
-        </h1>
-        <span className="jf-meta">
-          <Clock size={16} aria-hidden="true" />
-          {timeText} · read, then write
-        </span>
+    <main className="jf-main jf-split">
+      <div className="jf-col-read">
+        <div className="jf-stack">
+          <span className="text-overline jf-over">
+            Day {day.day} of {total}
+          </span>
+          <h1 id="jf-title" className="jf-h1">
+            {day.title}
+          </h1>
+          <span className="jf-meta">
+            <Clock size={16} aria-hidden="true" />
+            {timeText} · read, then write
+          </span>
+        </div>
+
+        {dayParas.length > 0 ? (
+          <div className="jf-read">
+            {dayParas.map((text, i) => (
+              <p key={i}>{text}</p>
+            ))}
+          </div>
+        ) : null}
+
+        {day.purpose ? (
+          <aside aria-labelledby="jf-whyday" className="jf-why">
+            <h2 id="jf-whyday" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+              Why this day
+            </h2>
+            <p>{day.purpose}</p>
+          </aside>
+        ) : null}
       </div>
 
-      {dayParas.length > 0 ? (
-        <div className="jf-read">
-          {dayParas.map((text, i) => (
-            <p key={i}>{text}</p>
-          ))}
-        </div>
-      ) : null}
-
-      {day.purpose ? (
-        <aside aria-labelledby="jf-whyday" className="jf-why">
-          <h2 id="jf-whyday" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-            Why this day
-          </h2>
-          <p>{day.purpose}</p>
-        </aside>
-      ) : null}
-
-      <section aria-labelledby="jf-write" style={{ display: "flex", flexDirection: "column", paddingTop: 8 }}>
+      <section aria-labelledby="jf-write" className="jf-col-write">
         <div className="jf-write-head">
           <h2 id="jf-write" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
             Your reflection
@@ -636,7 +658,7 @@ export default function JourneyDetailClient({
   const nextDay = days[dayIndex + 1];
   const nextStatus = nextDay ? statusOf(dayIndex + 1) : null;
   const doneView = day ? (
-    <main className="jf-main">
+    <main className="jf-main jf-split jf-split-center">
       <div className="jf-stack">
         <span className="jf-badge" aria-hidden="true">
           <Check size={24} />
@@ -650,6 +672,14 @@ export default function JourneyDetailClient({
         <p role="status" className="jf-lede" style={{ marginTop: 4, fontSize: 20, lineHeight: "32px" }}>
           Thank you for noticing. Your reflection is saved in your journal, and only you can read it.
         </p>
+        {savedEntry ? (
+          <blockquote className="jf-quote" style={{ marginTop: 12 }}>
+            <q>{keyLine(entryBody(savedEntry.content))}</q>
+            <span className="text-body-sm" style={{ color: "var(--muted-foreground)" }}>
+              {longDateTime(savedEntry.created_at)}
+            </span>
+          </blockquote>
+        ) : null}
         <div className="jf-actions" style={{ marginTop: 16 }}>
           <Button size="lg" href="/dashboard">
             Back to Home
@@ -660,24 +690,15 @@ export default function JourneyDetailClient({
         </div>
       </div>
 
-      {savedEntry ? (
-        <blockquote className="jf-quote">
-          <q>{keyLine(entryBody(savedEntry.content))}</q>
-          <span className="text-body-sm" style={{ color: "var(--muted-foreground)" }}>
-            {longDateTime(savedEntry.created_at)}
-          </span>
-        </blockquote>
-      ) : null}
-
       {nextDay ? (
-        <section aria-labelledby="jf-next" style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+        <section aria-labelledby="jf-next" className="jf-panel">
           <h2 id="jf-next" className="text-overline" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)" }}>
             {nextStatus === "plus" ? <Lock size={14} aria-hidden="true" /> : <Compass size={14} aria-hidden="true" />}
             Day {nextDay.day} · {nextStatus === "plus" ? "Part of Plus" : "Up next"}
           </h2>
           <p className="jf-next-title">{nextDay.title}</p>
           {nextDay.purpose ? <p className="jf-next-text">{nextDay.purpose}</p> : null}
-          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
             <span className="jf-meta jf-meta-soft">
               <Clock size={16} aria-hidden="true" />
               Whenever you&apos;re ready. There is nothing to catch up on.
@@ -831,19 +852,7 @@ export default function JourneyDetailClient({
 
   /* ── Bottom bar ─────────────────────────────────────────────── */
   const bar =
-    stage === "overview" && startDay ? (
-      <div className="jf-bar">
-        <div className="jf-bar-in">
-          <span className="jf-bar-text">
-            <b>{allDone ? "Journey complete" : started ? "Your place is kept" : "Ready when you are"}</b>
-            <span>
-              Day {startDay.day} · {startDay.title} · {timeText.toLowerCase()}
-            </span>
-          </span>
-          <Button onClick={overviewCta.onClick}>{overviewCta.label}</Button>
-        </div>
-      </div>
-    ) : stage === "day" && day ? (
+    stage === "day" && day ? (
       <div className="jf-bar">
         <div className="jf-bar-in">
           <span className="jf-meta jf-meta-soft jf-bar-hide-sm">
@@ -867,6 +876,7 @@ export default function JourneyDetailClient({
 
       {header}
       {stage === "overview" && overview}
+      {stage === "overview" && sheet}
       {stage === "day" && dayView}
       {stage === "done" && doneView}
       {stage === "complete" && completeView}

@@ -229,6 +229,85 @@ button.jf-dayrow:hover { background: color-mix(in srgb, var(--foreground) 5%, tr
 .jf-plan { flex: 1; text-align: left; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--fill); color: inherit; cursor: pointer; font: inherit; }
 .jf-plan[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 
+/* ── Journey flow · at a glance (canvas «0 · Journey overview», «0b · sheet open», «2b–2f») ── */
+
+/* Overview: the photo fills the screen; the journey on the left, its days on a glass card */
+.jf-overview .jf-hero { height: 100dvh; min-height: 640px; }
+.jf-overview .jf-hero img { opacity: .7; }
+.jf-overview .jf-hero::after { background: linear-gradient(180deg, color-mix(in srgb, var(--background) 25%, transparent) 0%, color-mix(in srgb, var(--background) 55%, transparent) 50%, var(--background) 100%), linear-gradient(90deg, color-mix(in srgb, var(--background) 60%, transparent) 0%, transparent 60%); }
+.jf-ov { position: relative; box-sizing: border-box; width: 100%; max-width: calc(1120px + 32px); margin: 0 auto; padding: 160px 16px 48px; display: flex; flex-direction: column; gap: 40px; }
+@media (min-width: 1024px) {
+  .jf-ov { max-width: calc(1120px + 64px); min-height: calc(100dvh - 72px); padding: 32px 32px 56px; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 56px; align-items: end; }
+  .jf-ov .jf-display { font-size: 58px; line-height: 64px; }
+  .jf-ov .jf-lede { max-width: 560px; font-size: 20px; line-height: 30px; }
+}
+.jf-ov-hero { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.jf-facts { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 4px 0 0; padding: 0; list-style: none; }
+.jf-facts li { display: inline-flex; align-items: center; gap: 8px; font: 400 15px/22px var(--hs-font-sans); color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.jf-facts svg { flex: none; color: var(--primary); }
+.jf-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: -6px 0 -12px -12px; padding: 0 12px; border: 0; border-radius: 9999px; background: transparent; color: var(--muted-foreground); font: 500 14px/20px var(--hs-font-sans); cursor: pointer; }
+.jf-more:hover { color: var(--foreground); background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+
+.jf-glass { border-radius: 24px; padding: 24px 24px 16px; display: flex; flex-direction: column; gap: 8px; background: linear-gradient(160deg, color-mix(in srgb, var(--foreground) 12%, transparent) 0%, color-mix(in srgb, var(--foreground) 4%, transparent) 45%, color-mix(in srgb, var(--background) 22%, transparent) 100%); -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 16%, transparent), 0 24px 60px rgba(0,0,0,.3); }
+.jf-glass-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 4px; }
+.jf-glass-head h2 { margin: 0; font: 600 17px/24px var(--hs-font-sans); }
+.jf-glass-head span { display: inline-flex; align-items: center; gap: 6px; font: 400 13px/18px var(--hs-font-sans); color: var(--muted-foreground); }
+.jf-gdays { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.jf-gday { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: center; box-sizing: border-box; margin: 0 -12px; width: calc(100% + 24px); padding: 9px 12px; border: 0; border-radius: 14px; background: transparent; color: inherit; font: inherit; text-align: left; }
+button.jf-gday { cursor: pointer; }
+button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.jf-gday.now { background: color-mix(in srgb, var(--foreground) 10%, transparent); }
+.jf-gnum { width: 32px; height: 32px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--foreground) 8%, transparent); color: var(--muted-foreground); font: 500 13px/16px var(--hs-font-sans); font-variant-numeric: tabular-nums; }
+.jf-gday.now .jf-gnum { background: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+.jf-gday.done .jf-gnum { background: var(--accent); color: var(--accent-foreground); }
+.jf-gtitle { min-width: 0; font: 500 16px/22px var(--hs-font-sans); color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jf-gday.later .jf-gtitle { color: color-mix(in srgb, var(--foreground) 62%, transparent); }
+.jf-gcap { font: 500 12px/16px var(--hs-font-sans); color: var(--muted-foreground); }
+.jf-gday.now .jf-gcap { color: var(--primary); }
+:is(.jf-more, .jf-gday):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* «More about this journey»: side sheet */
+.jf-sheet-scrim { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: flex-end; background: rgba(10,9,8,.55); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.jf-sheet { width: min(640px, 100%); height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; background: var(--card); color: var(--foreground); box-shadow: -24px 0 64px rgba(0,0,0,.45); animation: jf-sheet-in .35s cubic-bezier(.22,1,.36,1); }
+@media (min-width: 640px) { .jf-sheet { border-radius: 28px 0 0 28px; } }
+@keyframes jf-sheet-in { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+.jf-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 20px 16px; }
+.jf-sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 32px; display: flex; flex-direction: column; gap: 36px; }
+.jf-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -1px 0 color-mix(in srgb, var(--foreground) 6%, transparent); }
+@media (min-width: 640px) { .jf-sheet-head { padding: 28px 40px 20px; } .jf-sheet-body { padding: 4px 40px 32px; } .jf-sheet-foot { padding: 20px 40px 28px; } }
+.jf-sheet-title { margin: 0; font: 500 34px/40px var(--hs-font-serif); letter-spacing: -.015em; font-variation-settings: "SOFT" 100, "WONK" 0; }
+.jf-sheet-sec { display: flex; flex-direction: column; gap: 14px; }
+.jf-sheet-h { margin: 0; font: 500 24px/30px var(--hs-font-serif); letter-spacing: -.01em; font-variation-settings: "SOFT" 100, "WONK" 0; }
+.jf-sheet-p { margin: 0; font: 400 16px/26px var(--hs-font-sans); color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.jf-sheet-feats { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px 24px; }
+@media (min-width: 640px) { .jf-sheet-feats { grid-template-columns: 1fr 1fr; } }
+.jf-sheet-feat { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; }
+.jf-sheet-feat b { display: block; font: 600 15px/22px var(--hs-font-sans); }
+.jf-sheet-feat b + span { display: block; font: 400 14px/21px var(--hs-font-sans); color: var(--muted-foreground); }
+@media (prefers-reduced-motion: reduce) { .jf-sheet { animation: none; } }
+
+/* Day: read on the left, write on the right — one screen, no page scroll */
+.jf-col-read { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.jf-col-write { display: flex; flex-direction: column; min-width: 0; padding-top: 8px; }
+@media (min-width: 1024px) {
+  .jf-main.jf-split:not(.jf-split-center) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; height: calc(100dvh - 72px - 88px); min-height: 560px; padding: 28px 32px 0; align-items: stretch; }
+  .jf-split .jf-col-read { gap: 24px; min-height: 0; overflow-y: auto; scrollbar-width: none; padding-bottom: 28px; }
+  .jf-split .jf-col-read::-webkit-scrollbar { display: none; }
+  .jf-split .jf-col-write { min-height: 0; padding: 0 0 28px; }
+  .jf-split .jf-col-write .jf-box { flex: 1; min-height: 0; resize: none; }
+  .jf-split .jf-h1 { font-size: 44px; line-height: 48px; letter-spacing: -0.035em; }
+  .jf-split .jf-read p { margin-bottom: 14px; font-size: 17px; line-height: 28px; }
+  .jf-split .jf-read p:last-child { margin-bottom: 0; }
+  .jf-split .jf-why p { font-size: 15px; line-height: 24px; }
+}
+
+/* Day complete: the message on the left, the next day on a card on the right */
+.jf-panel { display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 24px; background: color-mix(in srgb, var(--card) 82%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--hs-shadow-md); }
+@media (min-width: 1024px) {
+  .jf-main.jf-split-center { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; min-height: calc(100dvh - 72px); padding: 40px 32px 56px; }
+  .jf-split-center .jf-h1 { font-size: 48px; line-height: 52px; letter-spacing: -0.035em; }
+}
+
 /* ── Home · compact: the essentials above the fold ─────────────── */
 .hc { display: flex; flex-direction: column; gap: 32px; }
 .hc-hello { margin: 0 0 -12px; }
