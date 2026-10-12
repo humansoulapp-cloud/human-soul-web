@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen, Camera, Check, Compass, Heart, Lock, Plus, Trash2, X } from "lucide-react";
+import { BookOpen, Camera, Check, ChevronDown, Compass, Plus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
@@ -15,9 +14,10 @@ import {
   uploadPhoto,
   type Reflection,
 } from "@/lib/reflections";
-import { Button, Chip, EmptyState, Icon, Input, Textarea } from "@/components/ds";
+import { Button, EmptyState } from "@/components/ds";
 
 const DRAFT_KEY = "humansoul:reflect-draft";
+const TITLE_KEY = "humansoul:reflect-draft-title";
 
 /** Journey entries are saved with a "[Journey - Day N: Title]" first line; it stays untouched. */
 function splitHeader(content: string) {
@@ -29,15 +29,38 @@ function splitHeader(content: string) {
   return { header: "", body: text };
 }
 
+function words(text: string) {
+  const n = text.trim() ? text.trim().split(/\s+/).length : 0;
+  return `${n} ${n === 1 ? "word" : "words"}`;
+}
+
+function store(key: string, value: string) {
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    /* storage can be unavailable; the text stays on screen */
+  }
+}
+
+function read(key: string) {
+  try {
+    return localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 /**
- * Focus editor for one reflection — new (`id` omitted) or existing.
- * No app navigation: a back link, the writing area, a details panel and a
- * fixed action bar. Desktop puts the panel beside the text; mobile below it.
+ * Focus writing (canvas «App / Journal · New reflection»): nothing but the page.
+ * A quiet top bar (close, the journal it saves to, Done), the date, a title and
+ * the text. Photo and word count sit at the bottom. New and existing reflections.
  */
 export default function ReflectionEditor({ id, initialJournalId }: { id?: string; initialJournalId?: string | null }) {
   const router = useRouter();
   const isNew = !id;
   const fileInput = useRef<HTMLInputElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [entry, setEntry] = useState<Reflection | null>(null);
@@ -49,11 +72,11 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   const [body, setBody] = useState("");
   const [header, setHeader] = useState("");
   const [journalId, setJournalId] = useState<string>(initialJournalId ?? "");
-  const [favorite, setFavorite] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
 
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [creatingJournal, setCreatingJournal] = useState(false);
   const [newJournal, setNewJournal] = useState("");
   const [dirty, setDirty] = useState(false);
@@ -93,7 +116,6 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
         setHeader(parts.header);
         setBody(parts.body);
         setTitle(row.title?.trim() || (parts.header ? entryTitle(row) : ""));
-        setFavorite(Boolean(row.favorite));
         const byTag = list.find((j) => (row.tags ?? []).includes(j.title));
         setJournalId(row.journal_id ?? byTag?.id ?? "");
         if (row.photo) {
@@ -101,33 +123,37 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
           setPhotoUrl(urls[row.id] || null);
         }
       } else {
-        const stored = localStorage.getItem(DRAFT_KEY);
-        if (stored) setBody(stored);
+        setBody(read(DRAFT_KEY));
+        setTitle(read(TITLE_KEY));
       }
       setLoading(false);
     }
     load();
   }, [id, router]);
 
-  // New reflections keep a draft while you type, until they are saved
+  // A new reflection is kept on this device while you write, until it is saved.
   useEffect(() => {
     if (!isNew || loading) return;
-    if (body) localStorage.setItem(DRAFT_KEY, body);
-    else localStorage.removeItem(DRAFT_KEY);
-  }, [body, isNew, loading]);
+    store(DRAFT_KEY, body);
+    store(TITLE_KEY, title);
+  }, [body, title, isNew, loading]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const close = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setPickerOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [pickerOpen]);
 
   const journey = entry ? journeyInfo(entry) : null;
   const journal = journals.find((j) => j.id === journalId) ?? null;
-  const backHref = journal ? `/journal?journal_id=${journal.id}` : "/journal";
-
-  const status = useMemo(() => {
-    if (saving) return "Saving…";
-    if (dirty) return "Unsaved changes";
-    if (isNew) return "Draft kept as you type";
-    const at = entry?.updated_at || entry?.created_at;
-    return at ? `Saved ${new Date(at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Saved";
-  }, [saving, dirty, isNew, entry]);
-
   const touch = () => setDirty(true);
 
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,6 +195,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
     setJournalId(created.id);
     setNewJournal("");
     setCreatingJournal(false);
+    setPickerOpen(false);
     touch();
   };
 
@@ -180,10 +207,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   };
 
   const save = async () => {
-    if (!userId || !body.trim()) {
-      setError("Write something before saving.");
-      return;
-    }
+    if (!userId || !body.trim()) return;
     setSaving(true);
     setError("");
     const supabase = createClient();
@@ -198,14 +222,19 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
         content,
         tags: nextTags(),
         journal_id: journey ? entry?.journal_id ?? null : journal?.id ?? null,
-        favorite,
       };
       if (photo !== undefined) fields.photo = photo;
 
+      let savedId = id ?? "";
       if (isNew) {
-        const { error: err } = await supabase.from("reflections").insert([{ ...fields, user_id: userId }]);
-        if (err) throw new Error(err.message);
-        localStorage.removeItem(DRAFT_KEY);
+        const { data, error: err } = await supabase
+          .from("reflections")
+          .insert([{ ...fields, user_id: userId, favorite: false }])
+          .select("id");
+        if (err || !data?.[0]) throw new Error(err?.message ?? "Could not save your reflection.");
+        savedId = (data[0] as { id: string }).id;
+        store(DRAFT_KEY, "");
+        store(TITLE_KEY, "");
       } else {
         const { error: err } = await supabase
           .from("reflections")
@@ -216,7 +245,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
         if (photo !== undefined && entry?.photo && entry.photo !== photo) await removeStoredPhoto(supabase, entry.photo);
       }
       setDirty(false);
-      router.push(backHref);
+      router.push(`/journal?r=${savedId}`);
       router.refresh();
     } catch (err) {
       setError(`${err instanceof Error ? err.message : "Could not save your reflection."} Your text is still here; try again.`);
@@ -224,23 +253,10 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
     }
   };
 
-  const remove = async () => {
-    if (!entry) return;
-    if (!window.confirm("Delete this reflection? This cannot be undone.")) return;
-    const supabase = createClient();
-    const { error: err } = await supabase.from("reflections").delete().eq("id", entry.id);
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    await removeStoredPhoto(supabase, entry.photo);
-    router.push(backHref);
-    router.refresh();
-  };
-
-  const cancel = () => {
-    if (dirty && !window.confirm("Leave without saving your changes?")) return;
-    router.push(backHref);
+  const close = () => {
+    // A new reflection keeps its draft; changes to a saved one would be lost.
+    if (!isNew && dirty && !window.confirm("Leave without saving your changes?")) return;
+    router.push(id ? `/journal?r=${id}` : "/journal");
   };
 
   if (loading) {
@@ -261,201 +277,140 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   }
 
   const when = new Date(entry?.created_at ?? Date.now());
-  const overline = `${isNew ? "New reflection" : "Edit reflection"} · ${when.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  })} · ${when.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+  const dateLabel = when.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--background)", color: "var(--foreground)" }}>
-      <header className="hs-editor-head">
-        <div className="hs-editor-head-in">
-          <Link href={backHref} className="hs-pill-link hs-focusable" style={{ justifySelf: "start" }}>
-            <Icon icon={ArrowLeft} size={20} />
-            Journal
-          </Link>
-          <span className="hs-meta hs-editor-head-mid" style={{ fontWeight: 500, color: "var(--foreground)" }}>
-            {journey ? journey.title : journal ? journal.title : "Free writing"}
-          </span>
-          <span className="hs-meta" role="status" style={{ justifySelf: "end" }}>
-            {!dirty && !saving ? <Icon icon={Check} size={16} /> : null}
-            {status}
-          </span>
-        </div>
-      </header>
+    <div className="fw">
+      <header className="fw-bar">
+        <button type="button" className="fw-close" aria-label="Close and go back to Journal" onClick={close}>
+          <X size={20} aria-hidden="true" />
+        </button>
 
-      <main className="hs-container hs-editor" style={{ flex: 1 }}>
-        <div className="hs-editor-main">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
-              {overline}
-            </span>
-            <h1 style={{ margin: 0 }}>
-              <label className="hs-sr-only" htmlFor="editor-title">
-                Title
-              </label>
-              <input
-                id="editor-title"
-                className="hs-title-input lg"
-                type="text"
-                placeholder="Give it a title"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  touch();
-                }}
-              />
-            </h1>
-          </div>
-          <label className="hs-sr-only" htmlFor="editor-body">
-            Reflection
-          </label>
-          <Textarea
-            id="editor-body"
-            writing
-            rows={12}
-            autoFocus={isNew}
-            placeholder="Write as it comes. No one else reads this."
-            value={body}
-            onChange={(e) => {
-              setBody(e.target.value);
-              touch();
-            }}
-          />
-          {error ? (
-            <p className="hs-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
-
-        <aside className="hs-editor-aside" aria-label="Reflection details">
-          {journey ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
-                From a journey
-              </span>
-              <span className="hs-meta" style={{ color: "var(--foreground)" }}>
-                <Icon icon={Compass} size={16} />
-                {journey.title} · Day {journey.day}
-              </span>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <span className="text-overline" style={{ color: "var(--muted-foreground)" }} id="journal-label">
-                Journal
-              </span>
-              <div className="hs-scroll-row" role="group" aria-labelledby="journal-label">
-                <Chip
-                  selected={!journalId}
-                  onClick={() => {
-                    setJournalId("");
-                    touch();
-                  }}
-                >
-                  No journal
-                </Chip>
-                {journals.map((j) => (
-                  <Chip
-                    key={j.id}
-                    icon={BookOpen}
-                    selected={journalId === j.id}
+        {journey ? (
+          <span className="fw-journal is-static">
+            <Compass size={14} aria-hidden="true" />
+            {journey.title} · Day {journey.day}
+          </span>
+        ) : (
+          <div className="fw-picker" ref={pickerRef}>
+            <button
+              type="button"
+              className="fw-journal"
+              aria-haspopup="listbox"
+              aria-expanded={pickerOpen}
+              aria-label={`Saving to ${journal ? journal.title : "no journal"}. Change journal`}
+              onClick={() => setPickerOpen((v) => !v)}
+            >
+              <BookOpen size={14} aria-hidden="true" />
+              {journal ? journal.title : "No journal"}
+              <ChevronDown size={14} aria-hidden="true" />
+            </button>
+            {pickerOpen ? (
+              <div className="fw-menu" role="listbox" aria-label="Journal">
+                {[{ id: "", title: "No journal" }, ...journals].map((j) => (
+                  <button
+                    key={j.id || "none"}
+                    type="button"
+                    role="option"
+                    aria-selected={journalId === j.id}
+                    className="fw-menu-item"
                     onClick={() => {
                       setJournalId(j.id);
+                      setPickerOpen(false);
                       touch();
                     }}
                   >
-                    {j.title}
-                  </Chip>
+                    <span>{j.title}</span>
+                    {journalId === j.id ? <Check size={16} aria-hidden="true" /> : null}
+                  </button>
                 ))}
-                <Chip icon={Plus} selected={creatingJournal} onClick={() => setCreatingJournal((v) => !v)}>
-                  New journal
-                </Chip>
-              </div>
-              {creatingJournal ? (
-                <form style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onSubmit={createJournal}>
-                  <label className="hs-sr-only" htmlFor="editor-new-journal">
-                    Journal name
-                  </label>
-                  <Input
-                    id="editor-new-journal"
-                    autoFocus
-                    placeholder="Journal name"
-                    value={newJournal}
-                    onChange={(e) => setNewJournal(e.target.value)}
-                    className="flex-1 min-w-[160px]"
-                  />
-                  <Button type="submit" disabled={!newJournal.trim()}>
-                    Create
-                  </Button>
-                </form>
-              ) : null}
-            </div>
-          )}
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
-              Photo
-            </span>
-            {photoUrl ? (
-              <div className="hs-photo-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoUrl} alt="Attached photo" />
+                {creatingJournal ? (
+                  <form className="fw-menu-form" onSubmit={createJournal}>
+                    <label className="hs-sr-only" htmlFor="fw-new-journal">
+                      Journal name
+                    </label>
+                    <input
+                      id="fw-new-journal"
+                      autoFocus
+                      placeholder="Journal name"
+                      value={newJournal}
+                      onChange={(e) => setNewJournal(e.target.value)}
+                    />
+                    <Button type="submit" size="sm" disabled={!newJournal.trim()}>
+                      Create
+                    </Button>
+                  </form>
+                ) : (
+                  <button type="button" className="fw-menu-item add" onClick={() => setCreatingJournal(true)}>
+                    <Plus size={16} aria-hidden="true" />
+                    New journal
+                  </button>
+                )}
               </div>
             ) : null}
-            <input ref={fileInput} type="file" accept="image/*" onChange={onPhoto} className="hs-sr-only" tabIndex={-1} aria-hidden="true" />
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Button variant="secondary" icon={Camera} onClick={() => fileInput.current?.click()}>
-                {photoUrl ? "Replace photo" : "Add photo"}
-              </Button>
-              {photoUrl ? (
-                <Button variant="ghost" icon={X} onClick={removePhoto}>
-                  Remove
-                </Button>
-              ) : null}
-            </div>
           </div>
+        )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <button
-              type="button"
-              className="hs-link-btn"
-              style={{ color: favorite ? "var(--destructive)" : "var(--muted-foreground)", justifyContent: "flex-start" }}
-              aria-pressed={favorite}
-              onClick={() => {
-                setFavorite((v) => !v);
-                touch();
-              }}
-            >
-              <Heart width={16} height={16} strokeWidth={2} fill={favorite ? "currentColor" : "none"} aria-hidden="true" />
-              {favorite ? "In Favorites" : "Add to Favorites"}
-            </button>
-            <span className="hs-meta">
-              <Icon icon={Lock} size={16} />
-              Only you can read this
-            </span>
-          </div>
-        </aside>
-      </main>
-
-      <div className="hs-actionbar">
-        <div className="hs-actionbar-in">
-          {!isNew ? (
-            <button type="button" className="hs-del hs-focusable" onClick={remove} aria-label="Delete reflection">
-              <Icon icon={Trash2} size={18} />
-              <span className="hs-del-label">Delete reflection</span>
-            </button>
-          ) : null}
-          <span style={{ flex: 1 }} />
-          <Button variant="ghost" onClick={cancel}>
-            Cancel
-          </Button>
-          <Button icon={Check} onClick={save} loading={saving} disabled={!body.trim()}>
-            {isNew ? "Save Reflection" : "Save Changes"}
+        <div className="fw-right">
+          <Button variant="secondary" size="sm" onClick={save} loading={saving} disabled={!body.trim()}>
+            {saving ? "Saving…" : "Done"}
           </Button>
         </div>
-      </div>
+      </header>
+
+      <main className="fw-page">
+        <span className="fw-date">{dateLabel}</span>
+        <label className="hs-sr-only" htmlFor="fw-title">
+          Title
+        </label>
+        <input
+          id="fw-title"
+          className="fw-title"
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            touch();
+          }}
+        />
+        <label className="hs-sr-only" htmlFor="fw-text">
+          Your reflection
+        </label>
+        <textarea
+          id="fw-text"
+          className="fw-text"
+          autoFocus={isNew}
+          placeholder="What's on your mind today?"
+          value={body}
+          onChange={(e) => {
+            setBody(e.target.value);
+            touch();
+          }}
+        />
+        {photoUrl ? (
+          <div className="fw-photo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoUrl} alt="Attached photo" />
+            <button type="button" className="fw-photo-x" aria-label="Remove photo" onClick={removePhoto}>
+              <X size={16} aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+        {error ? (
+          <p className="hs-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </main>
+
+      <footer className="fw-foot">
+        <input ref={fileInput} type="file" accept="image/*" onChange={onPhoto} className="hs-sr-only" tabIndex={-1} aria-hidden="true" />
+        <button type="button" className="fw-icon" aria-label={photoUrl ? "Replace photo" : "Add a photo"} onClick={() => fileInput.current?.click()}>
+          <Camera size={18} aria-hidden="true" />
+        </button>
+        <span className="fw-meta">{words(body)}</span>
+      </footer>
     </div>
   );
 }

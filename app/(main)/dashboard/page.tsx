@@ -165,7 +165,7 @@ export default function HomePage() {
       {recent.length > 0 && (
         <CarouselSection id="home-recent" title="Recent reflections" moreHref="/journal" moreLabel="See all" variant="notes">
           {recent.map((r) => (
-            <Link key={r.id} className="rc" href={`/journal/${r.id}`}>
+            <Link key={r.id} className="rc" href={`/journal?r=${r.id}`}>
               <span className="rc-title">{entryTitle(r)}</span>
               <span className="rc-text">{entryBody(r.content)}</span>
               <span className="rc-meta">

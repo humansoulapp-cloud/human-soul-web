@@ -3,31 +3,53 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, Camera, Compass, Heart, Lock, PenLine, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Compass, Heart, Lock, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
-  MAX_PHOTO_BYTES,
   dayGroupLabel,
   entryBody,
   entryLabels,
   entryTitle,
   inJournal,
   journeyInfo,
-  longDate,
+  removeStoredPhoto,
   resolvePhotos,
-  uploadPhoto,
   type Reflection,
 } from "@/lib/reflections";
-import { Button, Chip, EmptyState, Icon, Input, ReflectionCard, Select, Textarea } from "@/components/ds";
+import { Button, EmptyState } from "@/components/ds";
+
+/**
+ * Journal · two panes (canvas «App / Journal · Two panes»):
+ * find on the left (search, journals, the list by day), read on the right.
+ * Both panes fit the window and scroll on their own. On mobile the list
+ * fills the screen and a reflection opens full screen.
+ */
 
 type Filter = { kind: "all" } | { kind: "journeys" } | { kind: "favorites" } | { kind: "journal"; id: string };
+
+function timeOf(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function fullDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${timeOf(iso)}`;
+}
+
+function paragraphs(text: string) {
+  return text
+    .split(/\n{2,}|\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 
 function JournalPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const journalParam = params.get("journal_id");
   const filterParam = params.get("filter");
+  const selectedParam = params.get("r");
   const entryParam = params.get("entry");
   const newJournalParam = params.get("new_journal");
 
@@ -38,21 +60,13 @@ function JournalPageInner() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
-  // Composer
-  const [title, setTitle] = useState("");
-  const [draft, setDraft] = useState("");
-  const [composerJournal, setComposerJournal] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [composerError, setComposerError] = useState("");
-  const fileInput = useRef<HTMLInputElement>(null);
-
-  // Journal management
   const [creating, setCreating] = useState(Boolean(newJournalParam));
   const [newJournal, setNewJournal] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [journalError, setJournalError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const filter: Filter = journalParam
     ? { kind: "journal", id: journalParam }
@@ -62,9 +76,9 @@ function JournalPageInner() {
         ? { kind: "favorites" }
         : { kind: "all" };
 
-  // Old links opened an entry inside the feed; entries now have their own page.
+  // Older links pointed at ?entry=<id>; they now open the reflection in the reading pane.
   useEffect(() => {
-    if (entryParam) router.replace(`/journal/${entryParam}`);
+    if (entryParam) router.replace(`/journal?r=${entryParam}`);
   }, [entryParam, router]);
 
   useEffect(() => {
@@ -75,7 +89,6 @@ function JournalPageInner() {
       } = await supabase.auth.getUser();
       if (!user) return setLoading(false);
       setUserId(user.id);
-
       const [{ data: rows }, { data: journalRows }] = await Promise.all([
         supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
@@ -89,24 +102,25 @@ function JournalPageInner() {
     load();
   }, []);
 
-  useEffect(() => {
-    if (filter.kind === "journal") setComposerJournal(filter.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [journalParam]);
-
-  const setFilter = useCallback(
-    (next: Filter) => {
-      setRenaming(false);
-      const url =
-        next.kind === "journal"
-          ? `/journal?journal_id=${next.id}`
-          : next.kind === "all"
-            ? "/journal"
-            : `/journal?filter=${next.kind}`;
-      router.replace(url, { scroll: false });
+  /** Keeps the filter and the open reflection in the URL, so links and Back work. */
+  const go = useCallback(
+    (next: { filter?: Filter; r?: string | null }) => {
+      const f = next.filter ?? filter;
+      const sp = new URLSearchParams();
+      if (f.kind === "journal") sp.set("journal_id", f.id);
+      else if (f.kind !== "all") sp.set("filter", f.kind);
+      const r = next.r === undefined ? selectedParam : next.r;
+      if (r) sp.set("r", r);
+      const qs = sp.toString();
+      router.replace(qs ? `/journal?${qs}` : "/journal", { scroll: false });
     },
-    [router]
+    [filter, selectedParam, router]
   );
+
+  const setFilter = (next: Filter) => {
+    setRenaming(false);
+    go({ filter: next, r: null });
+  };
 
   const activeJournal = filter.kind === "journal" ? journals.find((j) => j.id === filter.id) ?? null : null;
 
@@ -138,11 +152,33 @@ function JournalPageInner() {
   const groups = useMemo(() => {
     const map = new Map<string, Reflection[]>();
     for (const e of visible) {
-      const label = dayGroupLabel(e.created_at);
+      const label = dayGroupLabel(e.created_at).split(" · ")[0];
       map.set(label, [...(map.get(label) ?? []), e]);
     }
     return [...map.entries()];
   }, [visible]);
+
+  /* The open reflection: the one in the URL, or (on wide screens) the newest in the list. */
+  const explicit = selectedParam ? entries.find((e) => e.id === selectedParam) ?? null : null;
+  const selected = explicit ?? visible[0] ?? null;
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [selected?.id]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [menuOpen]);
 
   const toggleFavorite = async (entry: Reflection) => {
     const next = !entry.favorite;
@@ -150,57 +186,18 @@ function JournalPageInner() {
     await createClient().from("reflections").update({ favorite: next }).eq("id", entry.id);
   };
 
-  /* ── Composer ── */
-  const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (file && file.size > MAX_PHOTO_BYTES) {
-      setComposerError("That photo is larger than 10 MB. Try a smaller one.");
+  const removeEntry = async (entry: Reflection) => {
+    setMenuOpen(false);
+    if (!window.confirm("Delete this reflection? This cannot be undone.")) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("reflections").delete().eq("id", entry.id);
+    if (error) {
+      setJournalError(error.message);
       return;
     }
-    setComposerError("");
-    setPhotoFile(file);
-  };
-
-  const saveReflection = async () => {
-    if (!userId || !draft.trim()) return;
-    setSaving(true);
-    setComposerError("");
-    const supabase = createClient();
-    try {
-      const photo = photoFile ? await uploadPhoto(supabase, userId, photoFile) : null;
-      const journal = journals.find((j) => j.id === composerJournal);
-      const { data, error } = await supabase
-        .from("reflections")
-        .insert([
-          {
-            user_id: userId,
-            title: title.trim() || null,
-            content: draft.trim(),
-            tags: journal ? [journal.title] : [],
-            journal_id: journal ? journal.id : null,
-            photo,
-            favorite: false,
-          },
-        ])
-        .select();
-      if (error || !data?.[0]) throw new Error(error?.message ?? "Could not save your reflection.");
-      const saved = data[0] as Reflection;
-      setEntries((prev) => [saved, ...prev]);
-      if (photo && photoFile) {
-        const preview = URL.createObjectURL(photoFile);
-        setPhotos((prev) => ({ ...prev, [saved.id]: preview }));
-      }
-      setTitle("");
-      setDraft("");
-      setPhotoFile(null);
-      if (fileInput.current) fileInput.current.value = "";
-    } catch (err) {
-      setComposerError(
-        `${err instanceof Error ? err.message : "Could not save your reflection."} Your text is still here; try again.`
-      );
-    } finally {
-      setSaving(false);
-    }
+    await removeStoredPhoto(supabase, entry.photo);
+    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    go({ r: null });
   };
 
   /* ── Journals ── */
@@ -254,293 +251,273 @@ function JournalPageInner() {
     return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
   }
 
-  const first = activeJournal ? visible[visible.length - 1] : null;
-  const journalOptions = [{ value: "", label: "No journal" }, ...journals.map((j) => ({ value: j.id, label: j.title }))];
+  const newHref = activeJournal ? `/journal/new?journal_id=${activeJournal.id}` : "/journal/new";
+  const chips: { key: string; label: string; n: number; on: boolean; icon?: React.ReactNode; onClick: () => void }[] = [
+    { key: "all", label: "All", n: counts.all, on: filter.kind === "all", onClick: () => setFilter({ kind: "all" }) },
+    ...journals.map((j) => ({
+      key: j.id,
+      label: j.title,
+      n: counts.byJournal[j.id] ?? 0,
+      on: filter.kind === "journal" && filter.id === j.id,
+      onClick: () => setFilter({ kind: "journal", id: j.id }),
+    })),
+    {
+      key: "journeys",
+      label: "From journeys",
+      n: counts.journeys,
+      on: filter.kind === "journeys",
+      icon: <Compass size={14} aria-hidden="true" />,
+      onClick: () => setFilter({ kind: "journeys" }),
+    },
+    {
+      key: "favorites",
+      label: "Favorites",
+      n: counts.favorites,
+      on: filter.kind === "favorites",
+      icon: <Heart size={14} aria-hidden="true" />,
+      onClick: () => setFilter({ kind: "favorites" }),
+    },
+  ];
+
+  const selectedJourney = selected ? journeyInfo(selected) : null;
+  const selectedLabel = selected ? entryLabels(selected, journals)[0] : "";
 
   return (
-    <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-          <span className="hs-kind">
-            <Icon icon={BookOpen} size={16} />
-            Free writing
-          </span>
-          <h1 className="text-h1" style={{ margin: 0 }}>
-            Your Journal
+    <div className="jx" data-open={explicit ? "true" : "false"}>
+      {/* ── Left: find ── */}
+      <section className="jl" aria-labelledby="jl-title">
+        <div className="jl-head">
+          <h1 id="jl-title" className="text-h2" style={{ margin: 0 }}>
+            Journal
           </h1>
-          <p className="text-body-lg hidden md:block" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-            No prompts and no streaks. A private place for whatever is on your mind.
-          </p>
-        </div>
-        <span className="hs-meta">
-          <Icon icon={Lock} size={16} />
-          Only you can read this
-        </span>
-      </div>
-
-      {/* Mobile: a quiet entry point that opens the full-screen editor */}
-      <div className="md:hidden">
-        <Link
-          className="hs-prompt hs-focusable"
-          href={activeJournal ? `/journal/new?journal_id=${activeJournal.id}` : "/journal/new"}
-        >
-          <span className="hs-prompt-ico">
-            <Icon icon={PenLine} size={20} />
+          <span className="jl-private">
+            <Lock size={14} aria-hidden="true" />
+            Private
           </span>
-          <span>What&apos;s on your mind today?</span>
-        </Link>
-      </div>
-
-      {/* Tablet and desktop: write in place */}
-      <div className="hidden md:block">
-        <section className="hs-composer" aria-label="Write a reflection">
-          <label className="hs-sr-only" htmlFor="composer-title">
-            Title
-          </label>
-          <input
-            id="composer-title"
-            className="hs-title-input"
-            type="text"
-            placeholder="Give it a title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <label className="hs-sr-only" htmlFor="composer-text">
-            Reflection
-          </label>
-          <Textarea
-            id="composer-text"
-            writing
-            rows={4}
-            placeholder="What's on your mind today?"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          {photoFile ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="hs-meta">
-                <Icon icon={Camera} size={16} />
-                {photoFile.name}
-              </span>
-              <button
-                type="button"
-                className="hs-link-btn"
-                onClick={() => {
-                  setPhotoFile(null);
-                  if (fileInput.current) fileInput.current.value = "";
-                }}
-              >
-                <Icon icon={X} size={16} />
-                Remove
-              </button>
-            </div>
-          ) : null}
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-            <label className="hs-meta" htmlFor="composer-journal">
-              Journal
-            </label>
-            <Select
-              id="composer-journal"
-              options={journalOptions}
-              value={composerJournal}
-              onChange={(e) => setComposerJournal(e.target.value)}
-              style={{ width: 200 }}
-            />
-            <input ref={fileInput} type="file" accept="image/*" onChange={onPhoto} className="hs-sr-only" tabIndex={-1} aria-hidden="true" />
-            <Button variant="ghost" icon={Camera} onClick={() => fileInput.current?.click()}>
-              Add photo
-            </Button>
-            <span style={{ flex: 1 }} />
-            <Button onClick={saveReflection} disabled={!draft.trim()} loading={saving}>
-              Save Reflection
-            </Button>
-          </div>
-          {composerError ? (
-            <p className="hs-error" role="alert">
-              {composerError}
-            </p>
-          ) : null}
-        </section>
-      </div>
-
-      <section className="hs-sec" aria-labelledby="journal-list" style={{ gap: 20 }}>
-        <div className="hs-sec-head" style={{ alignItems: "center" }}>
-          <h2 id="journal-list" className="text-h3" style={{ margin: 0 }}>
-            {activeJournal ? activeJournal.title : "All reflections"}
-          </h2>
-          <Input
-            icon={Search}
-            placeholder="Search your reflections"
-            aria-label="Search your reflections"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full md:w-[300px]"
-          />
         </div>
 
-        <div className="hs-scroll-row" role="group" aria-label="Filter by journal">
-          <Chip selected={filter.kind === "all"} onClick={() => setFilter({ kind: "all" })}>
-            All · {counts.all}
-          </Chip>
-          {journals.map((j) => (
-            <Chip
-              key={j.id}
-              icon={BookOpen}
-              selected={filter.kind === "journal" && filter.id === j.id}
-              onClick={() => setFilter({ kind: "journal", id: j.id })}
-            >
-              {j.title} · {counts.byJournal[j.id] ?? 0}
-            </Chip>
+        <label className="jl-search">
+          <span className="hs-sr-only">Search your reflections</span>
+          <Search size={18} aria-hidden="true" />
+          <input type="search" placeholder="Search your reflections" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </label>
+
+        <div className="jl-chips" role="group" aria-label="Filter by journal">
+          {chips.map((c) => (
+            <button key={c.key} type="button" className="jl-chip" aria-pressed={c.on} onClick={c.onClick}>
+              {c.icon}
+              {c.label}
+              <span className="jl-n">{c.n}</span>
+            </button>
           ))}
-          <Chip icon={Compass} selected={filter.kind === "journeys"} onClick={() => setFilter({ kind: "journeys" })}>
-            From journeys · {counts.journeys}
-          </Chip>
-          <Chip icon={Heart} selected={filter.kind === "favorites"} onClick={() => setFilter({ kind: "favorites" })}>
-            Favorites · {counts.favorites}
-          </Chip>
-          <Chip icon={Plus} selected={creating} onClick={() => setCreating((v) => !v)}>
-            New journal
-          </Chip>
+          <button
+            type="button"
+            className="jl-chip jl-chip-add"
+            aria-label="New journal"
+            aria-expanded={creating}
+            onClick={() => setCreating((v) => !v)}
+          >
+            <Plus size={16} aria-hidden="true" />
+          </button>
         </div>
 
         {creating ? (
-          <form className="hs-filter-sum" onSubmit={createJournal}>
+          <form className="jl-form" onSubmit={createJournal}>
             <label className="hs-sr-only" htmlFor="new-journal">
               Journal name
             </label>
-            <Input
+            <input
               id="new-journal"
+              className="jl-input"
               autoFocus
               placeholder="Name your journal, e.g. Gratitude"
               value={newJournal}
               onChange={(e) => setNewJournal(e.target.value)}
-              className="flex-1 min-w-[200px]"
             />
-            <Button type="submit" disabled={!newJournal.trim()}>
-              Create journal
+            <Button type="submit" size="sm" disabled={!newJournal.trim()}>
+              Create
             </Button>
-            <Button variant="ghost" onClick={() => setCreating(false)}>
-              Cancel
-            </Button>
+            <button type="button" className="jl-icon" aria-label="Cancel" onClick={() => setCreating(false)}>
+              <X size={16} aria-hidden="true" />
+            </button>
           </form>
         ) : null}
 
         {activeJournal ? (
           renaming ? (
-            <form className="hs-filter-sum" onSubmit={renameJournal}>
+            <form className="jl-form" onSubmit={renameJournal}>
               <label className="hs-sr-only" htmlFor="rename-journal">
                 New name
               </label>
-              <Input
-                id="rename-journal"
-                autoFocus
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                className="flex-1 min-w-[200px]"
-              />
-              <Button type="submit">Save name</Button>
-              <Button variant="ghost" onClick={() => setRenaming(false)}>
-                Cancel
+              <input id="rename-journal" className="jl-input" autoFocus value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+              <Button type="submit" size="sm">
+                Save
               </Button>
+              <button type="button" className="jl-icon" aria-label="Cancel" onClick={() => setRenaming(false)}>
+                <X size={16} aria-hidden="true" />
+              </button>
             </form>
           ) : (
-            <div className="hs-filter-sum" role="status">
-              <Icon icon={BookOpen} size={20} />
-              <span style={{ font: "500 15px/20px var(--hs-font-sans)" }}>Showing {activeJournal.title}</span>
-              <span className="hs-meta">
-                {visible.length} {visible.length === 1 ? "reflection" : "reflections"}
-                {first ? ` · since ${longDate(first.created_at, false)}` : ""}
-              </span>
-              <span style={{ flex: 1 }} />
+            <div className="jl-manage">
               <button
                 type="button"
-                className="hs-link-btn"
+                className="jl-link"
                 onClick={() => {
                   setRenameValue(activeJournal.title);
                   setRenaming(true);
                 }}
               >
-                <Icon icon={PenLine} size={16} />
-                Rename
+                Rename {activeJournal.title}
               </button>
-              <button type="button" className="hs-link-btn" style={{ color: "var(--destructive)" }} onClick={deleteJournal}>
-                <Icon icon={Trash2} size={16} />
-                Delete
-              </button>
-              <button
-                type="button"
-                className="hs-link-btn"
-                style={{ color: "var(--muted-foreground)" }}
-                onClick={() => setFilter({ kind: "all" })}
-              >
-                <Icon icon={X} size={16} />
-                Clear filter
+              <button type="button" className="jl-link jl-danger" onClick={deleteJournal}>
+                Delete journal
               </button>
             </div>
           )
         ) : null}
 
         {journalError ? (
-          <p className="hs-error" role="alert">
+          <p className="hs-error" role="alert" style={{ margin: 0 }}>
             {journalError}
           </p>
         ) : null}
 
+        <Link className="jl-new" href={newHref}>
+          <span className="jl-new-ico" aria-hidden="true">
+            <PenLine size={20} />
+          </span>
+          What&apos;s on your mind today?
+        </Link>
+
         {groups.length === 0 ? (
-          entries.length === 0 ? (
-            <EmptyState
-              icon={BookOpen}
-              title="Your journal is empty"
-              description="Everything you write, on your own or inside a journey, is kept here."
-              actions={<Button href="/journal/new" icon={PenLine}>Write your first reflection</Button>}
-            />
-          ) : activeJournal ? (
-            <EmptyState
-              icon={BookOpen}
-              title={`Nothing in ${activeJournal.title} yet`}
-              description="Choose this journal when you save a reflection and it will appear here."
-              actions={<Button href={`/journal/new?journal_id=${activeJournal.id}`} icon={PenLine}>Reflect</Button>}
-            />
-          ) : (
-            <EmptyState
-              icon={Search}
-              title="Nothing matches that"
-              description="Try a shorter word, or clear the filter to see every reflection again."
-              actions={
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setQuery("");
-                    setFilter({ kind: "all" });
-                  }}
-                >
-                  Clear search and filter
-                </Button>
-              }
-            />
-          )
+          <div className="jl-empty">
+            {entries.length === 0 ? (
+              <EmptyState icon={BookOpen} title="Your journal is empty" description="Everything you write, on your own or inside a journey, is kept here." />
+            ) : activeJournal ? (
+              <EmptyState icon={BookOpen} title={`Nothing in ${activeJournal.title} yet`} description="Choose this journal when you write and it will appear here." />
+            ) : (
+              <EmptyState
+                icon={Search}
+                title="Nothing matches that"
+                description="Try a shorter word, or clear the search."
+                actions={
+                  <Button variant="secondary" size="sm" onClick={() => setQuery("")}>
+                    Clear search
+                  </Button>
+                }
+              />
+            )}
+          </div>
         ) : (
-          groups.map(([label, list]) => (
-            <React.Fragment key={label}>
-              <span className="hs-day">{label}</span>
-              {list.map((e) => (
-                <ReflectionCard
-                  key={e.id}
-                  href={`/journal/${e.id}`}
-                  date={longDate(e.created_at)}
-                  title={entryTitle(e)}
-                  text={entryBody(e.content)}
-                  tags={entryLabels(e, journals)}
-                  photo={photos[e.id] || null}
-                  favorite={Boolean(e.favorite)}
-                  onToggleFavorite={() => toggleFavorite(e)}
-                />
-              ))}
-            </React.Fragment>
-          ))
+          <ul className="jl-list" role="list" aria-label="Reflections">
+            {groups.map(([label, list]) => (
+              <React.Fragment key={label}>
+                <li className="jl-day" aria-hidden="true">
+                  {label}
+                </li>
+                {list.map((e) => {
+                  const on = selected?.id === e.id;
+                  return (
+                    <li key={e.id}>
+                      <button
+                        type="button"
+                        className={`jl-row${on ? " on" : ""}`}
+                        aria-current={on ? "true" : undefined}
+                        onClick={() => go({ r: e.id })}
+                      >
+                        <span className="jl-row-top">
+                          <span className="jl-title">{entryTitle(e)}</span>
+                          <span className="jl-time">{timeOf(e.created_at)}</span>
+                        </span>
+                        <span className="jl-snip">{entryBody(e.content)}</span>
+                        <span className="jl-lab">
+                          <span className="jl-lab-t">{entryLabels(e, journals)[0]}</span>
+                          {e.favorite ? (
+                            <span className="jl-fav" aria-label="Favorite">
+                              <Heart size={14} fill="currentColor" aria-hidden="true" />
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </ul>
         )}
       </section>
-    </>
+
+      {/* ── Right: read ── */}
+      <article className="jr" aria-labelledby={selected ? "jr-title" : undefined}>
+        {selected ? (
+          <>
+            <div className="jr-bar">
+              <button type="button" className="jr-btn jr-back" onClick={() => go({ r: null })}>
+                <ArrowLeft size={18} aria-hidden="true" />
+                Journal
+              </button>
+              <span className="jr-meta">{fullDate(selected.created_at)}</span>
+              <div className="jr-actions">
+                <button
+                  type="button"
+                  className="jr-btn"
+                  aria-label={selected.favorite ? "Remove from favorites" : "Add to favorites"}
+                  aria-pressed={Boolean(selected.favorite)}
+                  onClick={() => toggleFavorite(selected)}
+                >
+                  <Heart size={18} fill={selected.favorite ? "currentColor" : "none"} aria-hidden="true" style={{ color: selected.favorite ? "var(--primary)" : undefined }} />
+                </button>
+                <Link className="jr-btn pri" href={`/journal/${selected.id}`}>
+                  <PenLine size={16} aria-hidden="true" />
+                  Edit
+                </Link>
+                <div className="jr-menu-wrap" ref={menuRef}>
+                  <button type="button" className="jr-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+                    <MoreHorizontal size={18} aria-hidden="true" />
+                  </button>
+                  {menuOpen ? (
+                    <div className="jr-menu" role="menu">
+                      <button type="button" role="menuitem" className="jr-menu-item danger" onClick={() => removeEntry(selected)}>
+                        <Trash2 size={16} aria-hidden="true" />
+                        Delete reflection
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <div className="jr-body">
+              <h2 id="jr-title" className="text-h1 jr-title">
+                {entryTitle(selected)}
+              </h2>
+              {selectedLabel ? (
+                <span className="jr-tag">
+                  {selectedJourney ? <Compass size={14} aria-hidden="true" /> : <BookOpen size={14} aria-hidden="true" />}
+                  {selectedLabel}
+                </span>
+              ) : null}
+              <div className="jr-text">
+                {paragraphs(entryBody(selected.content)).map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+              {photos[selected.id] ? (
+                <div className="jr-photo">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photos[selected.id]} alt="Photo attached to this reflection" />
+                </div>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <div className="jr-none">
+            <BookOpen size={28} aria-hidden="true" />
+            <p>Your reflections open here.</p>
+          </div>
+        )}
+      </article>
+    </div>
   );
 }
 

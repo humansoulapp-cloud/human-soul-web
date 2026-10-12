@@ -705,7 +705,7 @@ export default function JourneyDetailClient({
           <Button size="lg" href="/dashboard">
             Back to Home
           </Button>
-          <Link className="jf-link" href={savedEntry ? `/journal/${savedEntry.id}` : "/journal"}>
+          <Link className="jf-link" href={savedEntry ? `/journal?r=${savedEntry.id}` : "/journal"}>
             Read it in Journal
           </Link>
         </div>
@@ -834,7 +834,7 @@ export default function JourneyDetailClient({
                 <span className="jf-num" aria-hidden="true">
                   {String(d.day).padStart(2, "0")}
                 </span>
-                <Link href={`/journal/${entry.id}`} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, color: "inherit", textDecoration: "none" }}>
+                <Link href={`/journal?r=${entry.id}`} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, color: "inherit", textDecoration: "none" }}>
                   <span className="jf-look-title">{d.title}</span>
                   <span className="jf-look-text">{firstLine(entryBody(entry.content))}</span>
                 </Link>
