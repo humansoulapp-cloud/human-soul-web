@@ -343,7 +343,10 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
 .rc-fav { margin-left: auto; display: inline-flex; color: var(--primary); }
 
 /* carousels: scroll-snap rows; the next card peeks in */
-.cr { display: grid; grid-auto-flow: column; grid-auto-columns: 82%; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: -8px 0; padding: 8px 0; overscroll-behavior-x: contain; }
+/* The scroll box reaches past the cards so their shadows aren't clipped (overflow clips both axes);
+   the negative margin keeps the cards aligned with the page, scroll-padding keeps the snap there. */
+.cr { --cr-bleed: 16px; display: grid; grid-auto-flow: column; grid-auto-columns: 82%; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--cr-bleed); scrollbar-width: none; margin: -16px calc(-1 * var(--cr-bleed)) -44px; padding: 16px var(--cr-bleed) 44px; overscroll-behavior-x: contain; }
+@media (min-width: 768px) { .cr { --cr-bleed: 28px; } }
 .cr::-webkit-scrollbar { display: none; }
 .cr > * { scroll-snap-align: start; min-width: 0; }
 @media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2.25); } }
