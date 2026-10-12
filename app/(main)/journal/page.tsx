@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Compass, Heart, Lock, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
 import ReflectionEditor from "@/components/ReflectionEditor";
+import { JourneyPromptCard, loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
 import { createClient } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
@@ -86,6 +87,7 @@ function JournalPageInner() {
   /* Writing happens over the Journal page, so the pane can grow into it. */
   const [writing, setWriting] = useState<Writing>(writeParam ? { id: writeParam === "new" ? undefined : writeParam, focus: "text" } : null);
   const [fresh, setFresh] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<JourneyPrompt | null>(null);
 
   const filter: Filter = journalParam
     ? { kind: "journal", id: journalParam }
@@ -184,6 +186,19 @@ function JournalPageInner() {
   useEffect(() => {
     setMenuOpen(false);
   }, [selected?.id]);
+
+  /* A journey entry shows the day's prompt it was written for. */
+  const selJourney = selected ? journeyInfo(selected) : null;
+  const selJourneyKey = selJourney ? `${selJourney.title}|${selJourney.day}` : "";
+  useEffect(() => {
+    if (!selJourney) return;
+    let alive = true;
+    loadJourneyPrompt(selJourney.title, selJourney.day).then((p) => alive && setPrompt(p));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selJourneyKey]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -330,6 +345,8 @@ function JournalPageInner() {
   ];
 
   const selectedJourney = selected ? journeyInfo(selected) : null;
+  const promptForSelected =
+    prompt && selectedJourney && prompt.journeyTitle === selectedJourney.title && prompt.day === selectedJourney.day ? prompt : null;
   const selectedLabel = selected ? entryLabels(selected, journals)[0] : "";
 
   return (
@@ -539,7 +556,8 @@ function JournalPageInner() {
               <h2 id="jr-title" className="text-h1 jr-title">
                 {entryTitle(selected)}
               </h2>
-              {selectedLabel ? (
+              {promptForSelected ? <JourneyPromptCard key={selected.id} data={promptForSelected} /> : null}
+              {selectedLabel && !promptForSelected ? (
                 <span className="jr-tag">
                   {selectedJourney ? <Compass size={14} aria-hidden="true" /> : <BookOpen size={14} aria-hidden="true" />}
                   {selectedLabel}
@@ -579,6 +597,7 @@ function JournalPageInner() {
           initialJournalId={activeJournal?.id ?? null}
           embedded
           focusField={writing.focus}
+          journeyPrompt={writing.id && promptForSelected && selected?.id === writing.id ? promptForSelected : null}
           onDone={finishWriting}
           preloaded={
             userId
