@@ -163,6 +163,10 @@ export type JourneyPerformance = {
   starts: number;
   finished: number;
   dropOff: string;
+  /** People who wrote each day, day 1 first. */
+  curve: number[];
+  /** How many people the worst day lost. */
+  dropLoss: number;
 };
 
 /**
@@ -226,6 +230,8 @@ export async function getJourneyPerformance(): Promise<JourneyPerformance[]> {
       starts,
       finished,
       dropOff,
+      curve: Array.from({ length: totalDays }, (_, i) => countFor(i + 1)),
+      dropLoss: worstLoss,
     };
   });
 }
