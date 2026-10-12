@@ -221,6 +221,11 @@ export default function JourneyDetailClient({
     markPageReady();
   }, []);
 
+  /* And have the way back ready, so returning morphs straight away too. */
+  useEffect(() => {
+    if (returnTo) router.prefetch(returnTo);
+  }, [returnTo, router]);
+
   const exitToJournal = useCallback(() => {
     if (!returnTo) return;
     transitionTo(() => router.push(returnTo));

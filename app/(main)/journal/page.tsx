@@ -216,15 +216,25 @@ function JournalPageInner() {
   }, [menuOpen]);
 
   /* A journey entry is read and edited inside its journey: the text morphs there and back. */
+  const journeyUrl = (entry: Reflection, p: JourneyPrompt, edit: boolean) =>
+    `/journeys/${p.journeyId}?day=${p.day}&from=journal&r=${entry.id}${edit ? "&edit=1" : ""}`;
   const openInJourney = (entry: Reflection, edit: boolean) => {
     if (!prompt) return;
-    const url = `/journeys/${prompt.journeyId}?day=${prompt.day}&from=journal&r=${entry.id}${edit ? "&edit=1" : ""}`;
-    transitionTo(() => router.push(url));
+    transitionTo(() => router.push(journeyUrl(entry, prompt, edit)));
   };
 
   useEffect(() => {
     if (!loading) markPageReady();
   }, [loading]);
+
+  /* Fetch the journey page ahead, so the morph starts as soon as it's clicked. */
+  const prefetchUrl =
+    selected && prompt && selJourney && prompt.journeyTitle === selJourney.title && prompt.day === selJourney.day
+      ? journeyUrl(selected, prompt, true)
+      : null;
+  useEffect(() => {
+    if (prefetchUrl) router.prefetch(prefetchUrl);
+  }, [prefetchUrl, router]);
 
   const startWriting = (target: Writing) =>
     withTransition(() => {
