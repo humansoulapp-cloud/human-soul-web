@@ -14,7 +14,6 @@ import {
   Clock,
   Compass,
   Layers,
-  Loader2,
   Lock,
   PenLine,
   ShieldCheck,
@@ -129,7 +128,7 @@ export default function JourneyDetailClient({
   });
   const [stage, setStage] = useState<Stage>(initialDay && days.some((d) => d.day === initialDay) ? "day" : "overview");
   const [draft, setDraft] = useState("");
-  const [draftState, setDraftState] = useState<DraftState>("idle");
+  const [, setDraftState] = useState<DraftState>("idle");
   /* A day already written opens in reading mode; "Edit" switches to the editor. */
   const [editing, setEditing] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -633,28 +632,13 @@ export default function JourneyDetailClient({
           <h2 id="jf-write" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
             Your reflection
           </h2>
-          <span className="jf-status" role="status">
-            {!editing && dayEntry ? (
-              <>
-                <CircleCheck size={14} aria-hidden="true" />
-                Written {shortDate(dayEntry.created_at)}
-              </>
-            ) : draftState === "saving" ? (
-              <>
-                <Loader2 size={14} className="hs-spin" aria-hidden="true" />
-                Saving draft…
-              </>
-            ) : draftState === "saved" ? (
-              <>
-                <Check size={14} aria-hidden="true" />
-                Draft saved
-              </>
-            ) : dayEntry ? (
-              `Written ${shortDate(dayEntry.created_at)}`
-            ) : (
-              "Saves as you write"
-            )}
-          </span>
+          {/* No live save status while writing: the draft is kept quietly. */}
+          {!editing && dayEntry ? (
+            <span className="jf-status">
+              <CircleCheck size={14} aria-hidden="true" />
+              Written {shortDate(dayEntry.created_at)}
+            </span>
+          ) : null}
         </div>
         {!editing && dayEntry ? (
           <div className="jf-box jf-written" aria-labelledby="jf-write jf-title" role="document">
@@ -791,7 +775,7 @@ export default function JourneyDetailClient({
       {!closingEntry ? (
         <section aria-labelledby="jf-closing" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <h2 id="jf-closing" style={{ margin: 0, font: "600 24px/30px var(--jf-sans)", letterSpacing: "-0.01em" }}>
+            <h2 id="jf-closing" className="jf-h3">
               A closing reflection
             </h2>
             <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
@@ -892,11 +876,7 @@ export default function JourneyDetailClient({
     stage === "day" && day ? (
       <div className="jf-bar">
         <div className="jf-bar-in">
-          <span className="jf-meta jf-meta-soft jf-bar-hide-sm">
-            <Compass size={16} aria-hidden="true" />
-            Saves to {journey.title} · Day {day.day}
-          </span>
-          <span className="jf-bar-hide-sm" style={{ flex: 1 }} />
+          <span style={{ flex: 1 }} />
           {!editing && dayEntry ? (
             <>
               <Button variant="secondary" icon={PenLine} onClick={() => setEditing(true)} full={false}>
@@ -939,7 +919,7 @@ export default function JourneyDetailClient({
     ) : null;
 
   return (
-    <div className={`jf${stage === "overview" ? " jf-overview" : " jf-day"}`}>
+    <div className={`jf jf-stage-${stage}${stage === "overview" ? " jf-overview" : " jf-day"}`}>
       <div className="jf-hero" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={image} alt="" />
