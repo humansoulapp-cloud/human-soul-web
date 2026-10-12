@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowDownUp, Heart, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { titleAndSnippet, type ReflectionRow } from "@/lib/journal";
+import PageLoader from "@/components/PageLoader";
 
 const DAY_TAG = /^Day (\d+)$/;
 
@@ -73,7 +74,7 @@ export default function FavoritesPage() {
   }, [items, query, sortNewest]);
 
   if (loading) {
-    return <div className="py-20 text-center text-[13px] text-[var(--ds-text-muted)]">Loading…</div>;
+    return <PageLoader />;
   }
 
   return (

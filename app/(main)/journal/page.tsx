@@ -21,6 +21,7 @@ import {
   type Reflection,
 } from "@/lib/reflections";
 import { Button, EmptyState } from "@/components/ds";
+import PageLoader from "@/components/PageLoader";
 
 /**
  * Journal · two panes (canvas «App / Journal · Two panes»):
@@ -336,7 +337,7 @@ function JournalPageInner() {
   };
 
   if (loading) {
-    return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
+    return <PageLoader />;
   }
 
   const chips: { key: string; label: string; n: number; on: boolean; icon?: React.ReactNode; onClick: () => void }[] = [

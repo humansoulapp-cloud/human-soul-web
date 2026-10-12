@@ -16,6 +16,7 @@ import {
 import { Icon } from "@/components/ds";
 import { CarouselSection } from "@/components/carousel";
 import { CatalogCard, JourneyProgressCard } from "@/components/journeys/glass-cards";
+import PageLoader from "@/components/PageLoader";
 
 function greeting() {
   const h = new Date().getHours();
@@ -87,7 +88,7 @@ export default function HomePage() {
   }, [journals, reflections]);
 
   if (loading) {
-    return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
+    return <PageLoader />;
   }
 
   const recent = reflections.slice(0, 8);

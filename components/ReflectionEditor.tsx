@@ -15,6 +15,7 @@ import {
   type Reflection,
 } from "@/lib/reflections";
 import { Button, EmptyState } from "@/components/ds";
+import PageLoader from "@/components/PageLoader";
 
 const DRAFT_KEY = "humansoul:reflect-draft";
 const TITLE_KEY = "humansoul:reflect-draft-title";
@@ -300,7 +301,7 @@ export default function ReflectionEditor({
   };
 
   if (loading) {
-    return embedded ? <div className="fw fw-embedded" /> : <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
+    return embedded ? <div className="fw fw-embedded" /> : <PageLoader />;
   }
 
   if (notFound) {
