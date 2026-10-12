@@ -56,23 +56,54 @@ function read(key: string) {
  * A quiet top bar (close, the journal it saves to, Done), the date, a title and
  * the text. Photo and word count sit at the bottom. New and existing reflections.
  */
-export default function ReflectionEditor({ id, initialJournalId }: { id?: string; initialJournalId?: string | null }) {
+export default function ReflectionEditor({
+  id,
+  initialJournalId,
+  embedded = false,
+  focusField = "text",
+  onDone,
+  preloaded,
+}: {
+  id?: string;
+  initialJournalId?: string | null;
+  /** Inside the Journal page: it opens over the page and hands back instead of navigating. */
+  embedded?: boolean;
+  focusField?: "title" | "text";
+  /** Called with the saved reflection, or null when closed without saving. */
+  onDone?: (saved: Reflection | null) => void;
+  /** Data the Journal page already has, so the page opens without a loading step. */
+  preloaded?: { userId: string; journals: UserJournal[]; entry?: Reflection | null; photoUrl?: string | null };
+}) {
   const router = useRouter();
   const isNew = !id;
   const fileInput = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  const [userId, setUserId] = useState<string | null>(null);
-  const [entry, setEntry] = useState<Reflection | null>(null);
-  const [journals, setJournals] = useState<UserJournal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [init] = useState(() => {
+    if (!preloaded) return null;
+    const row = id ? preloaded.entry ?? null : null;
+    if (id && !row) return null;
+    const parts = splitHeader(row?.content ?? "");
+    const byTag = row ? preloaded.journals.find((j) => (row.tags ?? []).includes(j.title)) : undefined;
+    return {
+      row,
+      header: parts.header,
+      body: row ? parts.body : read(DRAFT_KEY),
+      title: row ? row.title?.trim() || (parts.header ? entryTitle(row) : "") : read(TITLE_KEY),
+      journalId: row ? row.journal_id ?? byTag?.id ?? "" : initialJournalId ?? "",
+    };
+  });
+  const [userId, setUserId] = useState<string | null>(init ? preloaded!.userId : null);
+  const [entry, setEntry] = useState<Reflection | null>(init?.row ?? null);
+  const [journals, setJournals] = useState<UserJournal[]>(init ? preloaded!.journals : []);
+  const [loading, setLoading] = useState(!init);
   const [notFound, setNotFound] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [header, setHeader] = useState("");
-  const [journalId, setJournalId] = useState<string>(initialJournalId ?? "");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [title, setTitle] = useState(init?.title ?? "");
+  const [body, setBody] = useState(init?.body ?? "");
+  const [header, setHeader] = useState(init?.header ?? "");
+  const [journalId, setJournalId] = useState<string>(init?.journalId ?? initialJournalId ?? "");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(init ? preloaded!.photoUrl ?? null : null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
 
@@ -84,13 +115,14 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (init) return;
     async function load() {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/sign-in");
+        if (!embedded) router.push("/sign-in");
         return;
       }
       setUserId(user.id);
@@ -129,7 +161,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
       setLoading(false);
     }
     load();
-  }, [id, router]);
+  }, [id, router, init, embedded]);
 
   // A new reflection is kept on this device while you write, until it is saved.
   useEffect(() => {
@@ -225,27 +257,34 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
       };
       if (photo !== undefined) fields.photo = photo;
 
-      let savedId = id ?? "";
+      let saved: Reflection;
       if (isNew) {
         const { data, error: err } = await supabase
           .from("reflections")
           .insert([{ ...fields, user_id: userId, favorite: false }])
-          .select("id");
+          .select("*");
         if (err || !data?.[0]) throw new Error(err?.message ?? "Could not save your reflection.");
-        savedId = (data[0] as { id: string }).id;
+        saved = data[0] as Reflection;
         store(DRAFT_KEY, "");
         store(TITLE_KEY, "");
       } else {
-        const { error: err } = await supabase
+        const { data, error: err } = await supabase
           .from("reflections")
           .update({ ...fields, updated_at: new Date().toISOString() })
-          .eq("id", id as string);
-        if (err) throw new Error(err.message);
+          .eq("id", id as string)
+          .select("*");
+        if (err || !data?.[0]) throw new Error(err?.message ?? "Could not save your changes.");
+        saved = data[0] as Reflection;
         // The old stored photo is no longer referenced
         if (photo !== undefined && entry?.photo && entry.photo !== photo) await removeStoredPhoto(supabase, entry.photo);
       }
       setDirty(false);
-      router.push(`/journal?r=${savedId}`);
+      if (onDone) {
+        setSaving(false);
+        onDone(saved);
+        return;
+      }
+      router.push(`/journal?r=${saved.id}`);
       router.refresh();
     } catch (err) {
       setError(`${err instanceof Error ? err.message : "Could not save your reflection."} Your text is still here; try again.`);
@@ -256,11 +295,12 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   const close = () => {
     // A new reflection keeps its draft; changes to a saved one would be lost.
     if (!isNew && dirty && !window.confirm("Leave without saving your changes?")) return;
+    if (onDone) return onDone(null);
     router.push(id ? `/journal?r=${id}` : "/journal");
   };
 
   if (loading) {
-    return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
+    return embedded ? <div className="fw fw-embedded" /> : <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
   }
 
   if (notFound) {
@@ -280,7 +320,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
   const dateLabel = when.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="fw">
+    <div className={`fw${embedded ? " fw-embedded" : ""}`}>
       <header className="fw-bar">
         <button type="button" className="fw-close" aria-label="Close and go back to Journal" onClick={close}>
           <X size={20} aria-hidden="true" />
@@ -367,6 +407,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
           id="fw-title"
           className="fw-title"
           type="text"
+          autoFocus={focusField === "title"}
           placeholder="Title"
           value={title}
           onChange={(e) => {
@@ -380,7 +421,7 @@ export default function ReflectionEditor({ id, initialJournalId }: { id?: string
         <textarea
           id="fw-text"
           className="fw-text"
-          autoFocus={isNew}
+          autoFocus={focusField === "text" && (isNew || embedded)}
           placeholder="What's on your mind today?"
           value={body}
           onChange={(e) => {

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Compass, Heart, Lock, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
+import ReflectionEditor from "@/components/ReflectionEditor";
 import { createClient } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
@@ -44,6 +45,20 @@ function paragraphs(text: string) {
     .filter(Boolean);
 }
 
+/**
+ * Runs a state change as a view transition: the reading pane grows into the
+ * writing page (and back) because both carry view-transition-name: jsheet.
+ * Without support, or with reduced motion, the change simply happens.
+ */
+function withTransition(change: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!doc.startViewTransition || reduce) return change();
+  doc.startViewTransition(() => flushSync(change));
+}
+
+type Writing = { id?: string; focus: "title" | "text" } | null;
+
 function JournalPageInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -52,6 +67,7 @@ function JournalPageInner() {
   const selectedParam = params.get("r");
   const entryParam = params.get("entry");
   const newJournalParam = params.get("new_journal");
+  const writeParam = params.get("write");
 
   const [userId, setUserId] = useState<string | null>(null);
   const [entries, setEntries] = useState<Reflection[]>([]);
@@ -67,6 +83,9 @@ function JournalPageInner() {
   const [journalError, setJournalError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  /* Writing happens over the Journal page, so the pane can grow into it. */
+  const [writing, setWriting] = useState<Writing>(writeParam ? { id: writeParam === "new" ? undefined : writeParam, focus: "text" } : null);
+  const [fresh, setFresh] = useState<string | null>(null);
 
   const filter: Filter = journalParam
     ? { kind: "journal", id: journalParam }
@@ -158,9 +177,9 @@ function JournalPageInner() {
     return [...map.entries()];
   }, [visible]);
 
-  /* The open reflection: the one in the URL, or (on wide screens) the newest in the list. */
+  /* The open reflection is the one in the URL; with none, the right pane is a blank sheet. */
   const explicit = selectedParam ? entries.find((e) => e.id === selectedParam) ?? null : null;
-  const selected = explicit ?? visible[0] ?? null;
+  const selected = explicit;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -179,6 +198,38 @@ function JournalPageInner() {
       document.removeEventListener("keydown", esc);
     };
   }, [menuOpen]);
+
+  const startWriting = (target: Writing) =>
+    withTransition(() => {
+      document.documentElement.classList.add("jx-writing");
+      setWriting(target);
+    });
+
+  const finishWriting = (saved: Reflection | null) => {
+    withTransition(() => {
+      document.documentElement.classList.remove("jx-writing");
+      setWriting(null);
+      if (saved) {
+        setEntries((prev) => [saved, ...prev.filter((e) => e.id !== saved.id)].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+        setFresh(saved.id);
+      }
+    });
+    if (saved) {
+      go({ r: saved.id });
+      resolvePhotos(createClient(), [saved]).then((urls) => setPhotos((prev) => ({ ...prev, ...urls })));
+    } else if (writeParam) go({});
+  };
+
+  useEffect(() => {
+    if (!fresh) return;
+    const t = setTimeout(() => setFresh(null), 1600);
+    return () => clearTimeout(t);
+  }, [fresh]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("jx-writing", Boolean(writing));
+    return () => document.documentElement.classList.remove("jx-writing");
+  }, [writing]);
 
   const toggleFavorite = async (entry: Reflection) => {
     const next = !entry.favorite;
@@ -251,7 +302,6 @@ function JournalPageInner() {
     return <p className="text-body-sm" style={{ color: "var(--muted-foreground)", padding: "80px 0", textAlign: "center" }}>Loading…</p>;
   }
 
-  const newHref = activeJournal ? `/journal/new?journal_id=${activeJournal.id}` : "/journal/new";
   const chips: { key: string; label: string; n: number; on: boolean; icon?: React.ReactNode; onClick: () => void }[] = [
     { key: "all", label: "All", n: counts.all, on: filter.kind === "all", onClick: () => setFilter({ kind: "all" }) },
     ...journals.map((j) => ({
@@ -382,12 +432,6 @@ function JournalPageInner() {
           </p>
         ) : null}
 
-        <Link className="jl-new" href={newHref}>
-          <span className="jl-new-ico" aria-hidden="true">
-            <PenLine size={20} />
-          </span>
-          What&apos;s on your mind today?
-        </Link>
 
         {groups.length === 0 ? (
           <div className="jl-empty">
@@ -421,7 +465,7 @@ function JournalPageInner() {
                     <li key={e.id}>
                       <button
                         type="button"
-                        className={`jl-row${on ? " on" : ""}`}
+                        className={`jl-row${on ? " on" : ""}${fresh === e.id ? " fresh" : ""}`}
                         aria-current={on ? "true" : undefined}
                         onClick={() => go({ r: e.id })}
                       >
@@ -449,7 +493,7 @@ function JournalPageInner() {
       </section>
 
       {/* ── Right: read ── */}
-      <article className="jr" aria-labelledby={selected ? "jr-title" : undefined}>
+      <article className={`jr${writing ? " jr-away" : ""}`} aria-labelledby={selected ? "jr-title" : undefined}>
         {selected ? (
           <>
             <div className="jr-bar">
@@ -459,6 +503,10 @@ function JournalPageInner() {
               </button>
               <span className="jr-meta">{fullDate(selected.created_at)}</span>
               <div className="jr-actions">
+                <button type="button" className="jr-btn jr-new" onClick={() => go({ r: null })}>
+                  <Plus size={16} aria-hidden="true" />
+                  New
+                </button>
                 <button
                   type="button"
                   className="jr-btn"
@@ -468,10 +516,10 @@ function JournalPageInner() {
                 >
                   <Heart size={18} fill={selected.favorite ? "currentColor" : "none"} aria-hidden="true" style={{ color: selected.favorite ? "var(--primary)" : undefined }} />
                 </button>
-                <Link className="jr-btn pri" href={`/journal/${selected.id}`}>
+                <button type="button" className="jr-btn pri" onClick={() => startWriting({ id: selected.id, focus: "text" })}>
                   <PenLine size={16} aria-hidden="true" />
                   Edit
-                </Link>
+                </button>
                 <div className="jr-menu-wrap" ref={menuRef}>
                   <button type="button" className="jr-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
                     <MoreHorizontal size={18} aria-hidden="true" />
@@ -511,12 +559,39 @@ function JournalPageInner() {
             </div>
           </>
         ) : (
-          <div className="jr-none">
-            <BookOpen size={28} aria-hidden="true" />
-            <p>Your reflections open here.</p>
+          <div className="js" aria-label="Start a new reflection">
+            <span className="js-date">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+            <button type="button" className="js-title" onClick={() => startWriting({ focus: "title" })}>
+              Title
+            </button>
+            <button type="button" className="js-text" onClick={() => startWriting({ focus: "text" })}>
+              What&apos;s on your mind today?
+            </button>
+            <button type="button" className="js-rest" aria-hidden="true" tabIndex={-1} onClick={() => startWriting({ focus: "text" })} />
           </div>
         )}
       </article>
+
+      {writing ? (
+        <ReflectionEditor
+          key={writing.id ?? "new"}
+          id={writing.id}
+          initialJournalId={activeJournal?.id ?? null}
+          embedded
+          focusField={writing.focus}
+          onDone={finishWriting}
+          preloaded={
+            userId
+              ? {
+                  userId,
+                  journals,
+                  entry: writing.id ? entries.find((e) => e.id === writing.id) ?? null : null,
+                  photoUrl: writing.id ? photos[writing.id] ?? null : null,
+                }
+              : undefined
+          }
+        />
+      ) : null}
     </div>
   );
 }
