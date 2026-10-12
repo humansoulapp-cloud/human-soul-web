@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, BookOpen, Compass, Heart, Lock, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Compass, Heart, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
 import ReflectionEditor from "@/components/ReflectionEditor";
 import { loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
 import { markPageReady, transitionTo } from "@/lib/view-transition";
@@ -369,10 +369,10 @@ function JournalPageInner() {
           <h1 id="jl-title" className="text-h2" style={{ margin: 0 }}>
             Journal
           </h1>
-          <span className="jl-private">
-            <Lock size={14} aria-hidden="true" />
-            Private
-          </span>
+          <button type="button" className="jl-head-new" onClick={() => startWriting({ focus: "title" })}>
+            <Plus size={16} aria-hidden="true" />
+            New
+          </button>
         </div>
 
         <label className="jl-search">
@@ -532,10 +532,6 @@ function JournalPageInner() {
               </button>
               <span className="jr-meta">{fullDate(selected.created_at)}</span>
               <div className="jr-actions">
-                <button type="button" className="jr-btn jr-new" onClick={() => go({ r: null })}>
-                  <Plus size={16} aria-hidden="true" />
-                  New
-                </button>
                 <button
                   type="button"
                   className="jr-btn"
@@ -546,16 +542,16 @@ function JournalPageInner() {
                   <Heart size={18} fill={selected.favorite ? "currentColor" : "none"} aria-hidden="true" style={{ color: selected.favorite ? "var(--primary)" : undefined }} />
                 </button>
                 {selectedJourney ? (
-                  <>
-                    <button type="button" className="jr-btn" disabled={!promptForSelected} onClick={() => openInJourney(selected, false)}>
-                      <Compass size={16} aria-hidden="true" />
-                      Open in journey
-                    </button>
-                    <button type="button" className="jr-btn pri" disabled={!promptForSelected} onClick={() => openInJourney(selected, true)}>
-                      <PenLine size={16} aria-hidden="true" />
-                      Edit
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="jr-btn pri"
+                    title="See the day's prompt and edit your entry"
+                    disabled={!promptForSelected}
+                    onClick={() => openInJourney(selected, true)}
+                  >
+                    <Compass size={16} aria-hidden="true" />
+                    Edit in journey
+                  </button>
                 ) : (
                   <button type="button" className="jr-btn pri" onClick={() => startWriting({ id: selected.id, focus: "text" })}>
                     <PenLine size={16} aria-hidden="true" />

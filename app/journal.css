@@ -11,7 +11,9 @@
 /* Left: find */
 .jl { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
 .jl-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.jl-private { display: inline-flex; align-items: center; gap: 6px; font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); }
+.jl-head-new { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px 0 10px; border: 0; border-radius: 9999px; background: color-mix(in oklab, var(--primary) 14%, transparent); color: var(--primary); font: 500 14px/20px var(--hs-font-sans); cursor: pointer; transition: background .15s; }
+.jl-head-new:hover { background: color-mix(in oklab, var(--primary) 22%, transparent); }
+.jl-head-new:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .jl-search { position: relative; display: block; }
 .jl-search svg { position: absolute; left: 14px; top: 50%; margin-top: -9px; color: var(--muted-foreground); pointer-events: none; }
 .jl-search input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 14px 0 42px; border: 0; border-radius: 9999px; background: var(--fill); color: var(--foreground); font: 400 15px/20px var(--hs-font-sans); outline: none; }
@@ -63,7 +65,6 @@
 .jr-btn:hover { background: var(--fill); color: var(--foreground); }
 .jr-btn.pri { background: var(--fill); color: var(--foreground); }
 .jr-btn.pri:hover { background: var(--fill-strong); }
-.jr-new { color: var(--primary); }
 .jr-back { display: none; margin-left: -12px; }
 .jr-menu-wrap { position: relative; }
 .jr-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 10; min-width: 200px; padding: 6px; border-radius: 16px; background: var(--popover); box-shadow: var(--hs-shadow-lg, 0 20px 50px rgba(0,0,0,.3)); }
