@@ -5,7 +5,8 @@ import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, BookOpen, Compass, Heart, Lock, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
 import ReflectionEditor from "@/components/ReflectionEditor";
-import { JourneyPromptCard, loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
+import { loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
+import { markPageReady, transitionTo } from "@/lib/view-transition";
 import { createClient } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
@@ -213,6 +214,17 @@ function JournalPageInner() {
       document.removeEventListener("keydown", esc);
     };
   }, [menuOpen]);
+
+  /* A journey entry is read and edited inside its journey: the text morphs there and back. */
+  const openInJourney = (entry: Reflection, edit: boolean) => {
+    if (!prompt) return;
+    const url = `/journeys/${prompt.journeyId}?day=${prompt.day}&from=journal&r=${entry.id}${edit ? "&edit=1" : ""}`;
+    transitionTo(() => router.push(url));
+  };
+
+  useEffect(() => {
+    if (!loading) markPageReady();
+  }, [loading]);
 
   const startWriting = (target: Writing) =>
     withTransition(() => {
@@ -533,10 +545,23 @@ function JournalPageInner() {
                 >
                   <Heart size={18} fill={selected.favorite ? "currentColor" : "none"} aria-hidden="true" style={{ color: selected.favorite ? "var(--primary)" : undefined }} />
                 </button>
-                <button type="button" className="jr-btn pri" onClick={() => startWriting({ id: selected.id, focus: "text" })}>
-                  <PenLine size={16} aria-hidden="true" />
-                  Edit
-                </button>
+                {selectedJourney ? (
+                  <>
+                    <button type="button" className="jr-btn" disabled={!promptForSelected} onClick={() => openInJourney(selected, false)}>
+                      <Compass size={16} aria-hidden="true" />
+                      Open in journey
+                    </button>
+                    <button type="button" className="jr-btn pri" disabled={!promptForSelected} onClick={() => openInJourney(selected, true)}>
+                      <PenLine size={16} aria-hidden="true" />
+                      Edit
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="jr-btn pri" onClick={() => startWriting({ id: selected.id, focus: "text" })}>
+                    <PenLine size={16} aria-hidden="true" />
+                    Edit
+                  </button>
+                )}
                 <div className="jr-menu-wrap" ref={menuRef}>
                   <button type="button" className="jr-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
                     <MoreHorizontal size={18} aria-hidden="true" />
@@ -556,14 +581,13 @@ function JournalPageInner() {
               <h2 id="jr-title" className="text-h1 jr-title">
                 {entryTitle(selected)}
               </h2>
-              {promptForSelected ? <JourneyPromptCard key={selected.id} data={promptForSelected} /> : null}
-              {selectedLabel && !promptForSelected ? (
+              {selectedLabel ? (
                 <span className="jr-tag">
                   {selectedJourney ? <Compass size={14} aria-hidden="true" /> : <BookOpen size={14} aria-hidden="true" />}
                   {selectedLabel}
                 </span>
               ) : null}
-              <div className="jr-text">
+              <div className={`jr-text${selectedJourney ? " jr-text-shared" : ""}`}>
                 {paragraphs(entryBody(selected.content)).map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
@@ -597,7 +621,6 @@ function JournalPageInner() {
           initialJournalId={activeJournal?.id ?? null}
           embedded
           focusField={writing.focus}
-          journeyPrompt={writing.id && promptForSelected && selected?.id === writing.id ? promptForSelected : null}
           onDone={finishWriting}
           preloaded={
             userId

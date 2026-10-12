@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { markPageReady, transitionTo } from "@/lib/view-transition";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import { PLANS, PLUS_PERKS } from "@/lib/plans";
@@ -108,11 +109,17 @@ export default function JourneyDetailClient({
   subscribed,
   initialDay,
   suggestions = [],
+  returnTo,
+  startEditing = false,
 }: {
   journey: JourneyRow;
   reflections: ReflectionRow[];
   subscribed: boolean;
   initialDay?: number;
+  /** Opened from Journal: Exit goes back there (with the shared-text transition). */
+  returnTo?: string;
+  /** Open the day's written reflection straight in the editor. */
+  startEditing?: boolean;
   suggestions?: JourneySuggestion[];
 }) {
   const router = useRouter();
@@ -131,6 +138,7 @@ export default function JourneyDetailClient({
   const [, setDraftState] = useState<DraftState>("idle");
   /* A day already written opens in reading mode; "Edit" switches to the editor. */
   const [editing, setEditing] = useState(true);
+  const editOnce = useRef(startEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [savedEntry, setSavedEntry] = useState<ReflectionRow | null>(null);
@@ -201,11 +209,22 @@ export default function JourneyDetailClient({
     const stored = readDraft(key);
     setDraft(stored || (dayEntry ? entryBody(dayEntry.content) : ""));
     setDraftState(stored ? "saved" : "idle");
-    setEditing(!dayEntry || Boolean(stored));
+    setEditing(!dayEntry || Boolean(stored) || editOnce.current);
+    editOnce.current = false;
     setError("");
     // When the day changes, or when its saved reflection arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, dayIndex, dayEntry?.id]);
+
+  /* Arriving from Journal: the page is on screen, let the transition capture it. */
+  useEffect(() => {
+    markPageReady();
+  }, []);
+
+  const exitToJournal = useCallback(() => {
+    if (!returnTo) return;
+    transitionTo(() => router.push(returnTo));
+  }, [returnTo, router]);
 
   /* Saves as you write: a short pause after typing keeps the draft on this device. */
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -304,9 +323,11 @@ export default function JourneyDetailClient({
     setSavedEntry(row);
     setToast(true);
     const finished = days.every((d, i) => i === dayIndex || Boolean(entryFor(i)));
-    setStage(finished ? "complete" : "done");
+    // Editing a written day from Journal: stay on the day, back in reading mode.
+    if (returnTo && dayEntry) setEditing(false);
+    else setStage(finished ? "complete" : "done");
     router.refresh();
-  }, [draft, day, dayEntry, journey.title, key, days, dayIndex, entryFor, router]);
+  }, [draft, day, dayEntry, journey.title, key, days, dayIndex, entryFor, router, returnTo]);
 
   const questions = (journey.reflection_questions ?? []).filter(Boolean);
 
@@ -358,10 +379,17 @@ export default function JourneyDetailClient({
       </header>
     ) : (
       <header className="jf-head">
-        <button type="button" className="jf-exit" onClick={toOverview}>
-          <X size={20} aria-hidden="true" />
-          Exit
-        </button>
+        {returnTo ? (
+          <button type="button" className="jf-exit" onClick={exitToJournal}>
+            <ArrowLeft size={20} aria-hidden="true" />
+            Journal
+          </button>
+        ) : (
+          <button type="button" className="jf-exit" onClick={toOverview}>
+            <X size={20} aria-hidden="true" />
+            Exit
+          </button>
+        )}
         <button
           type="button"
           className="jf-index"
@@ -886,6 +914,10 @@ export default function JourneyDetailClient({
                 <Button onClick={() => openDay(dayIndex + 1)} full={false}>
                   Day {days[dayIndex + 1].day}
                   <ChevronRight size={16} aria-hidden="true" />
+                </Button>
+              ) : returnTo ? (
+                <Button onClick={exitToJournal} full={false}>
+                  Back to Journal
                 </Button>
               ) : (
                 <Button onClick={toOverview} full={false}>

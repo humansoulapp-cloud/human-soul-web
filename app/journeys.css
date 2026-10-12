@@ -361,3 +361,6 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
 .cr-btn:disabled { opacity: .4; cursor: default; }
 .cr-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .rc { transition: none; } }
+
+/* Shared with Journal's reading pane: the reflection text morphs between the two pages */
+.jf-col-write .jf-box { view-transition-name: entry-text; }

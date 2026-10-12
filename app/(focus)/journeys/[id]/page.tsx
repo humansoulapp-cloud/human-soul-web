@@ -10,10 +10,10 @@ export default async function JourneyDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ day?: string }>;
+  searchParams: Promise<{ day?: string; from?: string; r?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { day } = await searchParams;
+  const { day, from, r, edit } = await searchParams;
   const journey = await getJourney(id);
 
   if (!journey) notFound();
@@ -63,6 +63,8 @@ export default async function JourneyDetailPage({
       subscribed={subscribed}
       initialDay={Number.isFinite(initialDay) ? initialDay : undefined}
       suggestions={suggestions}
+      returnTo={from === "journal" ? (r ? `/journal?r=${encodeURIComponent(r)}` : "/journal") : undefined}
+      startEditing={edit === "1"}
     />
   );
 }

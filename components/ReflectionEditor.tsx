@@ -15,7 +15,6 @@ import {
   type Reflection,
 } from "@/lib/reflections";
 import { Button, EmptyState } from "@/components/ds";
-import { JourneyPromptCard, loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
 
 const DRAFT_KEY = "humansoul:reflect-draft";
 const TITLE_KEY = "humansoul:reflect-draft-title";
@@ -64,7 +63,6 @@ export default function ReflectionEditor({
   focusField = "text",
   onDone,
   preloaded,
-  journeyPrompt = null,
 }: {
   id?: string;
   initialJournalId?: string | null;
@@ -75,8 +73,6 @@ export default function ReflectionEditor({
   onDone?: (saved: Reflection | null) => void;
   /** Data the Journal page already has, so the page opens without a loading step. */
   preloaded?: { userId: string; journals: UserJournal[]; entry?: Reflection | null; photoUrl?: string | null };
-  /** For a journey entry: the day's prompt, folded above the text. */
-  journeyPrompt?: JourneyPrompt | null;
 }) {
   const router = useRouter();
   const isNew = !id;
@@ -189,16 +185,6 @@ export default function ReflectionEditor({
   }, [pickerOpen]);
 
   const journey = entry ? journeyInfo(entry) : null;
-  const [prompt, setPrompt] = useState<JourneyPrompt | null>(journeyPrompt);
-  useEffect(() => {
-    if (prompt || !journey) return;
-    let alive = true;
-    loadJourneyPrompt(journey.title, journey.day).then((p) => alive && setPrompt(p));
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [journey?.title, journey?.day]);
   const journal = journals.find((j) => j.id === journalId) ?? null;
   const touch = () => setDirty(true);
 
@@ -414,7 +400,6 @@ export default function ReflectionEditor({
 
       <main className="fw-page">
         <span className="fw-date">{dateLabel}</span>
-        {prompt ? <JourneyPromptCard data={prompt} /> : null}
         <label className="hs-sr-only" htmlFor="fw-title">
           Title
         </label>
