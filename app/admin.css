@@ -12,7 +12,8 @@
 }
 .hsa :is(.text-h1, .text-h2, .text-h3, .text-h4) { font-family: var(--hs-font-serif); }
 .hsa.admin-panel :is(h1, h2, h3):not([class*="text-h"]) { font-family: var(--hs-font-sans); }
-.hsa a { color: inherit; text-decoration: none; }
+:where(.hsa) a { color: inherit; text-decoration: none; }
+:where(.hsa) a:hover { color: inherit; }
 .hsa .ai { flex: none; }
 .hsa-wrap { max-width: var(--hs-container, 1120px); margin: 0 auto; padding: 0 0 96px; }
 .hsa-page { padding: 0 32px; }
