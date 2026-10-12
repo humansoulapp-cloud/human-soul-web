@@ -141,7 +141,8 @@
 .hsa-side { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 2px; }
 .hsa-out { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 12px; color: var(--muted-foreground); font: 500 14px/20px var(--hs-font-sans); }
 .hsa-out:hover { background: var(--fill); color: var(--foreground); }
-.hsa-out span:first-child { flex: 1; min-width: 0; }
+.hsa-out > span:first-child { flex: 1; min-width: 0; }
+.hsa-out-sub > span:first-child { flex: none; }
 .hsa-out-sub { min-height: 34px; font-weight: 400; font-size: 13px; }
 .hsa-out-sub span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hsa-out-n { flex: none; width: 20px; font-variant-numeric: tabular-nums; }
