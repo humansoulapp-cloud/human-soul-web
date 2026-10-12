@@ -164,5 +164,9 @@ html.jx-writing .jl, html.jx-writing .hs-topbar { opacity: 0; transform: transla
 /* A journey entry's text is shared with the journey day page: it morphs there and back */
 .jr-text-shared { view-transition-name: entry-text; }
 ::view-transition-group(entry-text) { animation-duration: .5s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
-::view-transition-old(entry-text), ::view-transition-new(entry-text) { height: 100%; object-fit: cover; object-position: top left; }
+/* The box moves and resizes; the text inside keeps its own size (no stretched letters). */
+::view-transition-image-pair(entry-text) { overflow: hidden; }
+::view-transition-old(entry-text), ::view-transition-new(entry-text) { width: auto; height: auto; object-fit: none; object-position: top left; inset: 0 auto auto 0; }
+::view-transition-old(entry-text) { animation-duration: .18s; }
+::view-transition-new(entry-text) { animation-duration: .4s; animation-delay: .08s; animation-fill-mode: both; }
 .jr-btn:disabled { opacity: .5; cursor: default; }
