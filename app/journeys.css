@@ -169,6 +169,11 @@ button.jf-dayrow:hover { background: color-mix(in srgb, var(--foreground) 5%, tr
 @media (min-width: 768px) { .jf-box { min-height: 280px; font-size: 20px; line-height: 34px; } }
 .jf-box::placeholder { color: color-mix(in srgb, var(--foreground) 55%, transparent); }
 .jf-box:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 70%, transparent), 0 0 0 6px color-mix(in srgb, var(--primary) 14%, transparent); }
+.jf-written { overflow-y: auto; cursor: default; color: var(--foreground); }
+.jf-written p { margin: 0 0 16px; white-space: pre-wrap; }
+.jf-written p:last-child { margin: 0; }
+.jf-written:focus { box-shadow: var(--hs-shadow-sm); }
+.jf-bar-in > .jf-link { margin-left: auto; }
 .jf-deeper { margin-top: 20px; }
 .jf-deeper summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; list-style: none; cursor: pointer; font: 500 14px/20px var(--hs-font-sans); color: var(--foreground); border-radius: 8px; }
 .jf-deeper summary::-webkit-details-marker { display: none; }

@@ -130,6 +130,8 @@ export default function JourneyDetailClient({
   const [stage, setStage] = useState<Stage>(initialDay && days.some((d) => d.day === initialDay) ? "day" : "overview");
   const [draft, setDraft] = useState("");
   const [draftState, setDraftState] = useState<DraftState>("idle");
+  /* A day already written opens in reading mode; "Edit" switches to the editor. */
+  const [editing, setEditing] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [savedEntry, setSavedEntry] = useState<ReflectionRow | null>(null);
@@ -144,10 +146,30 @@ export default function JourneyDetailClient({
 
   const locked = Boolean(journey.premium) && !subscribed;
 
+  /* A day's reflection: tagged with the day, or saved with the day's header in its text. */
   const entryFor = useCallback(
-    (index: number) => entries.find((r) => (r.tags ?? []).includes(`Day ${days[index]?.day}`)) ?? null,
-    [entries, days]
+    (index: number) => {
+      const n = days[index]?.day;
+      if (n == null) return null;
+      const header = `[${journey.title} - Day ${n}:`;
+      return (
+        entries.find((r) => {
+          const tags = r.tags ?? [];
+          if (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || (r.content ?? "").startsWith(header))) return true;
+          return (r.content ?? "").trim().startsWith(header);
+        }) ?? null
+      );
+    },
+    [entries, days, journey.title]
   );
+
+  /* Keep what the server returns after a refresh, without losing rows saved here. */
+  useEffect(() => {
+    setEntries((prev) => {
+      const ids = new Set(reflections.map((r) => r.id));
+      return [...prev.filter((r) => !ids.has(r.id)), ...reflections].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    });
+  }, [reflections]);
 
   /** The first day without a reflection is "today"; the rest wait their turn. */
   const nextIndex = useMemo(() => {
@@ -180,10 +202,11 @@ export default function JourneyDetailClient({
     const stored = readDraft(key);
     setDraft(stored || (dayEntry ? entryBody(dayEntry.content) : ""));
     setDraftState(stored ? "saved" : "idle");
+    setEditing(!dayEntry || Boolean(stored));
     setError("");
-    // Only when the day changes, not on every entry update.
+    // When the day changes, or when its saved reflection arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, dayIndex]);
+  }, [stage, dayIndex, dayEntry?.id]);
 
   /* Saves as you write: a short pause after typing keeps the draft on this device. */
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -611,7 +634,12 @@ export default function JourneyDetailClient({
             Your reflection
           </h2>
           <span className="jf-status" role="status">
-            {draftState === "saving" ? (
+            {!editing && dayEntry ? (
+              <>
+                <CircleCheck size={14} aria-hidden="true" />
+                Written {shortDate(dayEntry.created_at)}
+              </>
+            ) : draftState === "saving" ? (
               <>
                 <Loader2 size={14} className="hs-spin" aria-hidden="true" />
                 Saving draft…
@@ -628,13 +656,22 @@ export default function JourneyDetailClient({
             )}
           </span>
         </div>
-        <textarea
-          className="jf-box"
-          aria-labelledby="jf-write jf-title"
-          placeholder="Start with the moment that comes to mind. A few lines are enough."
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-        />
+        {!editing && dayEntry ? (
+          <div className="jf-box jf-written" aria-labelledby="jf-write jf-title" role="document">
+            {paragraphs(entryBody(dayEntry.content)).map((text, i) => (
+              <p key={i}>{text}</p>
+            ))}
+          </div>
+        ) : (
+          <textarea
+            className="jf-box"
+            aria-labelledby="jf-write jf-title"
+            placeholder="Start with the moment that comes to mind. A few lines are enough."
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            autoFocus={Boolean(dayEntry)}
+          />
+        )}
         {error ? (
           <p className="jf-error" role="alert">
             {error}
@@ -860,9 +897,43 @@ export default function JourneyDetailClient({
             Saves to {journey.title} · Day {day.day}
           </span>
           <span className="jf-bar-hide-sm" style={{ flex: 1 }} />
-          <Button onClick={saveReflection} loading={saving} disabled={!draft.trim()} full={false}>
-            {saving ? "Saving…" : dayEntry ? `Update Day ${day.day}` : `Save Day ${day.day}`}
-          </Button>
+          {!editing && dayEntry ? (
+            <>
+              <Button variant="secondary" icon={PenLine} onClick={() => setEditing(true)} full={false}>
+                Edit
+              </Button>
+              {days[dayIndex + 1] && (statusOf(dayIndex + 1) === "today" || statusOf(dayIndex + 1) === "done") ? (
+                <Button onClick={() => openDay(dayIndex + 1)} full={false}>
+                  Day {days[dayIndex + 1].day}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </Button>
+              ) : (
+                <Button onClick={toOverview} full={false}>
+                  Journey overview
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {dayEntry ? (
+                <button
+                  type="button"
+                  className="jf-link"
+                  onClick={() => {
+                    writeDraft(key, "");
+                    setDraft(entryBody(dayEntry.content));
+                    setDraftState("idle");
+                    setEditing(false);
+                  }}
+                >
+                  Cancel
+                </button>
+              ) : null}
+              <Button onClick={saveReflection} loading={saving} disabled={!draft.trim()} full={false}>
+                {saving ? "Saving…" : dayEntry ? `Update Day ${day.day}` : `Save Day ${day.day}`}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     ) : null;
