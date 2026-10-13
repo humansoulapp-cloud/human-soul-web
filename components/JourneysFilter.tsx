@@ -1,102 +1,132 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Lock } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Compass, Search, Shield } from "lucide-react";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
+import { Button, EmptyState, Input } from "@/components/ds";
+import { CatalogCard } from "@/components/journeys/glass-cards";
 
-const ALL = "All journeys";
+const ALL = "All";
+const PAGE = 9;
 
+/**
+ * The Journeys page body: the journey in progress first (passed in, only
+ * when there is one), then the header with search, the categories and the
+ * glass catalog.
+ */
 export default function JourneysFilter({
   journeys,
   categories,
   activeJourneyId = null,
   subscribed = false,
+  isAdmin = false,
+  inProgress = null,
 }: {
   journeys: JourneyRow[];
   categories: string[];
   activeJourneyId?: string | null;
   subscribed?: boolean;
+  isAdmin?: boolean;
+  inProgress?: React.ReactNode;
 }) {
   const [selected, setSelected] = useState(ALL);
+  const [query, setQuery] = useState("");
+  const [shown, setShown] = useState(PAGE);
 
-  // The journey in progress already has its own card above the grid
-  const visible = journeys
-    .filter((j) => j.id !== activeJourneyId)
-    .filter((j) => selected === ALL || j.category === selected);
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return journeys
+      .filter((j) => j.id !== activeJourneyId)
+      .filter((j) => selected === ALL || j.category === selected)
+      .filter((j) => !q || `${j.title} ${j.tagline ?? ""} ${j.category ?? ""}`.toLowerCase().includes(q))
+      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+  }, [journeys, activeJourneyId, selected, query]);
 
   return (
     <>
-      <div className="flex items-center gap-2 mt-9 mb-4 flex-wrap">
-        <h2 className="text-[19px] font-semibold m-0">Explore</h2>
-        <span className="flex-1" />
-        <div className="flex gap-2 overflow-x-auto max-w-full pb-1">
+      {inProgress ? <section aria-label="Your journey in progress">{inProgress}</section> : null}
+
+      <section className="hs-sec" aria-labelledby="journeys-all" style={{ gap: 20 }}>
+        <div className="jy-head">
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+            <h1 id="journeys-all" className="text-h2" style={{ margin: 0 }}>
+              Journeys
+            </h1>
+            <p className="text-body" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+              A theme and a prompt for each day, over seven days.
+            </p>
+          </div>
+          <div className="jy-tools">
+            <Input
+              icon={Search}
+              placeholder="Search journeys"
+              aria-label="Search journeys"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShown(PAGE);
+              }}
+              className="w-full md:w-[320px]"
+            />
+            {isAdmin && (
+              <Button variant="ghost" size="icon" icon={Shield} href="/admin/journeys" aria-label="Admin journeys" />
+            )}
+          </div>
+        </div>
+
+        <div className="hs-tabs" role="tablist" aria-label="Filter by category">
           {[ALL, ...categories].map((cat) => (
             <button
               key={cat}
-              onClick={() => setSelected(cat)}
-              className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
-                selected === cat
-                  ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
-                  : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
-              }`}
+              type="button"
+              role="tab"
+              className="hs-tab hs-focusable"
+              aria-selected={selected === cat}
+              onClick={() => {
+                setSelected(cat);
+                setShown(PAGE);
+              }}
             >
               {cat}
             </button>
           ))}
         </div>
-      </div>
 
-      {visible.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)] p-8 text-center text-[13px] text-[var(--ds-text-muted)]">
-          No journeys in this category yet.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visible.map((journey) => {
-            const locked = journey.premium && !subscribed;
-            return (
-              <Link
-                key={journey.id}
-                href={`/journeys/${journey.id}`}
-                className="flex flex-col overflow-hidden rounded-[14px] border border-[var(--ds-line)] bg-[var(--ds-surface)] text-[var(--ds-text)] hover:text-[var(--ds-text)] hover:border-[var(--ds-line-strong)] transition-colors"
-              >
-                <span className="block relative aspect-video">
-                  <span
-                    className={`block w-full h-full bg-cover bg-center ${
-                      locked ? "saturate-50 brightness-90" : ""
-                    }`}
-                    style={{ backgroundImage: `url("${journeyImage(journey)}")` }}
-                  />
-                  <span className="absolute left-2.5 bottom-2.5 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10.5px] font-semibold whitespace-nowrap">
-                    {(journey.journey_days ?? []).length} days
-                  </span>
-                  {locked && (
-                    <span className="absolute right-2.5 top-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--ds-gold)] text-[var(--ds-on-gold)] text-[9.5px] font-bold tracking-[0.1em]">
-                      <Lock className="w-[11px] h-[11px]" strokeWidth={2.2} />
-                      PLUS
-                    </span>
-                  )}
-                </span>
-                <span className="flex flex-col gap-[5px] px-[15px] pt-3.5 pb-[15px] flex-1">
-                  <span
-                    className={`text-[10px] font-semibold tracking-[0.11em] uppercase ${
-                      locked ? "text-[var(--ds-gold)]" : "text-[var(--ds-accent)]"
-                    }`}
-                  >
-                    {journey.category}
-                  </span>
-                  <span className="text-[19px] font-semibold leading-[1.2]">{journey.title}</span>
-                  <span className="text-[12.5px] leading-[1.45] text-[var(--ds-text-muted)]">
-                    {journey.tagline}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+        {visible.length === 0 ? (
+          <EmptyState
+            icon={Compass}
+            title="No journeys here yet"
+            description={query ? "Try another word, or choose All." : "New journeys arrive regularly. Try another category."}
+          />
+        ) : (
+          <>
+            <div className="ct-grid">
+              {visible.slice(0, shown).map((journey) => (
+                <CatalogCard
+                  key={journey.id}
+                  href={`/journeys/${journey.id}`}
+                  image={journeyImage(journey)}
+                  category={journey.category}
+                  title={journey.title}
+                  tagline={journey.tagline}
+                  days={(journey.journey_days ?? []).length}
+                  time={journey.time_required}
+                  featured={journey.featured}
+                  premium={journey.premium && !subscribed}
+                />
+              ))}
+            </div>
+            {visible.length > shown ? (
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Button variant="secondary" onClick={() => setShown((n) => n + PAGE)}>
+                  Show more journeys
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
     </>
   );
 }

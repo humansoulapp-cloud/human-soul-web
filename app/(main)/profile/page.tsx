@@ -14,6 +14,7 @@ import {
   type Journey,
   type ReflectionRow,
 } from "@/lib/journal";
+import PageLoader from "@/components/PageLoader";
 
 const CARD = "p-6 rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)] mt-[18px]";
 const GHOST_BTN =
@@ -195,7 +196,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-[13px] text-[var(--ds-text-muted)]">Loading…</div>;
+    return <PageLoader />;
   }
 
   return (

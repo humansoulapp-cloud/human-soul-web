@@ -1,556 +1,646 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowDownUp, BookOpen, Heart, Search, X } from "lucide-react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, BookOpen, Compass, Heart, MoreHorizontal, PenLine, Plus, Search, Trash2, X } from "lucide-react";
+import ReflectionEditor from "@/components/ReflectionEditor";
+import { loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
+import { markPageReady, transitionTo } from "@/lib/view-transition";
 import { createClient } from "@/lib/supabase/client";
+import type { UserJournal } from "@/lib/journal";
 import {
-  dayKey,
-  longestStreak,
-  wordCount,
-  writtenDays,
-  type ReflectionRow,
-} from "@/lib/journal";
+  dayGroupLabel,
+  entryBody,
+  entryLabels,
+  entryTitle,
+  inJournal,
+  journeyInfo,
+  removeStoredPhoto,
+  resolvePhotos,
+  type Reflection,
+} from "@/lib/reflections";
+import { Button, EmptyState } from "@/components/ds";
+import PageLoader from "@/components/PageLoader";
 
-const CARD = "rounded-[14px] border border-[var(--ds-line)] bg-[var(--ds-surface)]";
-const RAIL_TITLE = "text-[15px] font-semibold";
-const GHOST_SMALL =
-  "flex-1 px-3 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[12.5px] text-center transition-colors cursor-pointer";
+/**
+ * Journal · two panes (canvas «App / Journal · Two panes»):
+ * find on the left (search, journals, the list by day), read on the right.
+ * Both panes fit the window and scroll on their own. On mobile the list
+ * fills the screen and a reflection opens full screen.
+ */
 
-const FILTERS = ["All", "Journeys", "Free writing", "Favorites"] as const;
-type Filter = (typeof FILTERS)[number];
+type Filter = { kind: "all" } | { kind: "journeys" } | { kind: "favorites" } | { kind: "journal"; id: string };
 
-const DAY_TAG = /^Day (\d+)$/;
-
-/** Journey entries carry [journey title, "Day N"]; anything else is free writing. */
-function entryMeta(entry: ReflectionRow) {
-  const tags = entry.tags ?? [];
-  const dayTag = tags.find((t) => DAY_TAG.test(t));
-  const journeyTitle = tags.find((t) => t !== dayTag && !DAY_TAG.test(t));
-
-  if (dayTag && journeyTitle) {
-    return {
-      kind: "journey" as const,
-      source: `${journeyTitle} · ${dayTag}`,
-    };
-  }
-  return { kind: "free" as const, source: "Free writing" };
+function timeOf(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-/** Strip the "[Journey - Day N: Title]" header journey entries are saved with. */
-function entryText(content: string | null) {
-  const text = (content ?? "").trim();
-  return text.startsWith("[") ? text.slice(text.indexOf("]") + 1).trim() : text;
+function fullDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${timeOf(iso)}`;
 }
 
-function chip(on: boolean) {
-  return `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors cursor-pointer ${
-    on
-      ? "border border-transparent bg-[var(--ds-accent-soft)] text-[var(--ds-text)] font-semibold"
-      : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
-  }`;
+function paragraphs(text: string) {
+  return text
+    .split(/\n{2,}|\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 }
 
-function JournalFeed() {
-  const searchParams = useSearchParams();
-  const focusEntry = searchParams.get("entry");
-  const selectedJournalId = searchParams.get("journal_id");
+/**
+ * Runs a state change as a view transition: the reading pane grows into the
+ * writing page (and back) because both carry view-transition-name: jsheet.
+ * Without support, or with reduced motion, the change simply happens.
+ */
+function withTransition(change: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!doc.startViewTransition || reduce) return change();
+  doc.startViewTransition(() => flushSync(change));
+}
 
-  const [entries, setEntries] = useState<ReflectionRow[]>([]);
-  const [journalTitle, setJournalTitle] = useState("");
+type Writing = { id?: string; focus: "title" | "text" } | null;
+
+function JournalPageInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const journalParam = params.get("journal_id");
+  const filterParam = params.get("filter");
+  const selectedParam = params.get("r");
+  const entryParam = params.get("entry");
+  const newJournalParam = params.get("new_journal");
+  const writeParam = params.get("write");
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [entries, setEntries] = useState<Reflection[]>([]);
+  const [journals, setJournals] = useState<UserJournal[]>([]);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("All");
-  const [sortNewest, setSortNewest] = useState(true);
-  const [tag, setTag] = useState<string | null>(null);
-  const [day, setDay] = useState<string | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  const [creating, setCreating] = useState(Boolean(newJournalParam));
+  const [newJournal, setNewJournal] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [journalError, setJournalError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  /* Writing happens over the Journal page, so the pane can grow into it. */
+  const [writing, setWriting] = useState<Writing>(writeParam ? { id: writeParam === "new" ? undefined : writeParam, focus: "text" } : null);
+  const [fresh, setFresh] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<JourneyPrompt | null>(null);
+
+  const filter: Filter = journalParam
+    ? { kind: "journal", id: journalParam }
+    : filterParam === "journeys"
+      ? { kind: "journeys" }
+      : filterParam === "favorites"
+        ? { kind: "favorites" }
+        : { kind: "all" };
+
+  // Older links pointed at ?entry=<id>; they now open the reflection in the reading pane.
+  useEffect(() => {
+    if (entryParam) router.replace(`/journal?r=${entryParam}`);
+  }, [entryParam, router]);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return setLoading(false);
-
-      const { data } = await supabase
-        .from("reflections")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      setEntries((data ?? []) as ReflectionRow[]);
-
-      if (selectedJournalId) {
-        const { data: jData } = await supabase
-          .from("journals")
-          .select("title")
-          .eq("id", selectedJournalId)
-          .single();
-        if (jData) {
-          setJournalTitle(jData.title);
-        }
-      } else {
-        setJournalTitle("");
-      }
-
+      setUserId(user.id);
+      const [{ data: rows }, { data: journalRows }] = await Promise.all([
+        supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+      ]);
+      const list = (rows ?? []) as Reflection[];
+      setEntries(list);
+      setJournals((journalRows ?? []) as UserJournal[]);
       setLoading(false);
+      setPhotos(await resolvePhotos(supabase, list));
     }
     load();
-  }, [selectedJournalId]);
+  }, []);
 
-  // An entry linked from Home opens expanded and scrolls into view
-  useEffect(() => {
-    if (!focusEntry || loading) return;
-    setOpen((prev) => ({ ...prev, [focusEntry]: true }));
-    document.getElementById(`entry-${focusEntry}`)?.scrollIntoView({ block: "center" });
-  }, [focusEntry, loading]);
-
-  const toggleFavorite = async (entry: ReflectionRow) => {
-    const next = !entry.favorite;
-    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, favorite: next } : e)));
-    const supabase = createClient();
-    await supabase.from("reflections").update({ favorite: next }).eq("id", entry.id);
-  };
-
-  const counts = useMemo(
-    () => ({
-      All: entries.length,
-      Journeys: entries.filter((e) => entryMeta(e).kind === "journey").length,
-      "Free writing": entries.filter((e) => entryMeta(e).kind === "free").length,
-      Favorites: entries.filter((e) => e.favorite).length,
-    }),
-    [entries]
+  /** Keeps the filter and the open reflection in the URL, so links and Back work. */
+  const go = useCallback(
+    (next: { filter?: Filter; r?: string | null }) => {
+      const f = next.filter ?? filter;
+      const sp = new URLSearchParams();
+      if (f.kind === "journal") sp.set("journal_id", f.id);
+      else if (f.kind !== "all") sp.set("filter", f.kind);
+      const r = next.r === undefined ? selectedParam : next.r;
+      if (r) sp.set("r", r);
+      const qs = sp.toString();
+      router.replace(qs ? `/journal?${qs}` : "/journal", { scroll: false });
+    },
+    [filter, selectedParam, router]
   );
 
-  const tagCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const e of entries) for (const t of e.tags ?? []) map.set(t, (map.get(t) ?? 0) + 1);
-    return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [entries]);
+  const setFilter = (next: Filter) => {
+    setRenaming(false);
+    go({ filter: next, r: null });
+  };
+
+  const activeJournal = filter.kind === "journal" ? journals.find((j) => j.id === filter.id) ?? null : null;
+
+  const counts = useMemo(() => {
+    const byJournal: Record<string, number> = {};
+    for (const j of journals) byJournal[j.id] = entries.filter((e) => inJournal(e, j)).length;
+    return {
+      all: entries.length,
+      journeys: entries.filter((e) => journeyInfo(e)).length,
+      favorites: entries.filter((e) => e.favorite).length,
+      byJournal,
+    };
+  }, [entries, journals]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = entries.filter((e) => {
-      const { kind, source } = entryMeta(e);
-      if (selectedJournalId) {
-        const matchesJournalId = e.journal_id === selectedJournalId;
-        const matchesTag = journalTitle && (e.tags ?? []).includes(journalTitle);
-        if (!matchesJournalId && !matchesTag) return false;
+    return entries.filter((e) => {
+      if (filter.kind === "journeys" && !journeyInfo(e)) return false;
+      if (filter.kind === "favorites" && !e.favorite) return false;
+      if (filter.kind === "journal") {
+        const j = journals.find((x) => x.id === filter.id);
+        if (!j || !inJournal(e, j)) return false;
       }
-      if (filter === "Journeys" && kind !== "journey") return false;
-      if (filter === "Free writing" && kind !== "free") return false;
-      if (filter === "Favorites" && !e.favorite) return false;
-      if (tag && !(e.tags ?? []).includes(tag)) return false;
-      if (day && dayKey(e.created_at) !== day) return false;
       if (!q) return true;
-      return `${e.content ?? ""} ${source} ${(e.tags ?? []).join(" ")} ${e.mood ?? ""}`
-        .toLowerCase()
-        .includes(q);
+      return `${entryTitle(e)} ${e.content ?? ""} ${(e.tags ?? []).join(" ")}`.toLowerCase().includes(q);
     });
-    return sortNewest ? list : [...list].reverse();
-  }, [entries, selectedJournalId, journalTitle, query, filter, tag, day, sortNewest]);
+  }, [entries, journals, filter, query]);
 
   const groups = useMemo(() => {
-    const map = new Map<string, ReflectionRow[]>();
+    const map = new Map<string, Reflection[]>();
     for (const e of visible) {
-      const label = new Date(e.created_at).toLocaleDateString("en-GB", {
-        month: "long",
-        year: "numeric",
-      });
+      const label = dayGroupLabel(e.created_at).split(" · ")[0];
       map.set(label, [...(map.get(label) ?? []), e]);
     }
     return [...map.entries()];
   }, [visible]);
 
-  // Calendar for the current month
-  const today = new Date();
-  const written = useMemo(() => writtenDays(entries), [entries]);
-  const calendar = useMemo(() => {
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    // Monday-first grid
-    const lead = (new Date(year, month, 1).getDay() + 6) % 7;
-    const cells: (number | null)[] = Array.from({ length: lead }, () => null);
-    for (let d = 1; d <= daysInMonth; d += 1) cells.push(d);
-    return { cells, year, month, daysInMonth };
+  /* The open reflection is the one in the URL; with none, the right pane is a blank sheet. */
+  const explicit = selectedParam ? entries.find((e) => e.id === selectedParam) ?? null : null;
+  const selected = explicit;
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [selected?.id]);
+
+  /* A journey entry shows the day's prompt it was written for. */
+  const selJourney = selected ? journeyInfo(selected) : null;
+  const selJourneyKey = selJourney ? `${selJourney.title}|${selJourney.day}` : "";
+  useEffect(() => {
+    if (!selJourney) return;
+    let alive = true;
+    loadJourneyPrompt(selJourney.title, selJourney.day).then((p) => alive && setPrompt(p));
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries]);
+  }, [selJourneyKey]);
 
-  const monthWritten = useMemo(
-    () =>
-      calendar.cells.filter(
-        (d) => d !== null && written.has(dayKey(new Date(calendar.year, calendar.month, d)))
-      ).length,
-    [calendar, written]
-  );
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [menuOpen]);
 
-  const stats = useMemo(
-    () => [
-      { label: "Entries", value: String(entries.length) },
-      {
-        label: "Words",
-        value: entries
-          .reduce((total, e) => total + wordCount(entryText(e.content)), 0)
-          .toLocaleString("en-GB"),
-      },
-      { label: "Longest streak", value: `${longestStreak(written)} d` },
-    ],
-    [entries, written]
-  );
+  /* A journey entry is read and edited inside its journey: the text morphs there and back. */
+  const journeyUrl = (entry: Reflection, p: JourneyPrompt, edit: boolean) =>
+    `/journeys/${p.journeyId}?day=${p.day}&from=journal&r=${entry.id}${edit ? "&edit=1" : ""}`;
+  const openInJourney = (entry: Reflection, edit: boolean) => {
+    if (!prompt) return;
+    transitionTo(() => router.push(journeyUrl(entry, prompt, edit)));
+  };
 
-  const firstEntry = entries[entries.length - 1];
-  const countLabel = entries.length
-    ? `${entries.length} entries · ${counts.Journeys} from journeys${
-        firstEntry
-          ? ` · first written ${new Date(firstEntry.created_at).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}`
-          : ""
-      }`
-    : "Nothing written yet.";
+  useEffect(() => {
+    if (!loading) markPageReady();
+  }, [loading]);
 
-  const resetAll = () => {
-    setQuery("");
-    setFilter("All");
-    setTag(null);
-    setDay(null);
+  /* Fetch the journey page ahead, so the morph starts as soon as it's clicked. */
+  const prefetchUrl =
+    selected && prompt && selJourney && prompt.journeyTitle === selJourney.title && prompt.day === selJourney.day
+      ? journeyUrl(selected, prompt, true)
+      : null;
+  useEffect(() => {
+    if (prefetchUrl) router.prefetch(prefetchUrl);
+  }, [prefetchUrl, router]);
+
+  const startWriting = (target: Writing) =>
+    withTransition(() => {
+      document.documentElement.classList.add("jx-writing");
+      setWriting(target);
+    });
+
+  const finishWriting = (saved: Reflection | null) => {
+    withTransition(() => {
+      document.documentElement.classList.remove("jx-writing");
+      setWriting(null);
+      if (saved) {
+        setEntries((prev) => [saved, ...prev.filter((e) => e.id !== saved.id)].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+        setFresh(saved.id);
+      }
+    });
+    if (saved) {
+      go({ r: saved.id });
+      resolvePhotos(createClient(), [saved]).then((urls) => setPhotos((prev) => ({ ...prev, ...urls })));
+    } else if (writeParam) go({});
+  };
+
+  useEffect(() => {
+    if (!fresh) return;
+    const t = setTimeout(() => setFresh(null), 1600);
+    return () => clearTimeout(t);
+  }, [fresh]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("jx-writing", Boolean(writing));
+    return () => document.documentElement.classList.remove("jx-writing");
+  }, [writing]);
+
+  const toggleFavorite = async (entry: Reflection) => {
+    const next = !entry.favorite;
+    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, favorite: next } : e)));
+    await createClient().from("reflections").update({ favorite: next }).eq("id", entry.id);
+  };
+
+  const removeEntry = async (entry: Reflection) => {
+    setMenuOpen(false);
+    if (!window.confirm("Delete this reflection? This cannot be undone.")) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("reflections").delete().eq("id", entry.id);
+    if (error) {
+      setJournalError(error.message);
+      return;
+    }
+    await removeStoredPhoto(supabase, entry.photo);
+    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    go({ r: null });
+  };
+
+  /* ── Journals ── */
+  const createJournal = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const value = newJournal.trim();
+    if (!userId || !value) return;
+    setJournalError("");
+    const { data, error } = await createClient()
+      .from("journals")
+      .insert([{ user_id: userId, title: value }])
+      .select();
+    if (error || !data?.[0]) {
+      setJournalError(error?.message ?? "Could not create the journal.");
+      return;
+    }
+    const created = data[0] as UserJournal;
+    setJournals((prev) => [...prev, created]);
+    setNewJournal("");
+    setCreating(false);
+    setFilter({ kind: "journal", id: created.id });
+  };
+
+  const renameJournal = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const value = renameValue.trim();
+    if (!activeJournal || !value || value === activeJournal.title) return setRenaming(false);
+    setJournalError("");
+    const { error } = await createClient().from("journals").update({ title: value }).eq("id", activeJournal.id);
+    if (error) {
+      setJournalError(error.message);
+      return;
+    }
+    setJournals((prev) => prev.map((j) => (j.id === activeJournal.id ? { ...j, title: value } : j)));
+    setRenaming(false);
+  };
+
+  const deleteJournal = async () => {
+    if (!activeJournal) return;
+    if (!window.confirm(`Delete the journal "${activeJournal.title}"? Its reflections stay in your Journal.`)) return;
+    const { error } = await createClient().from("journals").delete().eq("id", activeJournal.id);
+    if (error) {
+      setJournalError(error.message);
+      return;
+    }
+    setJournals((prev) => prev.filter((j) => j.id !== activeJournal.id));
+    setFilter({ kind: "all" });
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-[13px] text-[var(--ds-text-muted)]">Loading…</div>;
+    return <PageLoader />;
   }
 
+  const chips: { key: string; label: string; n: number; on: boolean; icon?: React.ReactNode; onClick: () => void }[] = [
+    { key: "all", label: "All", n: counts.all, on: filter.kind === "all", onClick: () => setFilter({ kind: "all" }) },
+    ...journals.map((j) => ({
+      key: j.id,
+      label: j.title,
+      n: counts.byJournal[j.id] ?? 0,
+      on: filter.kind === "journal" && filter.id === j.id,
+      onClick: () => setFilter({ kind: "journal", id: j.id }),
+    })),
+    {
+      key: "journeys",
+      label: "From journeys",
+      n: counts.journeys,
+      on: filter.kind === "journeys",
+      icon: <Compass size={14} aria-hidden="true" />,
+      onClick: () => setFilter({ kind: "journeys" }),
+    },
+    {
+      key: "favorites",
+      label: "Favorites",
+      n: counts.favorites,
+      on: filter.kind === "favorites",
+      icon: <Heart size={14} aria-hidden="true" />,
+      onClick: () => setFilter({ kind: "favorites" }),
+    },
+  ];
+
+  const selectedJourney = selected ? journeyInfo(selected) : null;
+  const promptForSelected =
+    prompt && selectedJourney && prompt.journeyTitle === selectedJourney.title && prompt.day === selectedJourney.day ? prompt : null;
+  const selectedLabel = selected ? entryLabels(selected, journals)[0] : "";
+
   return (
-    <div>
-      <div className="flex items-end gap-5 flex-wrap">
-        <div className="flex-1 min-w-[260px]">
-          <h1 className="text-[28px] md:text-[37px] font-semibold tracking-[-0.015em] m-0 mb-1.5">
-            {journalTitle ? journalTitle : "Journal"}
+    <div className="jx" data-open={explicit ? "true" : "false"}>
+      {/* ── Left: find ── */}
+      <section className="jl" aria-labelledby="jl-title">
+        <div className="jl-head">
+          <h1 id="jl-title" className="text-h2" style={{ margin: 0 }}>
+            Journal
           </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">
-            {journalTitle ? `Viewing reflections saved in "${journalTitle}".` : countLabel}
-          </p>
+          <button type="button" className="jl-head-new" onClick={() => startWriting({ focus: "title" })}>
+            <Plus size={16} aria-hidden="true" />
+            New
+          </button>
         </div>
-        <Link
-          href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
-          className="px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors cursor-pointer"
-        >
-          New entry
-        </Link>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-[18px] mt-6 items-start">
-        <div className="min-w-0">
-          {/* Active Journal Filter Banner */}
-          {selectedJournalId && (
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-3 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]">
-              <div className="flex items-center gap-2 text-[12.5px]">
-                <BookOpen className="w-4 h-4 text-[var(--ds-accent)] flex-shrink-0" />
-                <span>
-                  Filtered by journal: <strong className="font-semibold">{journalTitle || "Selected Journal"}</strong>
-                </span>
-              </div>
-              <Link
-                href="/journal"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[11.5px] transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Show all</span>
-              </Link>
-            </div>
-          )}
+        <label className="jl-search">
+          <span className="hs-sr-only">Search your reflections</span>
+          <Search size={18} aria-hidden="true" />
+          <input type="search" placeholder="Search your reflections" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </label>
 
-          <div className="flex items-center gap-3 px-4 h-12 rounded-xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-            <Search className="w-4 h-4 flex-shrink-0 text-[var(--ds-text-muted)]" strokeWidth={1.8} />
+        <div className="jl-chips" role="group" aria-label="Filter by journal">
+          {chips.map((c) => (
+            <button key={c.key} type="button" className="jl-chip" aria-pressed={c.on} onClick={c.onClick}>
+              {c.icon}
+              {c.label}
+              <span className="jl-n">{c.n}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="jl-chip jl-chip-add"
+            aria-label="New journal"
+            aria-expanded={creating}
+            onClick={() => setCreating((v) => !v)}
+          >
+            <Plus size={16} aria-hidden="true" />
+          </button>
+        </div>
+
+        {creating ? (
+          <form className="jl-form" onSubmit={createJournal}>
+            <label className="hs-sr-only" htmlFor="new-journal">
+              Journal name
+            </label>
             <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search your entries, prompts and tags"
-              className="flex-1 min-w-0 bg-transparent border-none text-sm text-[var(--ds-text)]"
+              id="new-journal"
+              className="jl-input"
+              autoFocus
+              placeholder="Name your journal, e.g. Gratitude"
+              value={newJournal}
+              onChange={(e) => setNewJournal(e.target.value)}
             />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="text-[12.5px] font-semibold text-[var(--ds-accent)] cursor-pointer"
-              >
-                Clear
+            <Button type="submit" size="sm" disabled={!newJournal.trim()}>
+              Create
+            </Button>
+            <button type="button" className="jl-icon" aria-label="Cancel" onClick={() => setCreating(false)}>
+              <X size={16} aria-hidden="true" />
+            </button>
+          </form>
+        ) : null}
+
+        {activeJournal ? (
+          renaming ? (
+            <form className="jl-form" onSubmit={renameJournal}>
+              <label className="hs-sr-only" htmlFor="rename-journal">
+                New name
+              </label>
+              <input id="rename-journal" className="jl-input" autoFocus value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+              <Button type="submit" size="sm">
+                Save
+              </Button>
+              <button type="button" className="jl-icon" aria-label="Cancel" onClick={() => setRenaming(false)}>
+                <X size={16} aria-hidden="true" />
               </button>
+            </form>
+          ) : (
+            <div className="jl-manage">
+              <button
+                type="button"
+                className="jl-link"
+                onClick={() => {
+                  setRenameValue(activeJournal.title);
+                  setRenaming(true);
+                }}
+              >
+                Rename {activeJournal.title}
+              </button>
+              <button type="button" className="jl-link jl-danger" onClick={deleteJournal}>
+                Delete journal
+              </button>
+            </div>
+          )
+        ) : null}
+
+        {journalError ? (
+          <p className="hs-error" role="alert" style={{ margin: 0 }}>
+            {journalError}
+          </p>
+        ) : null}
+
+
+        {groups.length === 0 ? (
+          <div className="jl-empty">
+            {entries.length === 0 ? (
+              <EmptyState icon={BookOpen} title="Your journal is empty" description="Everything you write, on your own or inside a journey, is kept here." />
+            ) : activeJournal ? (
+              <EmptyState icon={BookOpen} title={`Nothing in ${activeJournal.title} yet`} description="Choose this journal when you write and it will appear here." />
+            ) : (
+              <EmptyState
+                icon={Search}
+                title="Nothing matches that"
+                description="Try a shorter word, or clear the search."
+                actions={
+                  <Button variant="secondary" size="sm" onClick={() => setQuery("")}>
+                    Clear search
+                  </Button>
+                }
+              />
             )}
           </div>
-
-          <div className="flex items-center gap-2 mt-3.5 mb-1 flex-wrap">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => {
-                  setFilter(f);
-                  setTag(null);
-                  setDay(null);
-                }}
-                className={chip(filter === f)}
-              >
-                {f}
-                <span className="text-[11px] font-semibold opacity-60">{counts[f]}</span>
-              </button>
-            ))}
-            <span className="flex-1" />
-            <button
-              onClick={() => setSortNewest((v) => !v)}
-              className="inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] text-xs transition-colors"
-            >
-              <ArrowDownUp className="w-[13px] h-[13px]" strokeWidth={1.9} />
-              {sortNewest ? "Newest first" : "Oldest first"}
-            </button>
-          </div>
-
-          {groups.length === 0 ? (
-            <div className="mt-[22px] px-6 py-11 rounded-[14px] border border-dashed border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-center flex flex-col items-center">
-              <div className="text-[17px] font-semibold">
-                {selectedJournalId
-                  ? `No entries in "${journalTitle || "this journal"}" yet`
-                  : entries.length === 0
-                    ? "Your journal is empty"
-                    : "Nothing matches that yet"}
-              </div>
-              <p className="text-sm text-[var(--ds-text-muted)] mt-2 max-w-[40ch]">
-                {selectedJournalId
-                  ? "Write reflections and save them to this journal to view them here."
-                  : entries.length === 0
-                    ? "Everything you write, on your own or inside a journey, is kept here."
-                    : "Try a shorter word, or clear the filters to see every entry again."}
-              </p>
-              {selectedJournalId || entries.length === 0 ? (
-                <Link
-                  href={selectedJournalId ? `/journal/new?journal_id=${selectedJournalId}` : "/journal/new"}
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
-                >
-                  {selectedJournalId
-                    ? `Write reflection in ${journalTitle || "this journal"}`
-                    : "Write your first entry"}
-                </Link>
-              ) : (
-                <button
-                  onClick={resetAll}
-                  className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] cursor-pointer"
-                >
-                  Reset filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-[26px] mt-[22px]">
-              {groups.map(([month, list]) => (
-                <div key={month}>
-                  <div className="flex items-center gap-3.5">
-                    <span className="text-[11px] font-bold tracking-[0.12em] text-[var(--ds-text-muted)] uppercase whitespace-nowrap">
-                      {month}
-                    </span>
-                    <span className="flex-1 h-px bg-[var(--ds-line)]" />
-                    <span className="text-[11.5px] text-[var(--ds-text-muted)] whitespace-nowrap">
-                      {list.length} {list.length === 1 ? "entry" : "entries"}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-2.5 mt-3">
-                    {list.map((entry) => {
-                      const { kind, source } = entryMeta(entry);
-                      const text = entryText(entry.content);
-                      const isOpen = Boolean(open[entry.id]);
-                      return (
-                        <div key={entry.id} id={`entry-${entry.id}`} className={`${CARD} px-5 pt-[18px] pb-[17px]`}>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[13px] font-semibold whitespace-nowrap">
-                              {new Date(entry.created_at).toLocaleDateString("en-GB", {
-                                weekday: "short",
-                                day: "numeric",
-                                month: "short",
-                              })}
-                            </span>
-                            <span
-                              className={`px-2.5 py-[3px] rounded-full text-[10.5px] font-semibold tracking-[0.04em] whitespace-nowrap ${
-                                kind === "journey"
-                                  ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
-                                  : "bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)]"
-                              }`}
-                            >
-                              {source}
-                            </span>
-                            <span className="flex-1" />
-                            {entry.mood && (
-                              <span className="text-[12.5px] text-[var(--ds-text-muted)] whitespace-nowrap">
-                                {entry.mood}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => toggleFavorite(entry)}
-                              aria-label={entry.favorite ? "Remove from favorites" : "Add to favorites"}
-                              className={`p-1 grid place-items-center ${
-                                entry.favorite
-                                  ? "text-[var(--ds-accent)]"
-                                  : "text-[var(--ds-text-muted)]"
-                              }`}
-                            >
-                              <Heart
-                                className="w-[15px] h-[15px]"
-                                strokeWidth={1.7}
-                                fill={entry.favorite ? "currentColor" : "none"}
-                              />
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => setOpen((p) => ({ ...p, [entry.id]: !p[entry.id] }))}
-                            className="block w-full text-left mt-3 text-[var(--ds-text)]"
-                          >
-                            <span
-                              className={`text-[15px] leading-[1.72] text-[var(--ds-text-mid)] whitespace-pre-line ${
-                                isOpen ? "block" : "line-clamp-2"
-                              }`}
-                            >
-                              {text}
-                            </span>
-                          </button>
-
-                          {entry.photo && isOpen && (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={entry.photo}
-                              alt=""
-                              className="mt-3 max-h-64 rounded-xl border border-[var(--ds-line)]"
-                            />
-                          )}
-
-                          <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            {(entry.tags ?? []).map((t) => (
-                              <span
-                                key={t}
-                                className="px-2.5 py-1 rounded-full border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)] text-[11px]"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                            <span className="flex-1" />
-                            <span className="text-[11px] font-semibold tracking-[0.08em] text-[var(--ds-text-muted)]">
-                              {wordCount(text)} words
-                            </span>
-                            <button
-                              onClick={() => setOpen((p) => ({ ...p, [entry.id]: !p[entry.id] }))}
-                              className="text-[12.5px] font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)]"
-                            >
-                              {isOpen ? "Show less" : "Read entry"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Right rail ── */}
-        <div className="flex flex-col gap-[18px] min-w-0">
-          <div className={`${CARD} p-[18px]`}>
-            <div className="flex items-center gap-2.5">
-              <div className={RAIL_TITLE}>
-                {today.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
-              </div>
-              <span className="flex-1" />
-              <span className="text-[12.5px] text-[var(--ds-text-muted)]">
-                {monthWritten} of {calendar.daysInMonth} days
-              </span>
-            </div>
-
-            <div className="grid grid-cols-7 gap-[5px] mt-3.5">
-              {["M", "T", "W", "T", "F", "S", "S"].map((label, i) => (
-                <span
-                  key={`${label}-${i}`}
-                  className="text-center text-[10px] font-bold tracking-[0.06em] text-[var(--ds-text-muted)] pb-[3px]"
-                >
+        ) : (
+          <ul className="jl-list" role="list" aria-label="Reflections">
+            {groups.map(([label, list]) => (
+              <React.Fragment key={label}>
+                <li className="jl-day" aria-hidden="true">
                   {label}
-                </span>
-              ))}
-              {calendar.cells.map((d, i) => {
-                if (d === null) return <span key={`pad-${i}`} className="h-7" />;
-                const key = dayKey(new Date(calendar.year, calendar.month, d));
-                const has = written.has(key);
-                const selected = day === key;
-                const isToday = d === today.getDate();
-                return (
-                  <button
-                    key={key}
-                    onClick={() => has && setDay(selected ? null : key)}
-                    className={`h-7 rounded-[7px] text-[11.5px] transition-colors ${
-                      selected
-                        ? "bg-[var(--ds-accent)] text-[var(--ds-on-accent)] font-bold"
-                        : has
-                          ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] font-semibold"
-                          : isToday
-                            ? "border border-[var(--ds-line-strong)] text-[var(--ds-text)]"
-                            : "text-[var(--ds-text-muted)] opacity-55 cursor-default"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-3 leading-relaxed">
-              Days with an entry are filled. Pick one to jump to it.
-            </p>
-          </div>
+                </li>
+                {list.map((e) => {
+                  const on = selected?.id === e.id;
+                  return (
+                    <li key={e.id}>
+                      <button
+                        type="button"
+                        className={`jl-row${on ? " on" : ""}${fresh === e.id ? " fresh" : ""}`}
+                        aria-current={on ? "true" : undefined}
+                        onClick={() => go({ r: e.id })}
+                      >
+                        <span className="jl-row-top">
+                          <span className="jl-title">{entryTitle(e)}</span>
+                          <span className="jl-time">{timeOf(e.created_at)}</span>
+                        </span>
+                        <span className="jl-snip">{entryBody(e.content)}</span>
+                        <span className="jl-lab">
+                          <span className="jl-lab-t">{entryLabels(e, journals)[0]}</span>
+                          {e.favorite ? (
+                            <span className="jl-fav" aria-label="Favorite">
+                              <Heart size={14} fill="currentColor" aria-hidden="true" />
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </ul>
+        )}
+      </section>
 
-          {tagCounts.length > 0 && (
-            <div className={`${CARD} p-[18px]`}>
-              <div className={RAIL_TITLE}>Tags</div>
-              <div className="flex flex-wrap gap-[7px] mt-3">
-                {tagCounts.map(([label, count]) => (
+      {/* ── Right: read ── */}
+      <article className={`jr${writing ? " jr-away" : ""}`} aria-labelledby={selected ? "jr-title" : undefined}>
+        {selected ? (
+          <>
+            <div className="jr-bar">
+              <button type="button" className="jr-btn jr-back" onClick={() => go({ r: null })}>
+                <ArrowLeft size={18} aria-hidden="true" />
+                Journal
+              </button>
+              <span className="jr-meta">{fullDate(selected.created_at)}</span>
+              <div className="jr-actions">
+                <button
+                  type="button"
+                  className="jr-btn"
+                  aria-label={selected.favorite ? "Remove from favorites" : "Add to favorites"}
+                  aria-pressed={Boolean(selected.favorite)}
+                  onClick={() => toggleFavorite(selected)}
+                >
+                  <Heart size={18} fill={selected.favorite ? "currentColor" : "none"} aria-hidden="true" style={{ color: selected.favorite ? "var(--primary)" : undefined }} />
+                </button>
+                {selectedJourney ? (
                   <button
-                    key={label}
-                    onClick={() => {
-                      setTag(tag === label ? null : label);
-                      setFilter("All");
-                      setDay(null);
-                    }}
-                    className={chip(tag === label)}
+                    type="button"
+                    className="jr-btn pri"
+                    title="See the day's prompt and edit your entry"
+                    disabled={!promptForSelected}
+                    onClick={() => openInJourney(selected, true)}
                   >
-                    {label}
-                    <span className="text-[11px] font-semibold opacity-60">{count}</span>
+                    <Compass size={16} aria-hidden="true" />
+                    Edit in journey
                   </button>
+                ) : (
+                  <button type="button" className="jr-btn pri" onClick={() => startWriting({ id: selected.id, focus: "text" })}>
+                    <PenLine size={16} aria-hidden="true" />
+                    Edit
+                  </button>
+                )}
+                <div className="jr-menu-wrap" ref={menuRef}>
+                  <button type="button" className="jr-btn" aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+                    <MoreHorizontal size={18} aria-hidden="true" />
+                  </button>
+                  {menuOpen ? (
+                    <div className="jr-menu" role="menu">
+                      <button type="button" role="menuitem" className="jr-menu-item danger" onClick={() => removeEntry(selected)}>
+                        <Trash2 size={16} aria-hidden="true" />
+                        Delete reflection
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <div className="jr-body">
+              <h2 id="jr-title" className="text-h1 jr-title">
+                {entryTitle(selected)}
+              </h2>
+              {selectedLabel ? (
+                <span className="jr-tag">
+                  {selectedJourney ? <Compass size={14} aria-hidden="true" /> : <BookOpen size={14} aria-hidden="true" />}
+                  {selectedLabel}
+                </span>
+              ) : null}
+              <div className={`jr-text${selectedJourney ? " jr-text-shared" : ""}`}>
+                {paragraphs(entryBody(selected.content)).map((p, i) => (
+                  <p key={i}>{p}</p>
                 ))}
               </div>
+              {photos[selected.id] ? (
+                <div className="jr-photo">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photos[selected.id]} alt="Photo attached to this reflection" />
+                </div>
+              ) : null}
             </div>
-          )}
-
-          <div className={`${CARD} p-[18px]`}>
-            <div className={RAIL_TITLE}>Your record</div>
-            <div className="flex mt-3.5">
-              {stats.map((s) => (
-                <span key={s.label} className="flex-1">
-                  <span className="block text-xl font-semibold tracking-[-0.01em]">{s.value}</span>
-                  <span className="block text-[10px] font-semibold tracking-[0.09em] text-[var(--ds-text-muted)] mt-[3px] uppercase">
-                    {s.label}
-                  </span>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2.5 mt-4 pt-[15px] border-t border-[var(--ds-line)]">
-              <button onClick={() => window.print()} className={GHOST_SMALL}>
-                Export as PDF
-              </button>
-              <button onClick={() => window.print()} className={GHOST_SMALL}>
-                Print
-              </button>
-            </div>
+          </>
+        ) : (
+          <div className="js" aria-label="Start a new reflection">
+            <span className="js-date">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+            <button type="button" className="js-title" onClick={() => startWriting({ focus: "title" })}>
+              Title
+            </button>
+            <button type="button" className="js-text" onClick={() => startWriting({ focus: "text" })}>
+              What&apos;s on your mind today?
+            </button>
+            <button type="button" className="js-rest" aria-hidden="true" tabIndex={-1} onClick={() => startWriting({ focus: "text" })} />
           </div>
-        </div>
-      </div>
+        )}
+      </article>
+
+      {writing ? (
+        <ReflectionEditor
+          key={writing.id ?? "new"}
+          id={writing.id}
+          initialJournalId={activeJournal?.id ?? null}
+          embedded
+          focusField={writing.focus}
+          onDone={finishWriting}
+          preloaded={
+            userId
+              ? {
+                  userId,
+                  journals,
+                  entry: writing.id ? entries.find((e) => e.id === writing.id) ?? null : null,
+                  photoUrl: writing.id ? photos[writing.id] ?? null : null,
+                }
+              : undefined
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -558,7 +648,7 @@ function JournalFeed() {
 export default function JournalPage() {
   return (
     <Suspense fallback={null}>
-      <JournalFeed />
+      <JournalPageInner />
     </Suspense>
   );
 }

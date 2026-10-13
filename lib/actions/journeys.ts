@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -243,7 +242,7 @@ export async function createJourney(input: JourneyInput) {
   revalidatePath("/journeys");
   revalidatePath("/admin/journeys");
   revalidatePath("/admin");
-  redirect("/admin/journeys");
+  return { success: true as const, id: input.id };
 }
 
 // ─── Update ────────────────────────────────────────────────────────────────────
@@ -307,8 +306,9 @@ export async function updateJourney(id: string, input: JourneyInput) {
   revalidatePath("/journeys");
   revalidatePath(`/journeys/${id}`);
   revalidatePath("/admin/journeys");
+  revalidatePath(`/admin/journeys/${id}`);
   revalidatePath("/admin");
-  redirect("/admin/journeys");
+  return { success: true as const, id };
 }
 
 // ─── Quick Actions ─────────────────────────────────────────────────────────────

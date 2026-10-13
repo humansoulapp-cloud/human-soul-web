@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./ds.css";
+@import "./journeys.css";
+@import "./journal.css";
+@import "./admin.css";
 
 /* ═══════════════════════════════════════════════════════════════
    Design system — Human Soul
@@ -9,37 +13,27 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
+  /* The `--ds-*` names are what pages written before Design System v2
+     read. They now point at the v2 tokens (app/ds.css), so every screen
+     shares one palette in light and dark. New code uses the v2 names. */
   :root {
-    /* Surfaces */
-    --ds-bg:          #f7f6f1;
-    --ds-side:        #efede6;
-    --ds-surface:     #ffffff;
-    --ds-surface-2:   #f0ede4;
-
-    /* Lines */
-    --ds-line:        #ddd8cc;
-    --ds-line-strong: #c9c4b6;
-
-    /* Text */
-    --ds-text:        #22261f;
-    --ds-text-mid:    #4f544a;
-    --ds-text-muted:  #82806f;
-
-    /* Accent */
-    --ds-accent:      #6f8d6e;
-    --ds-accent-hover:#57724f;
-    --ds-accent-soft: #e7eae1;
-    --ds-on-accent:   #fdfbf6;
-
-    /* "Gold" — Plus / premium / scheduled. The redesign dropped the
-       real gold: these now resolve to the accent green. The names are
-       kept so Admin can still tell "Scheduled" apart semantically. */
-    --ds-gold:        #57724f;
-    --ds-gold-soft:   #e7eae1;
-    --ds-on-gold:     #fdfbf6;
-
-    /* Feedback */
-    --ds-danger:      #a35a4c;
+    --ds-bg:          var(--background);
+    --ds-side:        var(--card);
+    --ds-surface:     var(--card);
+    --ds-surface-2:   var(--secondary);
+    --ds-line:        var(--border);
+    --ds-line-strong: var(--border);
+    --ds-text:        var(--foreground);
+    --ds-text-mid:    #4A463F;
+    --ds-text-muted:  var(--muted-foreground);
+    --ds-accent:      var(--primary);
+    --ds-accent-hover:color-mix(in srgb, var(--primary) 86%, var(--foreground));
+    --ds-accent-soft: var(--accent);
+    --ds-on-accent:   var(--primary-foreground);
+    --ds-gold:        var(--primary);
+    --ds-gold-soft:   var(--accent);
+    --ds-on-gold:     var(--primary-foreground);
+    --ds-danger:      var(--destructive);
 
     /* ── Legacy aliases ─────────────────────────────────────── */
     --bg-surface:           var(--ds-bg);
@@ -56,46 +50,24 @@
   }
 
   .dark {
-    --ds-bg:          #151814;
-    --ds-side:        #191d18;
-    --ds-surface:     #1e221d;
-    --ds-surface-2:   #232720;
-
-    --ds-line:        #2e332c;
-    --ds-line-strong: #3b4139;
-
-    --ds-text:        #e9e7dc;
-    --ds-text-mid:    #c3c2b6;
-    --ds-text-muted:  #8f9285;
-
-    --ds-accent:      #93b190;
-    --ds-accent-hover:#a8c2a5;
-    --ds-accent-soft: #283226;
-    --ds-on-accent:   #14180f;
-
-    --ds-gold:        #93b190;
-    --ds-gold-soft:   #1a1f1a;
-    --ds-on-gold:     #14180f;
-
-    --ds-danger:      #d19183;
+    --ds-text-mid: #CFCAC2;
   }
 
   body {
     background-color: var(--ds-bg);
     color: var(--ds-text);
-    font-family: var(--font-public-sans), system-ui, sans-serif;
-    font-size: 14px;
+    font-family: var(--hs-font-sans);
+    font-size: 16px;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* The redesign drops the serif display face: headings are
-     Public Sans 600 with tight tracking. `.font-serif-editorial`
-     is kept as a name so unmigrated pages inherit the new look. */
+  /* Bare headings on pages not yet on Design System v2 keep a sans
+     heading. v2 screens use the `.text-h*` classes (Fraunces). */
   h1,
   h2,
   h3,
   .font-serif-editorial {
-    font-family: var(--font-public-sans), system-ui, sans-serif;
+    font-family: var(--hs-font-sans);
     font-weight: 600;
     letter-spacing: -0.015em;
   }
@@ -140,7 +112,13 @@
 /* ── Admin panel ─────────────────────────────────────────────────
    Same palette, but the admin shell carries its own light/dark
    switch and defaults to dark, so both sets are spelled out. */
+.admin-panel,
+.admin-panel :is(h1, h2, h3) {
+  font-family: var(--font-public-sans), system-ui, sans-serif;
+}
+
 .admin-panel {
+  font-size: 14px;
   --admin-bg:            #151814;
   --admin-sidebar:       #191d18;
   --admin-surface:       #1e221d;

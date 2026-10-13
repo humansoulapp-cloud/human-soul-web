@@ -2,8 +2,7 @@ import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import { AdminThemeProvider } from "@/components/admin/AdminThemeProvider";
+import AdminTopBar from "@/components/admin/AdminTopBar";
 
 export default async function AdminLayout({
   children,
@@ -23,12 +22,14 @@ export default async function AdminLayout({
 
   if (profile?.role !== "admin") redirect("/dashboard");
 
+  /* Admin runs on the app's own tokens, in dark. `admin-panel` still carries the
+     older --admin-* variables for the screens that haven't moved yet (Users). */
   return (
-    <AdminThemeProvider>
-      <AdminSidebar userEmail={user.email ?? ""} />
-      <main className="flex-1 min-w-0 p-8 overflow-auto" style={{ background: "var(--admin-bg)" }}>
-        {children}
+    <div className="dark admin-panel hsa hs">
+      <AdminTopBar />
+      <main className="hsa-page">
+        <div className="hsa-wrap">{children}</div>
       </main>
-    </AdminThemeProvider>
+    </div>
   );
 }
