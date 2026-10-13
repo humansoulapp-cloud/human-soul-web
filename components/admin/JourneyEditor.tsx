@@ -359,14 +359,16 @@ export default function JourneyEditor({
 
   return (
     <>
-      <div className="hsa-head">
+      {/* Fixed layout: the title truncates and the status lives under it, so typing
+          or saving never moves the buttons. */}
+      <div className="hsa-head hsa-ed-head">
         <div className="hsa-head-t">
           <Link className="hsa-back" href="/admin/journeys">
             <ArrowLeft size={16} aria-hidden="true" />
             Journeys
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h1 className="text-h1" style={{ margin: 0 }}>
+          <div className="hsa-ed-title">
+            <h1 className="text-h1" title={form.title.trim() || undefined}>
               {form.title.trim() || "New journey"}
             </h1>
             <span className={`hsa-st ${statusChip}`}>
@@ -374,17 +376,19 @@ export default function JourneyEditor({
               {STATUS_LABEL[form.status]}
             </span>
           </div>
-          <span className="hs-hint">
-            {[`${form.days.length} ${form.days.length === 1 ? "day" : "days"}`, form.category || null, form.featured ? "Featured" : null, form.premium ? "Plus" : null]
-              .filter(Boolean)
-              .join(" · ")}
+          <span className="hsa-ed-meta">
+            <span>
+              {[`${form.days.length} ${form.days.length === 1 ? "day" : "days"}`, form.category || null, form.featured ? "Featured" : null, form.premium ? "Plus" : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+            <span className={`hsa-saved${dirty ? " dirty" : ""}`} role="status">
+              {dirty ? <CircleAlert size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
+              {pending ? "Saving…" : dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "All changes saved"}
+            </span>
           </span>
         </div>
-        <div className="hsa-head-a">
-          <span className={`hsa-saved${dirty ? " dirty" : ""}`} role="status">
-            {dirty ? <CircleAlert size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
-            {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "All changes saved"}
-          </span>
+        <div className="hsa-head-a hsa-ed-acts">
           <button type="button" className="hs-btn hs-btn-ghost hs-btn-icon" aria-label="Import from a document" title="Import from a document" onClick={() => setImportOpen(true)}>
             <Upload size={18} aria-hidden="true" />
           </button>
@@ -397,8 +401,8 @@ export default function JourneyEditor({
               Preview journey
             </a>
           ) : null}
-          <button type="button" className="hs-btn hs-btn-default" onClick={save} disabled={pending || (!dirty && !isNew)}>
-            {pending ? "Saving…" : isNew ? "Create journey" : "Save changes"}
+          <button type="button" className="hs-btn hs-btn-default hsa-save" onClick={save} disabled={pending || (!dirty && !isNew)} aria-busy={pending}>
+            {isNew ? "Create journey" : "Save changes"}
           </button>
         </div>
       </div>
