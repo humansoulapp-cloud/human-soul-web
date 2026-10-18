@@ -1,58 +1,66 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 const FAQS: [string, string][] = [
   [
-    "What does the free plan include?",
-    "Day one of every journey, free writing whenever you want, and your whole journal kept and searchable. Only the days after day one need Plus.",
+    "What kinds of topics does HumanSoul explore?",
+    "HumanSoul journeys explore a wide range of human experiences, including identity, relationships, emotions, childhood, boundaries, choices, money, meaning, and much more.",
   ],
   [
-    "What if I miss a day?",
-    "Nothing is lost. The next day opens when you come back, and there is no streak to break.",
+    "Do I need to complete a journey in seven days?",
+    "No. Each journey contains seven reflections, but there's no deadline to finish. The next reflection becomes available when you complete the previous one, so you can move through a journey at your own pace.",
   ],
   [
-    "How long does a day take?",
-    "About seven minutes: a short reading and one question. You can always write more.",
+    "Is HumanSoul a self-improvement program?",
+    "No. HumanSoul isn't here to tell you what to change or who you should become. It's a space to explore your experiences, develop self-awareness, and decide for yourself what that awareness means.",
   ],
   [
-    "Is it available in Spanish?",
-    "The journeys are written in English today. More languages are on the way.",
+    "Is HumanSoul therapy?",
+    "No. HumanSoul is a guided reflection and journaling experience. It isn't therapy, mental health treatment, or a substitute for professional care.",
   ],
   [
-    "What happens to my entries if I stop paying?",
-    "They stay in your journal, readable and exportable. Only the unopened days of Plus journeys pause.",
+    "Is my writing private?",
+    "Your journal entries are private by default and aren't shared with other HumanSoul members. You can learn more about how your information is handled in our Privacy Policy.",
+  ],
+  [
+    "Can I cancel my membership?",
+    "Yes. You can cancel your paid membership at any time through your account settings.",
+  ],
+  [
+    "Will new journeys be added?",
+    "Yes. The HumanSoul Library will continue to grow, with new journeys exploring different questions, themes, and aspects of the human experience.",
   ],
 ];
 
 export default function LandingFaq() {
-  const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
+  const [open, setOpen] = useState(0);
 
   return (
-    <section className="py-16 md:py-[74px]">
-      <div className="w-[min(820px,100%-36px)] md:w-[min(820px,100%-48px)] mx-auto">
-        <h2 className="text-[26px] md:text-[33px] font-semibold leading-[1.2] tracking-[-0.02em] m-0 mb-2.5">
-          Questions people ask first
-        </h2>
-        <div className="mt-5">
-          {FAQS.map(([q, a], i) => (
-            <div key={q} className="border-b border-[var(--ds-line)]">
-              <button
-                onClick={() => setOpen((p) => ({ ...p, [i]: !p[i] }))}
-                className="flex items-center gap-3.5 w-full px-0.5 py-[17px] text-left text-[15.5px] font-semibold text-[var(--ds-text)]"
-              >
-                <span className="flex-1 min-w-0">{q}</span>
-                <span className="text-lg text-[var(--ds-text-muted)]">{open[i] ? "−" : "+"}</span>
-              </button>
-              {open[i] && (
-                <p className="m-0 mb-[17px] pr-8 sm:pr-[70px] text-[14.5px] leading-[1.7] text-[var(--ds-text-mid)]">
-                  {a}
-                </p>
-              )}
+    <div className="faq">
+      {FAQS.map(([q, a], i) => {
+        const isOpen = open === i;
+        return (
+          <div className="q" key={q} data-open={isOpen} data-reveal="" style={{ ["--d" as string]: i }}>
+            <button
+              type="button"
+              className="q-h"
+              aria-expanded={isOpen}
+              aria-controls={`faq-${i}`}
+              onClick={() => setOpen(isOpen ? -1 : i)}
+            >
+              {q}
+              <ChevronDown className="ai" size={20} aria-hidden="true" />
+            </button>
+            <div className="q-b" id={`faq-${i}`} role="region" aria-hidden={!isOpen}>
+              <div>
+                <p>{a}</p>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
+          </div>
+        );
+      })}
+    </div>
   );
 }
