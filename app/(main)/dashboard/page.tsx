@@ -135,7 +135,7 @@ export default function HomePage() {
               Write freely
             </h2>
             <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-              No prompt, no theme.
+              A space for whatever comes to mind.
             </p>
           </div>
           <Link className="hc-prompt" href="/journal/new">
