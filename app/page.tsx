@@ -76,7 +76,7 @@ export default async function LandingPage() {
 
   const heroPhoto = img(featured);
   const entryPhoto = img(library[2], 1);
-  const finalPhoto = img(library[3], 2);
+  const finalPhoto = "/landing/final.jpg";
   const featuredTitle = featured?.title ?? "Becoming More Human";
   const featuredCategory = featured?.category ?? "Human Soul Foundations";
   const featuredDays = featured ? daysOf(featured) || 7 : 7;
