@@ -17,6 +17,7 @@ import { Icon } from "@/components/ds";
 import { CarouselSection } from "@/components/carousel";
 import { CatalogCard, JourneyProgressCard } from "@/components/journeys/glass-cards";
 import PageLoader from "@/components/PageLoader";
+import HomeTour from "@/components/home-tour";
 
 function greeting() {
   const h = new Date().getHours();
@@ -129,7 +130,7 @@ export default function HomePage() {
           />
         ) : null}
 
-        <section className="hc-journal" aria-labelledby="home-write">
+        <section className="hc-journal" aria-labelledby="home-write" data-tour="write">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <h2 id="home-write" className="text-h3" style={{ margin: 0 }}>
               Write freely
@@ -201,6 +202,11 @@ export default function HomePage() {
           ))}
         </CarouselSection>
       )}
+
+      <HomeTour
+        journeyTitle={(active?.journey ?? offer)?.title}
+        dayHref={active ? `/journeys/${active.journey.id}?day=${active.nextDay.day}` : offer ? `/journeys/${offer.id}?day=1` : "/journeys"}
+      />
     </div>
   );
 }

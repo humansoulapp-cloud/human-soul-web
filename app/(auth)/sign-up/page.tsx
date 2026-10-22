@@ -152,8 +152,15 @@ export default function SignUpPage() {
               {terms ? "✓" : ""}
             </button>
             <span className="text-xs leading-[1.55] text-[var(--ds-text-muted)]">
-              I agree to the terms and the privacy policy. Entries are private and never used to
-              train anything.
+              I agree to the{" "}
+              <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-[var(--ds-text)]">
+                Terms
+              </Link>{" "}
+              and the{" "}
+              <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-[var(--ds-text)]">
+                Privacy Policy
+              </Link>
+              . Entries are private and never used to train anything.
             </span>
           </div>
         </div>

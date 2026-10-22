@@ -330,3 +330,6 @@
   .lp-js .lp [data-reveal],.lp-js .lp .hero-in > *,.lp-js .lp .shot{opacity:1 !important;transform:none !important;filter:none !important}
   .lp .shot-in,.lp .phone,.lp .final img{transform:none !important}
 }
+.lp .q-b a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
+.lp .priv-more{display:inline-flex;align-items:center;gap:6px;margin-top:20px;min-height:44px;color:var(--foreground);font:600 15px/20px var(--hs-font-sans);text-decoration:underline;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,var(--foreground) 30%,transparent)}
+.lp .priv-more:hover{text-decoration-color:var(--foreground)}
