@@ -455,7 +455,7 @@ export default function ProfilePage() {
                 </span>
                 <ChevronRight className="end" size={18} aria-hidden="true" />
               </button>
-              <Link className="ac-actrow" href="/#privacy">
+              <Link className="ac-actrow" href="/privacy">
                 <span className="ac-row-i">
                   <Shield size={18} aria-hidden="true" />
                 </span>

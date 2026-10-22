@@ -639,6 +639,10 @@ export default async function LandingPage() {
                 A personal journal should feel like a place where you can write freely. HumanSoul is built with
                 privacy at its core, giving you control over what you choose to keep.
               </p>
+              <Link className="priv-more" href="/privacy">
+                Read the Privacy Policy
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
             </div>
             <ul className="priv-list">
               <li>
@@ -782,8 +786,9 @@ export default async function LandingPage() {
           <span>A quiet place to notice yourself · © {new Date().getFullYear()} HumanSoul</span>
         </div>
         <div className="foot-r">
-          <a href="#privacy">Privacy</a>
           <a href="#pricing">Pricing</a>
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/terms">Terms</Link>
           <Link href="/sign-in">Sign in</Link>
         </div>
       </footer>

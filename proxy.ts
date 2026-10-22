@@ -56,7 +56,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/sign-up') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/reset-password');
-  const isPublicPage = isAuthPage || pathname === '/onboarding' || pathname === '/';
+  const isPublicPage = isAuthPage || pathname === '/onboarding' || pathname === '/' || pathname === '/privacy' || pathname === '/terms';
 
   if (!user && !isPublicPage) {
     const url = request.nextUrl.clone();

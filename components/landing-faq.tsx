@@ -1,9 +1,11 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
-const FAQS: [string, string][] = [
+const FAQS: [string, React.ReactNode][] = [
   [
     "What kinds of topics does HumanSoul explore?",
     "HumanSoul journeys explore a wide range of human experiences, including identity, relationships, emotions, childhood, boundaries, choices, money, meaning, and much more.",
@@ -22,7 +24,10 @@ const FAQS: [string, string][] = [
   ],
   [
     "Is my writing private?",
-    "Your journal entries are private by default and aren't shared with other HumanSoul members. You can learn more about how your information is handled in our Privacy Policy.",
+    <>
+      Your journal entries are private by default and aren&apos;t shared with other HumanSoul members. You can learn more about how
+      your information is handled in our <Link href="/privacy">Privacy Policy</Link>.
+    </>,
   ],
   [
     "Can I cancel my membership?",

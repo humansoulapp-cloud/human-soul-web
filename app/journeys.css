@@ -364,3 +364,25 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
 
 /* Shared with Journal's reading pane: the reflection text morphs between the two pages */
 .jf-col-write .jf-box { view-transition-name: entry-text; }
+
+/* ── Home tour (coachmarks) ─────────────────────────────────── */
+.ht { position: fixed; inset: 0; z-index: 90; font-family: var(--hs-font-sans); }
+.ht-spot { position: fixed; pointer-events: none; box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary) 45%, transparent), 0 0 0 4000px rgba(12, 11, 10, .74); transition: top .35s cubic-bezier(.22, 1, .36, 1), left .35s cubic-bezier(.22, 1, .36, 1), width .35s cubic-bezier(.22, 1, .36, 1), height .35s cubic-bezier(.22, 1, .36, 1); }
+.ht-scrim { position: fixed; inset: 0; background: rgba(12, 11, 10, .74); }
+.ht-card { position: fixed; padding: 24px; border-radius: 24px; background: var(--card); color: var(--foreground); box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--foreground) 6%, transparent); outline: none; animation: ht-in .35s cubic-bezier(.22, 1, .36, 1); }
+.ht-card.sheet { left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); max-width: 420px; margin: 0 auto; }
+@keyframes ht-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.ht-arrow { position: absolute; width: 16px; height: 16px; background: var(--card); transform: rotate(45deg); border-radius: 3px; }
+.ht-x { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border: 0; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.ht-x:hover { background: var(--fill); color: var(--foreground); }
+.ht-n { font: 600 12px/16px var(--hs-font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.ht-t { margin: 10px 0 0; padding-right: 32px; font: 500 24px/30px var(--hs-font-serif); font-variation-settings: "SOFT" 100, "WONK" 0; }
+.ht-p { margin: 8px 0 0; font: 400 15px/23px var(--hs-font-sans); color: var(--muted-foreground); }
+.ht-acts { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.ht-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 9999px; font: 600 15px/20px var(--hs-font-sans); cursor: pointer; }
+.ht-btn.pri { background: var(--primary); color: var(--primary-foreground); }
+.ht-btn.pri:hover { background: color-mix(in srgb, var(--primary) 86%, var(--foreground)); }
+.ht-btn.ghost { background: transparent; color: var(--muted-foreground); }
+.ht-btn.ghost:hover { background: var(--fill); color: var(--foreground); }
+.ht :is(button):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .ht-spot, .ht-card { transition: none; animation: none; } }
