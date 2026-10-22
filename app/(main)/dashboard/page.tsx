@@ -21,7 +21,9 @@ import HomeTour from "@/components/home-tour";
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 19 ? "Good afternoon" : "Good evening";
+  if (h >= 5 && h < 12) return "Good morning";
+  if (h >= 12 && h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function shortDate(iso: string) {
