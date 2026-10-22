@@ -142,7 +142,7 @@ export default function HomePage() {
             <span className="hc-prompt-ico" aria-hidden="true">
               <Icon icon={PenLine} size={20} />
             </span>
-            What&apos;s on your mind today?
+            Start writing…
           </Link>
           <div className="hc-journals">
             <span className="text-overline" style={{ color: "var(--muted-foreground)", paddingBottom: 4 }}>
