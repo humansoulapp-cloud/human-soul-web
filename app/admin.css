@@ -403,3 +403,12 @@
   .hsa-sec { padding: 20px; }
   .hsa-logo { display: none; }
 }
+
+/* Writing fields: a clearly lighter fill than the cards they sit on, so every
+   input reads as a place to type. Light values apply if the admin is shown light. */
+.hsa { --hsa-field: #34312E; --hsa-field-hover: #3B3835; --hsa-field-focus: #3F3B37; --hsa-field-ph: #9A948B; }
+.hsa:not(.dark), .hsa[data-theme="light"] { --hsa-field: #EFEAE1; --hsa-field-hover: #E8E2D7; --hsa-field-focus: #FFFFFF; --hsa-field-ph: #7A746B; }
+.hsa .hs-control, .hsa-srch input, .hsa-in { background: var(--hsa-field); color: var(--foreground); }
+.hsa .hs-control:hover, .hsa-srch input:hover, .hsa-in:hover { background: var(--hsa-field-hover); }
+.hsa .hs-control:focus, .hsa-srch input:focus, .hsa-in:focus { background: var(--hsa-field-focus); }
+.hsa .hs-control::placeholder, .hsa-srch input::placeholder, .hsa-in::placeholder { color: var(--hsa-field-ph); }
