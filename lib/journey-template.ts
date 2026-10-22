@@ -101,7 +101,9 @@ const LABELS: Record<string, Record<string, string | null>> = {
   day: {
     "day title": "title",
     reading: "prompt",
-    "why this day": "purpose",
+    "today's intention": "purpose",
+    "today’s intention": "purpose",
+    "why this day": "purpose", // older templates
     "go deeper": "deeper",
     time: null,
     summary: null,
@@ -396,7 +398,7 @@ export function journeyToTemplateLines(v: TemplateValues): string[] {
     sec(`Day ${d.day}`);
     label("Day title", d.title);
     block("Reading", d.prompt);
-    block("Why this day", d.purpose);
+    block("Today's intention", d.purpose);
     label("Go deeper (optional)", d.deeper);
   }
   sec("Completion");

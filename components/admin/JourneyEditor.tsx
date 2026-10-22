@@ -664,7 +664,7 @@ export default function JourneyEditor({
                       <Field label="Reading" where="Day · reading" htmlFor={`d-r-${i}`} hint="Leave a blank line between paragraphs. About two minutes to read.">
                         <textarea id={`d-r-${i}`} className="hs-control hs-textarea" rows={8} value={d.prompt} onChange={(e) => setDay(i, "prompt", e.target.value)} />
                       </Field>
-                      <Field label="Why this day" where="Day · under the reading" htmlFor={`d-p-${i}`}>
+                      <Field label="Today's intention" where="Day · under the reading" htmlFor={`d-p-${i}`}>
                         <textarea id={`d-p-${i}`} className="hs-control hs-textarea" rows={3} value={d.purpose} onChange={(e) => setDay(i, "purpose", e.target.value)} />
                       </Field>
                       <Field label="Go deeper · optional" where="Folded until opened" htmlFor={`d-g-${i}`}>

@@ -298,7 +298,7 @@ export function ImportReview({
         const fields: [keyof TemplateDay, string][] = [
           ["title", "Day title"],
           ["prompt", "Reading"],
-          ["purpose", "Why this day"],
+          ["purpose", "Today's intention"],
           ["deeper", "Go deeper"],
         ];
         let changed = false;

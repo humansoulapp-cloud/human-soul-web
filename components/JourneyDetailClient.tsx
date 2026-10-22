@@ -653,7 +653,7 @@ export default function JourneyDetailClient({
         {day.purpose ? (
           <aside aria-labelledby="jf-whyday" className="jf-why">
             <h2 id="jf-whyday" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-              Why this day
+              Today&apos;s intention
             </h2>
             <p>{day.purpose}</p>
           </aside>
