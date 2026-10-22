@@ -193,6 +193,19 @@ export default function JourneyDetailClient({
     [locked, entryFor, nextIndex]
   );
 
+  /* Never show a day that isn't open yet, whatever the address says. */
+  useEffect(() => {
+    if (stage !== "day") return;
+    const st = statusOf(dayIndex);
+    if (st === "locked" || st === "plus") {
+      setStage("overview");
+      if (st === "plus") setPaywallOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("day");
+      window.history.replaceState(null, "", url);
+    }
+  }, [stage, dayIndex, statusOf]);
+
   const doneCount = useMemo(() => days.filter((_, i) => statusOf(i) === "done").length, [days, statusOf]);
   const allDone = total > 0 && doneCount === total;
   const closingEntry = useMemo(() => entries.find((r) => (r.tags ?? []).includes(CLOSING_TAG)) ?? null, [entries]);
