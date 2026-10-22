@@ -172,6 +172,7 @@ export default function JourneyEditor({
 }) {
   const router = useRouter();
   const isNew = !journey;
+  const initialId = journey?.id ?? "";
   const initial = useMemo(() => fromRow(journey), [journey]);
   const [form, setForm] = useState<Form>(initial);
   const [saved, setSaved] = useState<Form>(initial);
@@ -285,7 +286,7 @@ export default function JourneyEditor({
     setError(null);
     setNotice(null);
     if (!form.title.trim()) return setError("A journey needs a title. Everything else can wait.");
-    const id = isNew ? slugify(form.id || form.title) : form.id;
+    const id = slugify(form.id || form.title);
     if (!id) return setError("Give the journey a title with letters or numbers.");
     if (form.status === "scheduled" && !form.scheduled) return setError("Choose when the journey publishes.");
     const emptyDays = form.days.filter((d) => !d.title.trim()).map((d) => d.day);
@@ -317,7 +318,7 @@ export default function JourneyEditor({
     };
 
     start(async () => {
-      const res = isNew ? await createJourney(payload) : await updateJourney(id, payload);
+      const res = isNew ? await createJourney(payload) : await updateJourney(initialId, payload);
       if (res && "error" in res && res.error) {
         setError(res.error);
         return;
@@ -328,7 +329,7 @@ export default function JourneyEditor({
       const next = { ...form, id };
       setForm(next);
       setSaved(next);
-      if (isNew) router.replace(`/admin/journeys/${id}`);
+      if (isNew || id !== initialId) router.replace(`/admin/journeys/${id}`);
       else router.refresh();
     });
   };
@@ -495,14 +496,14 @@ export default function JourneyEditor({
               <Field
                 label="Address"
                 htmlFor="f-id"
-                hint={isNew ? "Set from the title. You can change it until the journey is created." : "Changing it would break links people have saved, so it's fixed."}
+                hint={isNew ? "Set from the title. You can change it." : "You can change it. Links people saved to the old address will stop working."}
               >
                 <input
                   id="f-id"
                   className="hs-control"
-                  value={`/journeys/${isNew ? slugify(form.id || form.title) : form.id}`}
-                  readOnly={!isNew}
-                  onChange={(e) => set("id", e.target.value.replace(/^\/journeys\//, ""))}
+                  value={`/journeys/${isNew && !form.id ? slugify(form.title) : form.id}`}
+                  onChange={(e) => set("id", e.target.value.replace(/^\/?journeys\/?/, "").toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                  onBlur={() => form.id && set("id", slugify(form.id))}
                 />
               </Field>
               {form.status === "scheduled" ? (

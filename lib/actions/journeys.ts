@@ -247,10 +247,29 @@ export async function createJourney(input: JourneyInput) {
 
 // ─── Update ────────────────────────────────────────────────────────────────────
 
-export async function updateJourney(id: string, input: JourneyInput) {
+export async function updateJourney(currentId: string, input: JourneyInput) {
   const supabase = await requireAdmin();
 
   const { days, ...journeyData } = input;
+
+  // A new address means a new primary key. The journey is copied to the new
+  // id, saved there as usual, and the old row and its days are removed at the
+  // end. Reflections point at journeys by title, so they are unaffected; links
+  // people saved to the old address stop working.
+  const nextId = (input.id || currentId).trim();
+  const renaming = nextId !== currentId;
+  if (renaming) {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(nextId)) {
+      return { error: "Use lowercase letters, numbers and dashes for the address." };
+    }
+    const { data: taken } = await supabase.from("journeys").select("id").eq("id", nextId).maybeSingle();
+    if (taken) return { error: `Another journey already uses /journeys/${nextId}.` };
+    const { data: oldRow, error: readErr } = await supabase.from("journeys").select("*").eq("id", currentId).single();
+    if (readErr || !oldRow) return { error: readErr?.message ?? "Journey not found." };
+    const { error: copyErr } = await supabase.from("journeys").insert({ ...oldRow, id: nextId });
+    if (copyErr) return { error: copyErr.message };
+  }
+  const id = nextId;
 
   const status = journeyData.status || "published";
   const scheduledPublishAt =
@@ -301,6 +320,14 @@ export async function updateJourney(id: string, input: JourneyInput) {
       }
       return { error: dErr.message };
     }
+  }
+
+  if (renaming) {
+    await supabase.from("journey_days").delete().eq("journey_id", currentId);
+    const { error: delErr } = await supabase.from("journeys").delete().eq("id", currentId);
+    if (delErr) return { error: `Saved at the new address, but the old one couldn't be removed: ${delErr.message}` };
+    revalidatePath(`/journeys/${currentId}`);
+    revalidatePath(`/admin/journeys/${currentId}`);
   }
 
   revalidatePath("/journeys");
