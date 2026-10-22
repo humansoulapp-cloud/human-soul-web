@@ -39,9 +39,10 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "The Human Soul — A quiet place to notice yourself",
+  title: { default: "HumanSoul", template: "%s · HumanSoul" },
   description: "A quiet place to notice yourself, record your journal, and explore guided journeys of personal growth.",
   applicationName: "HumanSoul",
+  openGraph: { siteName: "HumanSoul", title: "HumanSoul", type: "website" },
   appleWebApp: { capable: true, title: "HumanSoul", statusBarStyle: "default" },
   formatDetection: { telephone: false },
 };

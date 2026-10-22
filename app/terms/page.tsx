@@ -4,7 +4,7 @@ import LegalPage from "@/components/legal";
 import { PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · HumanSoul",
+  title: "Terms of Service",
   description: "The agreement between you and HumanSoul when you use the app.",
 };
 

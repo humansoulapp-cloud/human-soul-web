@@ -3,7 +3,7 @@ import Link from "next/link";
 import LegalPage from "@/components/legal";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · HumanSoul",
+  title: "Privacy Policy",
   description: "What HumanSoul keeps, why, and what we never do with your writing.",
 };
 

@@ -30,7 +30,14 @@ import LandingMotion from "@/components/landing/LandingMotion";
 import "./landing.css";
 
 export const metadata: Metadata = {
-  title: "HumanSoul · A quiet place to notice yourself",
+  title: { absolute: "HumanSoul · A quiet place to notice yourself" },
+  openGraph: {
+    siteName: "HumanSoul",
+    title: "HumanSoul · A quiet place to notice yourself",
+    description: "A library of guided reflective journeys and a private journal. Write a little, notice a lot.",
+    images: ["/landing/final.jpg"],
+    type: "website",
+  },
   description:
     "A library of guided reflective journeys and a private journal. Write a little, notice a lot.",
 };
