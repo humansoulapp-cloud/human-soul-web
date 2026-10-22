@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces, Instrument_Sans, Public_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -41,6 +41,19 @@ const publicSans = Public_Sans({
 export const metadata: Metadata = {
   title: "The Human Soul — A quiet place to notice yourself",
   description: "A quiet place to notice yourself, record your journal, and explore guided journeys of personal growth.",
+  applicationName: "HumanSoul",
+  appleWebApp: { capable: true, title: "HumanSoul", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+};
+
+/* The status bar and browser chrome follow the app's own background in light and dark. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF8F4" },
+    { media: "(prefers-color-scheme: dark)", color: "#141312" },
+  ],
 };
 
 export default function RootLayout({
