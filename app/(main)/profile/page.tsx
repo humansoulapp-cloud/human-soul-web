@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteOwnAccount } from "@/lib/actions/account";
-import { PLANS } from "@/lib/plans";
+import { PLANS, YEARLY_SAVING } from "@/lib/plans";
 import {
   currentStreak,
   longestStreak,
@@ -338,7 +338,7 @@ export default function ProfilePage() {
                 <span className="flex-1" />
                 {p.key === "year" && (
                   <span className="text-[9.5px] font-bold tracking-[0.1em] text-[var(--ds-gold)]">
-                    SAVE 35%
+                    SAVE {YEARLY_SAVING}%
                   </span>
                 )}
               </span>

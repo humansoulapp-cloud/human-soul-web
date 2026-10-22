@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { PLANS } from "@/lib/plans";
+import { PLANS, YEARLY_SAVING } from "@/lib/plans";
 
 /** Only the differences the app actually enforces today. */
 const ROWS = [
@@ -122,7 +122,7 @@ export default function SubscriptionPage() {
               <span className="flex-1" />
               {p.key === "year" && (
                 <span className="text-[9.5px] font-bold tracking-[0.1em] text-[var(--ds-gold)]">
-                  SAVE 35%
+                  SAVE {YEARLY_SAVING}%
                 </span>
               )}
             </span>
@@ -134,7 +134,7 @@ export default function SubscriptionPage() {
             </span>
             <span className="block text-[12.5px] text-[var(--ds-text-muted)] mt-2 leading-[1.5]">
               {p.key === "year"
-                ? "€3.25 a month, billed once."
+                ? `${PLANS[1].note.replace(" / month", "")} a month, billed once.`
                 : "Cancel any time, keeps everything you wrote."}
             </span>
           </button>
