@@ -1,296 +1,449 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import type { JourneyRow } from "@/lib/actions/journeys";
-import { journeyImage } from "@/lib/journey-images";
-import DeleteJourneyButton from "./DeleteJourneyButton";
-import PublishNowButton from "./PublishNowButton";
-import ArchiveJourneyButton from "./ArchiveJourneyButton";
+import { useRouter } from "next/navigation";
+import {
+  Archive,
+  ArrowDown,
+  ArchiveRestore,
+  CalendarDays,
+  ChevronDown,
+  CircleCheck,
+  ExternalLink,
+  Gem,
+  Image as ImageIcon,
+  LayoutGrid,
+  List,
+  MoreHorizontal,
+  PenLine,
+  Plus,
+  Rocket,
+  Search,
+  Star,
+  Trash2,
+  TriangleAlert,
+  Upload,
+} from "lucide-react";
+import { archiveJourney, deleteJourney, publishJourneyNow, unarchiveJourney } from "@/lib/actions/journeys";
 
-const FILTERS = ["All", "Live", "Scheduled", "Draft", "Archived"] as const;
-type Filter = (typeof FILTERS)[number];
+export type StatusKey = "live" | "scheduled" | "draft" | "archived";
 
-/** URL ?status= values stay the source of truth, as the filters did before. */
-const PARAM: Record<Filter, string | null> = {
-  All: null,
-  Live: "published",
-  Scheduled: "scheduled",
-  Draft: "draft",
-  Archived: "archived",
+export type AdminJourneyItem = {
+  id: string;
+  title: string;
+  category: string;
+  days: number;
+  status: StatusKey;
+  note: string | null;
+  image: string | null;
+  featured: boolean;
+  premium: boolean;
+  started: number;
+  finishedPct: number | null;
+  tooEarly: boolean;
+  drop: string | null;
+  warning: string | null;
 };
 
-function labelFor(journey: JourneyRow): Filter {
-  const status = journey.status || "published";
-  if (status === "draft") return "Draft";
-  if (status === "archived") return "Archived";
-  if (status === "scheduled") {
-    const due = journey.scheduled_publish_at && new Date(journey.scheduled_publish_at) <= new Date();
-    return due ? "Live" : "Scheduled";
-  }
-  return "Live";
+const STATUS: Record<StatusKey, { label: string; icon: typeof CircleCheck }> = {
+  live: { label: "Live", icon: CircleCheck },
+  scheduled: { label: "Scheduled", icon: CalendarDays },
+  draft: { label: "Draft", icon: PenLine },
+  archived: { label: "Archived", icon: Archive },
+};
+const ORDER: StatusKey[] = ["live", "scheduled", "draft", "archived"];
+const VIEW_KEY = "humansoul:admin-journeys-view";
+
+function StatusChip({ status, glass = false }: { status: StatusKey; glass?: boolean }) {
+  const { label, icon: Icon } = STATUS[status];
+  return (
+    <span className={`${glass ? "hsa-glass" : "hsa-st"} ${status}`}>
+      <Icon size={14} aria-hidden="true" className="ai" />
+      {label}
+    </span>
+  );
 }
 
-function statusTone(status: Filter) {
-  if (status === "Live") return "bg-[var(--admin-accent-soft)] text-[var(--admin-accent)]";
-  if (status === "Scheduled") return "bg-[var(--admin-gold-soft)] text-[var(--admin-gold)]";
-  return "bg-[var(--admin-surface-2)] text-[var(--admin-text-muted)]";
+function RowMenu({ item }: { item: AdminJourneyItem }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  const run = (action: () => Promise<{ error?: string } | { success: boolean }>) =>
+    start(async () => {
+      const res = await action();
+      if (res && "error" in res && res.error) window.alert(res.error);
+      setOpen(false);
+      router.refresh();
+    });
+
+  return (
+    <div className="hsa-menu-wrap" ref={ref}>
+      <button
+        type="button"
+        className="hsa-icon-btn"
+        aria-label={`More actions for ${item.title}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={pending}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreHorizontal size={18} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="hsa-menu" role="menu">
+          <Link role="menuitem" href={`/admin/journeys/${item.id}`}>
+            <PenLine size={16} className="ai" aria-hidden="true" />
+            Edit
+          </Link>
+          {item.status === "live" ? (
+            <a role="menuitem" href={`/journeys/${item.id}`} target="_blank" rel="noreferrer">
+              <ExternalLink size={16} className="ai" aria-hidden="true" />
+              Open in the app
+            </a>
+          ) : null}
+          {item.status === "draft" || item.status === "scheduled" ? (
+            <button type="button" role="menuitem" onClick={() => run(() => publishJourneyNow(item.id))}>
+              <Rocket size={16} className="ai" aria-hidden="true" />
+              Publish now
+            </button>
+          ) : null}
+          {item.status === "archived" ? (
+            <button type="button" role="menuitem" onClick={() => run(() => unarchiveJourney(item.id, "draft"))}>
+              <ArchiveRestore size={16} className="ai" aria-hidden="true" />
+              Restore as draft
+            </button>
+          ) : (
+            <button type="button" role="menuitem" onClick={() => run(() => archiveJourney(item.id))}>
+              <Archive size={16} className="ai" aria-hidden="true" />
+              Archive
+            </button>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            className="danger"
+            onClick={() => {
+              if (window.confirm(`Delete “${item.title}” and all its days? This can't be undone.`)) {
+                run(() => deleteJourney(item.id));
+              }
+            }}
+          >
+            <Trash2 size={16} className="ai" aria-hidden="true" />
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
-const CHIP = (on: boolean) =>
-  `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors ${
-    on
-      ? "border border-transparent bg-[var(--admin-accent-soft)] text-[var(--admin-text)] font-semibold"
-      : "border border-[var(--admin-border-hover)] text-[var(--admin-text-muted)]"
-  }`;
+function Flags({ item }: { item: AdminJourneyItem }) {
+  return (
+    <>
+      {item.featured ? (
+        <span className="hsa-tg">
+          <Star size={13} aria-hidden="true" />
+          Featured
+        </span>
+      ) : null}
+      {item.premium ? (
+        <span className="hsa-tg">
+          <Gem size={13} aria-hidden="true" />
+          Plus
+        </span>
+      ) : null}
+    </>
+  );
+}
 
-const SMALL_BTN =
-  "px-3 py-[7px] rounded-lg border border-[var(--admin-border-hover)] text-[12.5px] whitespace-nowrap flex-shrink-0";
+function meta(item: AdminJourneyItem) {
+  return `${item.category} · ${item.days ? `${item.days} ${item.days === 1 ? "day" : "days"}` : "no days"}`;
+}
 
 export default function AdminJourneysBrowser({
-  journeys,
-  starts,
-  initialFilter,
+  items,
+  initialStatus,
+  initialView,
 }: {
-  journeys: JourneyRow[];
-  starts: Record<string, number>;
-  initialFilter: Filter;
+  items: AdminJourneyItem[];
+  initialStatus: StatusKey | "all";
+  initialView?: "list" | "grid";
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [query, setQuery] = useState("");
-  const [grid, setGrid] = useState(true);
+  const [status, setStatus] = useState<StatusKey | "all">(initialStatus);
+  const [category, setCategory] = useState("all");
+  const [view, setView] = useState<"list" | "grid">(initialView ?? "list");
 
-  const select = (next: Filter) => {
-    setFilter(next);
-    const param = PARAM[next];
-    router.replace(param ? `${pathname}?status=${param}` : pathname, { scroll: false });
+  useEffect(() => {
+    if (initialView) return;
+    try {
+      const saved = localStorage.getItem(VIEW_KEY);
+      if (saved === "grid" || saved === "list") setView(saved);
+    } catch {}
+  }, [initialView]);
+
+  const changeView = (v: "list" | "grid") => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
   };
 
-  const labelled = useMemo(
-    () => journeys.map((j) => ({ journey: j, status: labelFor(j) })),
-    [journeys]
-  );
-
   const counts = useMemo(() => {
-    const base: Record<Filter, number> = {
-      All: labelled.length,
-      Live: 0,
-      Scheduled: 0,
-      Draft: 0,
-      Archived: 0,
-    };
-    for (const { status } of labelled) base[status] += 1;
-    return base;
-  }, [labelled]);
+    const c: Record<StatusKey, number> = { live: 0, scheduled: 0, draft: 0, archived: 0 };
+    for (const i of items) c[i.status] += 1;
+    return c;
+  }, [items]);
+
+  const categories = useMemo(
+    () => [...new Set(items.map((i) => i.category))].sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return labelled.filter(({ journey, status }) => {
-      if (filter !== "All" && status !== filter) return false;
-      if (!q) return true;
-      return `${journey.title} ${journey.category} ${journey.tagline} ${journey.id}`
-        .toLowerCase()
-        .includes(q);
-    });
-  }, [labelled, filter, query]);
+    return items
+      .filter((i) => status === "all" || i.status === status)
+      .filter((i) => category === "all" || i.category === category)
+      .filter((i) => !q || `${i.title} ${i.category} ${i.id}`.toLowerCase().includes(q))
+      .sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || b.started - a.started);
+  }, [items, query, status, category]);
+
+  const summary = [
+    `${items.length} ${items.length === 1 ? "journey" : "journeys"}`,
+    `${counts.live} live`,
+    counts.scheduled ? `${counts.scheduled} scheduled` : null,
+    counts.draft ? `${counts.draft} ${counts.draft === 1 ? "draft" : "drafts"}` : null,
+    counts.archived ? `${counts.archived} archived` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
-      <div className="flex items-center gap-3 px-4 h-[46px] mt-[22px] rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)]">
-        <Search className="w-4 h-4 flex-shrink-0 text-[var(--admin-text-muted)]" strokeWidth={1.8} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by title, category or id"
-          className="flex-1 min-w-0 bg-transparent border-none text-sm text-[var(--admin-text)]"
-        />
-        {query && (
-          <button
-            onClick={() => setQuery("")}
-            className="text-[12.5px] font-semibold text-[var(--admin-accent)]"
-          >
-            Clear
-          </button>
-        )}
+      <div className="hsa-head">
+        <div className="hsa-head-t">
+          <h1 className="text-h1" style={{ margin: 0 }}>
+            Journeys
+          </h1>
+          <span className="hs-hint">{summary}</span>
+        </div>
+        <div className="hsa-head-a">
+          <Link href="/admin/journeys/new?import=open" className="hs-btn hs-btn-secondary">
+            <Upload size={16} aria-hidden="true" />
+            Import from a document
+          </Link>
+          <Link href="/admin/journeys/new" className="hs-btn hs-btn-default">
+            <Plus size={16} aria-hidden="true" />
+            New journey
+          </Link>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-3.5 flex-wrap">
-        {FILTERS.map((f) => (
-          <button key={f} onClick={() => select(f)} className={CHIP(filter === f)}>
-            {f}
-            <span className="text-[11px] font-semibold opacity-60">{counts[f]}</span>
+      <div className="hsa-tools">
+        <label className="hsa-srch">
+          <span className="sr-only">Search journeys</span>
+          <Search size={18} className="ai" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder="Search by title or category"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <div className="hsa-seg" role="group" aria-label="Status">
+          <button type="button" aria-pressed={status === "all"} onClick={() => setStatus("all")}>
+            All<span className="n">{items.length}</span>
           </button>
-        ))}
-        <span className="flex-1" />
-        <button
-          onClick={() => setGrid((v) => !v)}
-          className="px-3 py-[7px] rounded-full border border-[var(--admin-border-hover)] text-[var(--admin-text-muted)] text-xs whitespace-nowrap"
-        >
-          {grid ? "View as list" : "View as grid"}
-        </button>
+          {ORDER.map((s) => (
+            <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)}>
+              {s === "draft" ? "Drafts" : STATUS[s].label}
+              <span className="n">{counts[s]}</span>
+            </button>
+          ))}
+        </div>
+        <label className="hsa-pill">
+          <span className="sr-only">Category</span>
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="all">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="ai" aria-hidden="true" />
+        </label>
+        <div className="hsa-views" role="group" aria-label="View">
+          <button type="button" aria-pressed={view === "list"} aria-label="List" onClick={() => changeView("list")}>
+            <List size={18} aria-hidden="true" />
+          </button>
+          <button type="button" aria-pressed={view === "grid"} aria-label="Grid" onClick={() => changeView("grid")}>
+            <LayoutGrid size={18} aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {shown.length === 0 ? (
-        <div className="mt-5 px-6 py-[46px] rounded-[14px] border border-dashed border-[var(--admin-border-hover)] bg-[var(--admin-surface)] text-center flex flex-col items-center">
-          <div className="text-[17px] font-semibold text-[var(--admin-text)]">
-            Nothing in this view
+        <div className="hsa-card hsa-empty" style={{ marginTop: 16 }}>
+          No journeys match. Try another status or clear the search.
+        </div>
+      ) : view === "list" ? (
+        <section className="hsa-card hsa-list" aria-label="Journeys">
+          <div className="hsa-cols" aria-hidden="true">
+            <span>Journey</span>
+            <span>Status</span>
+            <span className="num">
+              Started
+              <ArrowDown size={14} />
+            </span>
+            <span>Finished</span>
+            <span>Biggest drop</span>
+            <span />
           </div>
-          <p className="text-[13.5px] text-[var(--admin-text-muted)] mt-2 max-w-[40ch]">
-            Change the filter, clear the search, or create a new journey.
-          </p>
-          <button
-            onClick={() => {
-              setQuery("");
-              select("All");
-            }}
-            className="mt-4 px-4 py-2.5 rounded-[9px] border border-[var(--admin-border-hover)] text-[var(--admin-text-secondary)] text-[13px]"
-          >
-            Reset filters
-          </button>
-        </div>
-      ) : grid ? (
-        <div className="grid gap-4 mt-5 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
-          {shown.map(({ journey, status }) => (
-            <div
-              key={journey.id}
-              className={`flex flex-col rounded-[14px] border border-[var(--admin-border)] bg-[var(--admin-surface)] overflow-hidden ${
-                status === "Archived" ? "opacity-70" : ""
-              }`}
-            >
-              <span className="block relative aspect-video">
-                <span
-                  className={`absolute inset-0 bg-cover bg-center ${
-                    status !== "Live" ? "saturate-50 brightness-90" : ""
-                  }`}
-                  style={{ backgroundImage: `url("${journeyImage(journey)}")` }}
-                />
-                <span className="absolute left-2.5 top-2.5 flex gap-1.5">
-                  <span
-                    className={`inline-block px-2.5 py-1 rounded-full text-[9.5px] font-bold tracking-[0.1em] uppercase ${statusTone(
-                      status
-                    )}`}
-                  >
-                    {status}
+          <ul className="hsa-rows">
+            {shown.map((item) => (
+              <li key={item.id} className={`hsa-row${item.status === "archived" ? " arch" : ""}`}>
+                <Link className="hsa-r-main" href={`/admin/journeys/${item.id}`}>
+                  <span className="hsa-cov">
+                    {item.image ? <img src={item.image} alt="" /> : <ImageIcon size={18} aria-hidden="true" />}
                   </span>
-                  {journey.premium && (
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[var(--admin-gold)] text-[var(--ds-on-gold)] text-[9.5px] font-bold tracking-[0.1em]">
-                      PLUS
+                  <span className="hsa-r-txt">
+                    <span className="hsa-r-t">{item.title}</span>
+                    <span className="hsa-r-m">
+                      {meta(item)}
+                      <Flags item={item} />
                     </span>
-                  )}
-                  {journey.featured && (
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[var(--admin-accent)] text-[var(--admin-on-accent)] text-[9.5px] font-bold tracking-[0.1em]">
-                      FEATURED
-                    </span>
-                  )}
-                </span>
-              </span>
-
-              <div className="flex flex-col gap-[5px] px-[17px] pt-4 pb-3.5 flex-1">
-                <span className="text-[10px] font-semibold tracking-[0.11em] text-[var(--admin-accent)] uppercase">
-                  {journey.category}
-                </span>
-                <span className="text-[18px] font-semibold leading-[1.25] text-[var(--admin-text)]">
-                  {journey.title}
-                </span>
-                <span className="text-[12.5px] leading-[1.5] text-[var(--admin-text-muted)]">
-                  {journey.tagline}
-                </span>
-                <span className="text-[12.5px] text-[var(--admin-text-muted)] mt-1.5 pt-2.5 border-t border-[var(--admin-border)]">
-                  {(journey.journey_days ?? []).length} days ·{" "}
-                  {starts[journey.id] ? `${starts[journey.id]} starts` : "no starts yet"}
-                  {status === "Scheduled" && journey.scheduled_publish_at
-                    ? ` · ${new Date(journey.scheduled_publish_at).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                      })}`
-                    : ""}
-                </span>
-              </div>
-
-              <div className="flex items-center flex-wrap gap-2 px-3.5 py-3 border-t border-[var(--admin-border)] bg-[var(--admin-bg)]">
-                <Link
-                  href={`/admin/journeys/${journey.id}`}
-                  className={`${SMALL_BTN} font-semibold text-[var(--admin-text)]`}
-                >
-                  Edit
+                    {item.warning ? (
+                      <span className="hsa-warn">
+                        <TriangleAlert size={14} aria-hidden="true" />
+                        {item.warning}
+                      </span>
+                    ) : null}
+                  </span>
                 </Link>
-                <Link
-                  href={`/journeys/${journey.id}`}
-                  className={`${SMALL_BTN} text-[var(--admin-text-secondary)]`}
-                >
-                  Preview
-                </Link>
-                {status === "Scheduled" && <PublishNowButton id={journey.id} title={journey.title} />}
-                <span className="flex-1" />
-                {status !== "Archived" && <ArchiveJourneyButton id={journey.id} title={journey.title} />}
-                <DeleteJourneyButton id={journey.id} title={journey.title} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-5 rounded-[13px] border border-[var(--admin-border)] bg-[var(--admin-surface)] overflow-x-auto">
-          <div className="min-w-[680px]">
-            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-[var(--admin-border)] text-[9.5px] font-bold tracking-[0.11em] text-[var(--admin-text-muted)]">
-              <span className="flex-1 min-w-0">JOURNEY</span>
-              <span className="w-[100px] text-right flex-shrink-0">STATUS</span>
-              <span className="w-20 text-right flex-shrink-0">DAYS</span>
-              <span className="w-20 text-right flex-shrink-0">STARTS</span>
-              <span className="w-[150px] flex-shrink-0" />
-            </div>
-
-            {shown.map(({ journey, status }) => (
-              <div
-                key={journey.id}
-                className="flex items-center gap-3.5 px-4 py-3 border-b border-[var(--admin-border)] last:border-b-0"
-              >
-                <span className="flex-1 min-w-0 flex items-center gap-3">
-                  <span
-                    className="w-14 h-[38px] flex-shrink-0 rounded-md bg-cover bg-center"
-                    style={{ backgroundImage: `url("${journeyImage(journey)}")` }}
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[var(--admin-text)] truncate">
-                      {journey.title}
+                <div className="hsa-stc">
+                  <StatusChip status={item.status} />
+                  {item.note ? <span className="hsa-st-n">{item.note}</span> : null}
+                </div>
+                <span className="num">
+                  {item.status === "scheduled" || item.status === "draft" ? <span className="hsa-dash">—</span> : item.started}
+                </span>
+                {item.finishedPct !== null ? (
+                  <div className="hsa-fin">
+                    <span className="hsa-fin-v">{item.finishedPct}%</span>
+                    <span className="hsa-fin-t">
+                      <span style={{ width: `${item.finishedPct}%` }} />
                     </span>
-                    <span className="block text-[12.5px] text-[var(--admin-text-muted)] mt-0.5 truncate">
-                      {journey.category}
-                    </span>
-                  </span>
-                </span>
-                <span className="w-[100px] flex-shrink-0 text-right">
-                  <span
-                    className={`inline-block px-2.5 py-1 rounded-full text-[9.5px] font-bold tracking-[0.1em] uppercase ${statusTone(
-                      status
-                    )}`}
-                  >
-                    {status}
-                  </span>
-                </span>
-                <span className="w-20 flex-shrink-0 text-right text-[13.5px] text-[var(--admin-text-secondary)]">
-                  {(journey.journey_days ?? []).length}
-                </span>
-                <span className="w-20 flex-shrink-0 text-right text-[13.5px] text-[var(--admin-text-secondary)]">
-                  {starts[journey.id] || "—"}
-                </span>
-                <span className="w-[150px] flex-shrink-0 flex gap-2 justify-end">
-                  <Link
-                    href={`/admin/journeys/${journey.id}`}
-                    className={`${SMALL_BTN} font-semibold text-[var(--admin-text)]`}
-                  >
-                    Edit
-                  </Link>
-                  <DeleteJourneyButton id={journey.id} title={journey.title} />
-                </span>
-              </div>
+                  </div>
+                ) : item.tooEarly ? (
+                  <span className="hsa-soft">Too early</span>
+                ) : (
+                  <span className="hsa-dash">—</span>
+                )}
+                {item.drop ? <span className="hsa-drop">{item.drop}</span> : <span className="hsa-dash">—</span>}
+                <RowMenu item={item} />
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
+      ) : (
+        <ul className="hsa-grid" aria-label="Journeys">
+          {shown.map((item) => (
+            <li key={item.id} className={`hsa-gc${item.status === "archived" ? " arch" : ""}`}>
+              <Link href={`/admin/journeys/${item.id}`}>
+                <div className="hsa-gc-img">
+                  {item.image ? (
+                    <img src={item.image} alt="" />
+                  ) : (
+                    <span className="hsa-noimg">
+                      <ImageIcon size={28} aria-hidden="true" />
+                      No cover yet
+                    </span>
+                  )}
+                  <div className="hsa-gc-top">
+                    <StatusChip status={item.status} glass />
+                    <span className="hsa-gc-flags">
+                      {item.featured ? (
+                        <span className="hsa-glass">
+                          <Star size={14} aria-hidden="true" />
+                          Featured
+                        </span>
+                      ) : null}
+                      {item.premium ? (
+                        <span className="hsa-glass">
+                          <Gem size={14} aria-hidden="true" />
+                          Plus
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                </div>
+                <div className="hsa-gc-b">
+                  <span className="hsa-r-t">{item.title}</span>
+                  <span className="hsa-r-m">{meta(item)}</span>
+                  {item.warning ? (
+                    <span className="hsa-warn">
+                      <TriangleAlert size={14} aria-hidden="true" />
+                      {item.warning}
+                    </span>
+                  ) : null}
+                  <div className="hsa-gs">
+                    {item.status === "live" || item.status === "archived" ? (
+                      <div>
+                        <span className="hsa-gs-v">{item.started}</span>
+                        <span className="hsa-gs-l">started</span>
+                      </div>
+                    ) : null}
+                    {item.finishedPct !== null ? (
+                      <div>
+                        <span className="hsa-gs-v">{item.finishedPct}%</span>
+                        <span className="hsa-gs-l">finished</span>
+                      </div>
+                    ) : null}
+                    {item.drop && item.status === "live" ? (
+                      <div>
+                        <span className="hsa-gs-v">{item.drop}</span>
+                        <span className="hsa-gs-l">biggest drop</span>
+                      </div>
+                    ) : null}
+                    {item.note || item.tooEarly ? (
+                      <div className="hsa-soft">
+                        {item.status === "scheduled" ? `Publishes ${item.note}` : item.note}
+                        {item.tooEarly ? `${item.note ? " · " : ""}too early for finishes` : ""}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </Link>
+              <RowMenu item={item} />
+            </li>
+          ))}
+        </ul>
       )}
+      <div className="hsa-foot">
+        <span>Grouped by status, then most started · started and finished count people</span>
+        <span>
+          Showing {shown.length} of {items.length}
+        </span>
+      </div>
     </>
   );
 }

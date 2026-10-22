@@ -2,228 +2,308 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen, Check, ChevronDown, Compass, Download, Lock, Shield, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { PLANS } from "@/lib/plans";
+import { journeyImage } from "@/lib/journey-images";
+import type { Journey } from "@/lib/journal";
+import { PLANS, YEARLY_SAVING } from "@/lib/plans";
+import PageLoader from "@/components/PageLoader";
+import "../../account.css";
 
-/** Only the differences the app actually enforces today. */
-const ROWS = [
-  {
-    title: "Day one of every journey",
-    meta: "Read, write and keep it, on any journey in the library.",
-    free: "Included",
-    plus: "Included",
-  },
-  {
-    title: "All the days of a journey",
-    meta: "Days open one at a time until the journey ends.",
-    free: "—",
-    plus: "Included",
-  },
-  {
-    title: "The full library",
-    meta: "Every guided journey, new ones as they are added.",
-    free: "Previews",
-    plus: "Everything",
-  },
-  {
-    title: "Journal history",
-    meta: "Search, revisit and export what you wrote.",
-    free: "Kept",
-    plus: "Kept",
-  },
+type Cell = "yes" | "no" | string;
+
+/** Only what the app really does today. */
+const ROWS: [string, string, Cell, Cell][] = [
+  ["Day one of every journey", "Read it, write it and keep it, on any journey.", "yes", "yes"],
+  ["Every day of every journey", "Days open one at a time, after you write the one before.", "no", "yes"],
+  ["New journeys as they arrive", "The library keeps growing.", "Day one", "yes"],
+  ["Your Journal, unlimited", "Write freely, search, favorite and export.", "yes", "yes"],
 ];
 
-const FAQS = [
-  {
-    q: "What do I get for paying?",
-    a: "Every day of every journey. On the free plan you can read and write day one of any journey; the rest of the days stay closed.",
-  },
-  {
-    q: "Can I cancel whenever I want?",
-    a: "Yes. Plus stays active until the end of the period you already paid for, and everything you wrote stays readable and exportable.",
-  },
-  {
-    q: "Is my journal private?",
-    a: "Entries are private by default, never shown to anyone, and never used to train anything. You can export or delete everything at any time from Profile.",
-  },
+const FAQS: [string, string][] = [
+  [
+    "What do I get for paying?",
+    "Every day of every journey, and the ones still to come. On the free plan you can read and write day one of any journey; the rest open with Plus.",
+  ],
+  ["Can I cancel whenever I want?", "Yes. Plus stays active until the end of the period you already paid for."],
+  [
+    "What happens to my Journal if I cancel?",
+    "Nothing. Everything you wrote stays in your Journal, readable and exportable, on any plan.",
+  ],
+  [
+    "Is my journal private?",
+    "Your entries are private by default and aren't shared with other HumanSoul members. They are never used to train AI or for advertising.",
+  ],
 ];
+
+function CellView({ v }: { v: Cell }) {
+  if (v === "yes")
+    return (
+      <span className="ac-yes">
+        <Check className="ai" size={16} aria-hidden="true" />
+        Included
+      </span>
+    );
+  if (v === "no") return <span className="ac-no">Not included</span>;
+  return <span className="ac-part">{v}</span>;
+}
 
 export default function SubscriptionPage() {
-  const [plan, setPlan] = useState<string>("year");
-  const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
+  const [loading, setLoading] = useState(true);
   const [plus, setPlus] = useState(false);
+  const [planName, setPlanName] = useState<string | null>(null);
+  const [since, setSince] = useState<string | null>(null);
+  const [plan, setPlan] = useState<"year" | "month">("year");
+  const [open, setOpen] = useState(0);
+  const [journey, setJourney] = useState<Journey | null>(null);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
-      setPlus(Boolean(data?.plan && data.plan !== "free"));
+      const [{ data: profile }, { data: journeys }] = await Promise.all([
+        user
+          ? supabase.from("profiles").select("*").eq("user_id", user.id).single()
+          : Promise.resolve({ data: null }),
+        supabase.from("journeys").select("*, journey_days(day, title)").order("created_at", { ascending: true }),
+      ]);
+      const p = profile as { plan?: string | null; created_at?: string } | null;
+      setPlus(Boolean(p?.plan && p.plan !== "free"));
+      setPlanName(p?.plan ?? null);
+      setSince(p?.created_at ?? user?.created_at ?? null);
+      const list = ((journeys ?? []) as Journey[]).filter((j) => (j.status || "published") === "published");
+      setJourney(list.find((j) => j.id === "becoming-more-human") ?? list.find((j) => j.featured) ?? list[0] ?? null);
+      setLoading(false);
     }
     load();
   }, []);
 
-  const selected = PLANS.find((p) => p.key === plan) ?? PLANS[1];
+  if (loading) return <PageLoader />;
+
+  const year = PLANS.find((p) => p.key === "year")!;
+  const month = PLANS.find((p) => p.key === "month")!;
+  const selected = plan === "year" ? year : month;
+  const days = [...(journey?.journey_days ?? [])].sort((a, b) => a.day - b.day);
+
+  const faq = (
+    <section className="ac-sec" aria-labelledby="sub-faq">
+      <div className="ac-sec-h">
+        <h2 id="sub-faq" className="ac-h3">
+          Questions
+        </h2>
+      </div>
+      <div className="ac-faq">
+        {FAQS.map(([q, a], i) => (
+          <div key={q} className="ac-q" data-open={open === i}>
+            <button type="button" className="ac-q-h" aria-expanded={open === i} onClick={() => setOpen(open === i ? -1 : i)}>
+              {q}
+              <ChevronDown className="ai" size={18} aria-hidden="true" />
+            </button>
+            {open === i && <p>{a}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  if (plus) {
+    const yearly = !planName || /year|annual/i.test(planName);
+    return (
+      <div className="ac">
+        <div className="ac-head">
+          <span className="ac-over">
+            <Sparkles size={14} aria-hidden="true" />
+            HumanSoul Plus
+          </span>
+          <h1 className="ac-h1">Your subscription</h1>
+        </div>
+        <div className="ac-act">
+          <section className="ac-card" aria-labelledby="sub-plan">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <h2 id="sub-plan" className="ac-h3">
+                Plus · {yearly ? "Yearly" : "Monthly"}
+              </h2>
+              <span className="ac-status">
+                <Check size={14} aria-hidden="true" />
+                Active
+              </span>
+            </div>
+            <div className="ac-kv">
+              <div>
+                <span>Price</span>
+                <b>{yearly ? `${year.price} a year` : `${month.price} a month`}</b>
+              </div>
+              <div>
+                <span>Member since</span>
+                <b>{since ? new Date(since).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "·"}</b>
+              </div>
+            </div>
+            <ul className="ac-list">
+              <li>
+                <Check className="ai" size={16} aria-hidden="true" />
+                Every day of every journey, and new ones as they arrive
+              </li>
+              <li>
+                <Check className="ai" size={16} aria-hidden="true" />
+                Your Journal, unlimited and exportable
+              </li>
+            </ul>
+          </section>
+          <aside className="ac-side" aria-label="Manage">
+            <div className="ac-side-a">
+              <span>
+                Billing and invoices
+                <small>Managed with Stripe once payments are connected.</small>
+              </span>
+            </div>
+            <Link className="ac-side-a" href="/profile">
+              <span>
+                Download your writing
+                <small>Everything you wrote, in one file.</small>
+              </span>
+            </Link>
+          </aside>
+        </div>
+        {faq}
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-[980px] mx-auto">
-      <div className="flex items-center gap-4 pb-4 border-b border-[var(--ds-line)]">
-        <span className="text-[18px] font-bold tracking-[-0.015em]">
-          Human<span className="font-normal">Soul</span>
-        </span>
-        <span className="flex-1" />
-        <Link href="/dashboard" className="text-[13px] text-[var(--ds-text-muted)]">
-          Not now
-        </Link>
-      </div>
-
-      <div className="text-center mt-11">
-        <span
-          className={`inline-block px-3 py-1.5 rounded-full text-[10px] font-bold tracking-[0.12em] ${
-            plus
-              ? "bg-[var(--ds-gold-soft)] text-[var(--ds-gold)]"
-              : "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
-          }`}
-        >
-          {plus ? "PLUS IS ACTIVE" : "FREE PLAN"}
-        </span>
-        <h1 className="text-[28px] md:text-[34px] font-semibold leading-[1.2] tracking-[-0.02em] mt-4 mb-2">
-          Keep every journey open
-        </h1>
-        <p className="text-[15px] leading-[1.65] text-[var(--ds-text-muted)] mx-auto max-w-[52ch]">
-          Day one of every journey is free. Plus opens the days that follow, and the whole library
-          as it grows.
-        </p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-3.5 mt-[30px]">
-        {PLANS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPlan(p.key)}
-            className={`text-left px-[22px] py-5 rounded-[15px] border transition-colors ${
-              plan === p.key
-                ? "border-[var(--ds-gold)] bg-[var(--ds-gold-soft)]"
-                : "border-[var(--ds-line)] bg-[var(--ds-surface)]"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <span
-                className={`w-[15px] h-[15px] rounded-full box-border ${
-                  plan === p.key
-                    ? "border-[5px] border-[var(--ds-gold)]"
-                    : "border border-[var(--ds-line-strong)]"
-                }`}
-              />
-              <span className="text-[10.5px] font-bold tracking-[0.12em] text-[var(--ds-text-muted)]">
-                {p.label}
-              </span>
-              <span className="flex-1" />
-              {p.key === "year" && (
-                <span className="text-[9.5px] font-bold tracking-[0.1em] text-[var(--ds-gold)]">
-                  SAVE 35%
-                </span>
-              )}
-            </span>
-            <span className="flex items-baseline gap-2 mt-3.5">
-              <span className="text-[34px] font-semibold tracking-[-0.02em]">{p.price}</span>
-              <span className="text-[13px] text-[var(--ds-text-muted)]">
-                {p.key === "year" ? "per year" : "per month"}
-              </span>
-            </span>
-            <span className="block text-[12.5px] text-[var(--ds-text-muted)] mt-2 leading-[1.5]">
-              {p.key === "year"
-                ? "€3.25 a month, billed once."
-                : "Cancel any time, keeps everything you wrote."}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-[22px] rounded-[15px] border border-[var(--ds-line)] bg-[var(--ds-surface)] overflow-hidden">
-        <div className="flex items-center gap-3.5 px-5 py-3 border-b border-[var(--ds-line)] text-[9.5px] font-bold tracking-[0.11em] text-[var(--ds-text-muted)]">
-          <span className="flex-1 min-w-0">WHAT YOU GET</span>
-          <span className="w-[90px] sm:w-[110px] text-right flex-shrink-0">FREE</span>
-          <span className="w-[90px] sm:w-[110px] text-right flex-shrink-0 text-[var(--ds-gold)]">
-            PLUS
+    <div className="ac">
+      <section className="ac-hero" aria-labelledby="sub-h">
+        <div>
+          <span className="ac-over">
+            <Sparkles size={14} aria-hidden="true" />
+            HumanSoul Plus
           </span>
-        </div>
-        {ROWS.map((r, i) => (
-          <div
-            key={r.title}
-            className={`flex items-center gap-3.5 px-5 py-4 ${
-              i < ROWS.length - 1 ? "border-b border-[var(--ds-line)]" : ""
-            }`}
-          >
-            <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold">{r.title}</span>
-              <span className="block text-[12.5px] text-[var(--ds-text-muted)] mt-0.5 leading-[1.5]">
-                {r.meta}
+          <h1 id="sub-h" className="ac-h">
+            Keep every journey open
+          </h1>
+          <p className="ac-lede">
+            Day one of every journey is free. Plus opens the days that follow, and every new journey as the library grows.
+          </p>
+          <div className="ac-plans" role="radiogroup" aria-label="Plan">
+            <button type="button" className="ac-plan" role="radio" aria-checked={plan === "year"} onClick={() => setPlan("year")}>
+              <span className="ac-plan-top">
+                <span className="ac-plan-n">Yearly</span>
+                <span className="ac-save">Save {YEARLY_SAVING}%</span>
               </span>
-            </span>
-            <span className="w-[90px] sm:w-[110px] flex-shrink-0 text-right text-[12.5px] text-[var(--ds-text-muted)]">
-              {r.free}
-            </span>
-            <span className="w-[90px] sm:w-[110px] flex-shrink-0 text-right text-[13px] font-semibold">
-              {r.plus}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 text-center">
-        <button
-          disabled
-          className="w-[min(360px,100%)] p-4 rounded-[11px] bg-[var(--ds-gold)] text-[var(--ds-on-gold)] text-[14.5px] font-semibold opacity-60 cursor-not-allowed"
-        >
-          {plus
-            ? "Plus is active"
-            : `Continue with ${selected.key === "year" ? "yearly" : "monthly"}, ${selected.price}`}
-        </button>
-        <div className="text-[12.5px] text-[var(--ds-text-muted)] mt-3">
-          {plus
-            ? "Manage or cancel any time from Profile."
-            : "Payments are not connected yet, so nothing can be charged from here."}
-        </div>
-      </div>
-
-      <div className="grid sm:grid-cols-3 gap-3.5 mt-[26px]">
-        {[
-          ["Your words stay yours", "Cancel and your journal remains readable and exportable."],
-          ["One quiet reminder", "No streak pressure, no badges, no notifications you did not ask for."],
-          ["Private by default", "Entries are never shown to anyone and never used to train anything."],
-        ].map(([title, body]) => (
-          <div
-            key={title}
-            className="px-5 py-4 rounded-[13px] border border-[var(--ds-line)] bg-[var(--ds-surface)]"
-          >
-            <div className="text-[13.5px] font-semibold">{title}</div>
-            <div className="text-[12.5px] text-[var(--ds-text-muted)] mt-1.5 leading-[1.55]">
-              {body}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-[30px]">
-        {FAQS.map((f, i) => (
-          <div key={f.q} className="border-b border-[var(--ds-line)]">
-            <button
-              onClick={() => setOpen((p) => ({ ...p, [i]: !p[i] }))}
-              className="flex items-center gap-3.5 w-full px-0.5 py-4 text-left text-[15px] font-semibold text-[var(--ds-text)]"
-            >
-              <span className="flex-1 min-w-0">{f.q}</span>
-              <span className="text-[17px] text-[var(--ds-text-muted)]">{open[i] ? "−" : "+"}</span>
+              <span className="ac-plan-p">
+                <b>{year.price}</b>
+                <span>a year</span>
+              </span>
+              <span className="ac-plan-note">{year.note.replace(" / month", "")} a month, billed once</span>
+              <span className="ac-plan-check">
+                <Check size={14} aria-hidden="true" />
+              </span>
             </button>
-            {open[i] && (
-              <p className="m-0 mb-4 pr-8 sm:pr-16 text-sm leading-[1.7] text-[var(--ds-text-mid)]">
-                {f.a}
-              </p>
-            )}
+            <button type="button" className="ac-plan" role="radio" aria-checked={plan === "month"} onClick={() => setPlan("month")}>
+              <span className="ac-plan-top">
+                <span className="ac-plan-n">Monthly</span>
+              </span>
+              <span className="ac-plan-p">
+                <b>{month.price}</b>
+                <span>a month</span>
+              </span>
+              <span className="ac-plan-note">Cancel any time</span>
+              <span className="ac-plan-check">
+                <Check size={14} aria-hidden="true" />
+              </span>
+            </button>
           </div>
-        ))}
-      </div>
+          <div className="ac-cta">
+            <button type="button" className="ac-btn ac-btn-pri ac-btn-lg" disabled>
+              Continue with {plan === "year" ? "yearly" : "monthly"} · {selected.price}
+            </button>
+            <span className="ac-cta-n">Payments open soon. Nothing can be charged yet.</span>
+          </div>
+          <ul className="ac-prom">
+            <li>
+              <span className="ac-ico">
+                <Download size={18} aria-hidden="true" />
+              </span>
+              <span>
+                <b>Your words stay yours</b>Cancel and your Journal stays readable and exportable.
+              </span>
+            </li>
+            <li>
+              <span className="ac-ico">
+                <BookOpen size={18} aria-hidden="true" />
+              </span>
+              <span>
+                <b>At your own pace</b>No streaks and no deadlines. Each day opens when you finish the one before.
+              </span>
+            </li>
+            <li>
+              <span className="ac-ico">
+                <Shield size={18} aria-hidden="true" />
+              </span>
+              <span>
+                <b>Private by default</b>Never shown to anyone, never used to train AI.
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        {journey && (
+          <aside className="ac-open" aria-label="What Plus opens">
+            <div className="ac-open-img">
+              <img src={journeyImage(journey)} alt="" />
+            </div>
+            <div className="ac-open-b">
+              <span className="ac-open-over">
+                {[journey.category, days.length ? `${days.length} days` : null].filter(Boolean).join(" · ")}
+              </span>
+              <h2 className="ac-open-t">{journey.title}</h2>
+              <ul className="ac-days">
+                {days.map((d, i) => (
+                  <li key={d.day} className={`ac-day ${i === 0 ? "free" : "plus"}`}>
+                    <span className="ac-day-n">{String(d.day).padStart(2, "0")}</span>
+                    <span className="ac-day-t">{(d as { title?: string }).title || `Day ${d.day}`}</span>
+                    <span className="ac-day-s">
+                      {i === 0 ? <Check size={14} aria-hidden="true" /> : <Lock size={14} aria-hidden="true" />}
+                      {i === 0 ? "Free" : "With Plus"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="ac-open-foot">Every journey works like this. With Plus, each day opens after you write the one before.</p>
+            </div>
+          </aside>
+        )}
+      </section>
+
+      <section className="ac-sec" aria-labelledby="sub-cmp">
+        <div className="ac-sec-h">
+          <h2 id="sub-cmp" className="ac-h3">
+            Free and Plus
+          </h2>
+          <Link className="ac-cta-n" href="/journeys">
+            <Compass size={14} aria-hidden="true" style={{ verticalAlign: -2, marginRight: 6 }} />
+            Browse the library
+          </Link>
+        </div>
+        <div className="ac-cmp">
+          <div className="ac-cmp-row ac-cmp-h">
+            <span>What you get</span>
+            <span>Free</span>
+            <span>Plus</span>
+          </div>
+          {ROWS.map(([t, m, f, p]) => (
+            <div className="ac-cmp-row" key={t}>
+              <span>
+                <span className="ac-cmp-t">{t}</span>
+                <span className="ac-cmp-m">{m}</span>
+              </span>
+              <CellView v={f} />
+              <CellView v={p} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {faq}
     </div>
   );
 }

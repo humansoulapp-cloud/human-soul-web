@@ -174,6 +174,7 @@ export type Journey = {
   category: string | null;
   tagline: string | null;
   image_url: string | null;
+  time_required?: string | null;
   status?: string | null;
   scheduled_publish_at?: string | null;
   featured?: boolean | null;

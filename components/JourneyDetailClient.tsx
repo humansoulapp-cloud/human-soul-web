@@ -1,26 +1,47 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ChevronRight, Lock } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  CircleCheck,
+  Clock,
+  Compass,
+  Layers,
+  Lock,
+  PenLine,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { markPageReady, transitionTo } from "@/lib/view-transition";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import { PLANS, PLUS_PERKS } from "@/lib/plans";
-import { wordCount, type ReflectionRow } from "@/lib/journal";
+import type { ReflectionRow } from "@/lib/journal";
+import { Button, SegmentProgress } from "@/components/ds";
 
-type Stage = "overview" | "read" | "write" | "done";
+/**
+ * The journey flow in focus mode, as designed on the canvas
+ * («App / Journey flow / 0 · Journey overview · Focus» through
+ * «4 · Journey complete»): one 1120px column under the journey's
+ * header image, the day read and written on the same page.
+ */
+
+type Stage = "overview" | "day" | "done" | "complete";
 type DayStatus = "done" | "today" | "locked" | "plus";
+type DraftState = "idle" | "saving" | "saved";
+export type JourneySuggestion = { id: string; title: string; image: string };
 
-const PRIMARY_BTN =
-  "px-5 py-2.5 rounded-[9px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] hover:text-[var(--ds-on-accent)] text-[13px] font-semibold whitespace-nowrap transition-colors disabled:opacity-60";
-const GHOST_BTN =
-  "px-4 py-2.5 rounded-[9px] border border-[var(--ds-line-strong)] text-[var(--ds-text-mid)] hover:text-[var(--ds-text)] text-[13px] whitespace-nowrap transition-colors";
-const GOLD_BTN =
-  "px-5 py-2.5 rounded-[9px] bg-[var(--ds-gold)] hover:opacity-90 text-[var(--ds-on-gold)] hover:text-[var(--ds-on-gold)] text-[13px] font-semibold whitespace-nowrap transition-opacity";
-const EYEBROW = "text-[10.5px] font-semibold tracking-[0.11em] text-[var(--ds-text-muted)] uppercase";
-const MICRO = "text-[10.5px] font-semibold tracking-[0.11em] text-[var(--ds-text-muted)]";
+const CLOSING_TAG = "Closing reflection";
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 
 /** Journey entries are saved as "[Title - Day N: Day title]\n\n<text>". */
 function entryBody(content: string | null) {
@@ -35,50 +56,133 @@ function paragraphs(text: string | null | undefined) {
     .filter(Boolean);
 }
 
+/** The sentence a person is most likely to recognise: the last full one. */
+function keyLine(text: string) {
+  const sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]*/g) ?? [];
+  const last = (sentences[sentences.length - 1] ?? "").trim();
+  return last.length > 180 ? `${last.slice(0, 177).trimEnd()}…` : last;
+}
+
+function firstLine(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function longDateTime(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${date} · ${time}`;
+}
+
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function monthDay(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+}
+
+function draftKey(journeyId: string, day: number) {
+  return `hs-journey-draft:${journeyId}:${day}`;
+}
+
+function readDraft(key: string) {
+  try {
+    return window.localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeDraft(key: string, value: string) {
+  try {
+    if (value.trim()) window.localStorage.setItem(key, value);
+    else window.localStorage.removeItem(key);
+  } catch {
+    /* storage can be unavailable (private mode); the draft stays in memory */
+  }
+}
+
 export default function JourneyDetailClient({
   journey,
   reflections,
   subscribed,
   initialDay,
+  suggestions = [],
+  returnTo,
+  startEditing = false,
 }: {
   journey: JourneyRow;
   reflections: ReflectionRow[];
   subscribed: boolean;
   initialDay?: number;
+  /** Opened from Journal: Exit goes back there (with the shared-text transition). */
+  returnTo?: string;
+  /** Open the day's written reflection straight in the editor. */
+  startEditing?: boolean;
+  suggestions?: JourneySuggestion[];
 }) {
   const router = useRouter();
-  const days = useMemo(
-    () => [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day),
-    [journey.journey_days]
-  );
+  const days = useMemo(() => [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day), [journey.journey_days]);
+  const total = days.length;
+  const image = journeyImage(journey);
+  const timeText = journey.time_required || "About 7 minutes";
 
   const [entries, setEntries] = useState<ReflectionRow[]>(reflections);
-  const [stage, setStage] = useState<Stage>(initialDay ? "read" : "overview");
   const [dayIndex, setDayIndex] = useState(() => {
     const found = days.findIndex((d) => d.day === initialDay);
     return found >= 0 ? found : 0;
   });
+  const [stage, setStage] = useState<Stage>(initialDay && days.some((d) => d.day === initialDay) ? "day" : "overview");
   const [draft, setDraft] = useState("");
+  const [, setDraftState] = useState<DraftState>("idle");
+  /* A day already written opens in reading mode; "Edit" switches to the editor. */
+  const [editing, setEditing] = useState(true);
+  const editOnce = useRef(startEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [promptOpen, setPromptOpen] = useState(false);
+  const [savedEntry, setSavedEntry] = useState<ReflectionRow | null>(null);
+  const [toast, setToast] = useState(false);
+  const [indexOpen, setIndexOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [plan, setPlan] = useState<string>("year");
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [question, setQuestion] = useState(0);
+  const [closing, setClosing] = useState("");
+  const [closingSaving, setClosingSaving] = useState(false);
 
   const locked = Boolean(journey.premium) && !subscribed;
 
+  /* A day's reflection: tagged with the day, or saved with the day's header in its text. */
   const entryFor = useCallback(
-    (index: number) =>
-      entries.find((r) => (r.tags ?? []).includes(`Day ${days[index]?.day}`)) ?? null,
-    [entries, days]
+    (index: number) => {
+      const n = days[index]?.day;
+      if (n == null) return null;
+      const header = `[${journey.title} - Day ${n}:`;
+      return (
+        entries.find((r) => {
+          const tags = r.tags ?? [];
+          if (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || (r.content ?? "").startsWith(header))) return true;
+          return (r.content ?? "").trim().startsWith(header);
+        }) ?? null
+      );
+    },
+    [entries, days, journey.title]
   );
+
+  /* Keep what the server returns after a refresh, without losing rows saved here. */
+  useEffect(() => {
+    setEntries((prev) => {
+      const ids = new Set(reflections.map((r) => r.id));
+      return [...prev.filter((r) => !ids.has(r.id)), ...reflections].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    });
+  }, [reflections]);
 
   /** The first day without a reflection is "today"; the rest wait their turn. */
   const nextIndex = useMemo(() => {
     const i = days.findIndex((_, idx) => !entryFor(idx));
-    return i === -1 ? days.length - 1 : i;
-  }, [days, entryFor]);
+    return i === -1 ? total - 1 : i;
+  }, [days, entryFor, total]);
 
   const statusOf = useCallback(
     (index: number): DayStatus => {
@@ -89,30 +193,117 @@ export default function JourneyDetailClient({
     [locked, entryFor, nextIndex]
   );
 
-  const doneCount = useMemo(
-    () => days.filter((_, i) => statusOf(i) === "done").length,
-    [days, statusOf]
-  );
+  /* Never show a day that isn't open yet, whatever the address says. */
+  useEffect(() => {
+    if (stage !== "day") return;
+    const st = statusOf(dayIndex);
+    if (st === "locked" || st === "plus") {
+      setStage("overview");
+      if (st === "plus") setPaywallOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("day");
+      window.history.replaceState(null, "", url);
+    }
+  }, [stage, dayIndex, statusOf]);
+
+  const doneCount = useMemo(() => days.filter((_, i) => statusOf(i) === "done").length, [days, statusOf]);
+  const allDone = total > 0 && doneCount === total;
+  const closingEntry = useMemo(() => entries.find((r) => (r.tags ?? []).includes(CLOSING_TAG)) ?? null, [entries]);
 
   const day = days[dayIndex];
   const dayEntry = entryFor(dayIndex);
   const dayParas = useMemo(() => paragraphs(day?.prompt), [day]);
-  const aboutParas = useMemo(
-    () => paragraphs(journey.intro || journey.purpose),
-    [journey.intro, journey.purpose]
-  );
+  const aboutParas = useMemo(() => paragraphs(journey.intro), [journey.intro]);
+  const key = day ? draftKey(journey.id, day.day) : "";
+
+  /* Load the text for the open day: an unsaved draft first, then what was saved. */
+  useEffect(() => {
+    if (stage !== "day" || !day) return;
+    const stored = readDraft(key);
+    setDraft(stored || (dayEntry ? entryBody(dayEntry.content) : ""));
+    setDraftState(stored ? "saved" : "idle");
+    setEditing(!dayEntry || Boolean(stored) || editOnce.current);
+    editOnce.current = false;
+    setError("");
+    // When the day changes, or when its saved reflection arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, dayIndex, dayEntry?.id]);
+
+  /* Arriving from Journal: the page is on screen, let the transition capture it. */
+  useEffect(() => {
+    markPageReady();
+  }, []);
+
+  /* And have the way back ready, so returning morphs straight away too. */
+  useEffect(() => {
+    if (returnTo) router.prefetch(returnTo);
+  }, [returnTo, router]);
+
+  const exitToJournal = useCallback(() => {
+    if (!returnTo) return;
+    transitionTo(() => router.push(returnTo));
+  }, [returnTo, router]);
+
+  /* Saves as you write: a short pause after typing keeps the draft on this device. */
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onDraftChange = (value: string) => {
+    setDraft(value);
+    setDraftState("saving");
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      writeDraft(key, value);
+      setDraftState(value.trim() ? "saved" : "idle");
+    }, 700);
+  };
+  useEffect(() => () => {
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [stage, dayIndex]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(false), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!indexOpen && !paywallOpen && !aboutOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIndexOpen(false);
+        setPaywallOpen(false);
+        setAboutOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [indexOpen, paywallOpen, aboutOpen]);
 
   const openDay = useCallback(
     (index: number) => {
       const status = statusOf(index);
+      setIndexOpen(false);
       if (status === "plus") return setPaywallOpen(true);
       if (status === "locked") return;
       setDayIndex(index);
-      setStage("read");
-      setError("");
+      setStage("day");
+      const url = new URL(window.location.href);
+      url.searchParams.set("day", String(days[index].day));
+      window.history.replaceState(null, "", url);
     },
-    [statusOf]
+    [statusOf, days]
   );
+
+  const toOverview = useCallback(() => {
+    setIndexOpen(false);
+    setStage("overview");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("day");
+    window.history.replaceState(null, "", url);
+  }, []);
 
   const saveReflection = useCallback(async () => {
     if (!draft.trim() || !day) return;
@@ -120,532 +311,811 @@ export default function JourneyDetailClient({
     setError("");
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       setSaving(false);
-      setError("You must be signed in to save this reflection.");
+      setError("You need to be signed in to save this reflection.");
       return;
     }
 
     const content = `[${journey.title} - Day ${day.day}: ${day.title}]\n\n${draft.trim()}`;
-    const { data, error: insertError } = await supabase
-      .from("reflections")
-      .insert([
-        {
-          user_id: user.id,
-          content,
-          tags: [journey.title, `Day ${day.day}`],
-          favorite: false,
-        },
-      ])
-      .select();
+    const result = dayEntry
+      ? await supabase.from("reflections").update({ content }).eq("id", dayEntry.id).select()
+      : await supabase
+          .from("reflections")
+          .insert([{ user_id: user.id, content, tags: [journey.title, `Day ${day.day}`], favorite: false }])
+          .select();
 
     setSaving(false);
-    if (insertError || !data?.[0]) {
-      setError(insertError?.message ?? "Could not save this reflection.");
+    const row = result.data?.[0] as ReflectionRow | undefined;
+    if (result.error || !row) {
+      setError(result.error?.message ?? "This reflection could not be saved. Please try again.");
       return;
     }
 
-    setEntries((prev) => [data[0] as ReflectionRow, ...prev]);
-    setDraft("");
-    setStage("done");
+    writeDraft(key, "");
+    setDraftState("idle");
+    setEntries((prev) => [row, ...prev.filter((r) => r.id !== row.id)]);
+    setSavedEntry(row);
+    setToast(true);
+    const finished = days.every((d, i) => i === dayIndex || Boolean(entryFor(i)));
+    // Editing a written day from Journal: stay on the day, back in reading mode.
+    if (returnTo && dayEntry) setEditing(false);
+    else setStage(finished ? "complete" : "done");
     router.refresh();
-  }, [draft, day, journey.title, router]);
+  }, [draft, day, dayEntry, journey.title, key, days, dayIndex, entryFor, router, returnTo]);
 
-  const metaRows = [
-    ["Category", journey.category ?? "—"],
-    ["Length", `${days.length} days, one a day`],
-    ["Each day", journey.time_required || "About 7 minutes"],
-    ["Access", journey.premium ? "HumanSoul Plus" : "Free"],
-  ];
+  const questions = (journey.reflection_questions ?? []).filter(Boolean);
 
-  const isLastDay = dayIndex === days.length - 1;
-  const nextBlocked = !isLastDay && statusOf(dayIndex + 1) === "plus";
+  const saveClosing = useCallback(async () => {
+    if (!closing.trim()) return;
+    setClosingSaving(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setClosingSaving(false);
+      return;
+    }
+    const q = questions[question];
+    const content = `[${journey.title} - ${CLOSING_TAG}]\n\n${q ? `${q}\n\n` : ""}${closing.trim()}`;
+    const { data } = await supabase
+      .from("reflections")
+      .insert([{ user_id: user.id, content, tags: [journey.title, CLOSING_TAG], favorite: false }])
+      .select();
+    setClosingSaving(false);
+    if (data?.[0]) {
+      setEntries((prev) => [data[0] as ReflectionRow, ...prev]);
+      setClosing("");
+      setToast(true);
+      router.refresh();
+    }
+  }, [closing, questions, question, journey.title, router]);
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* ── Focus header ── */}
-      <header className="sticky top-0 z-10 flex items-center gap-3.5 px-4 md:px-6 py-3 border-b border-[var(--ds-line)] bg-[var(--ds-bg)]">
-        <Link
-          href="/journeys"
-          className="flex items-center gap-[7px] pl-2.5 pr-3 py-[7px] rounded-lg border border-[var(--ds-line)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] text-[12.5px] transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
-          <span className="hidden sm:inline">Leave journey</span>
+  const progressBar = (
+    <SegmentProgress
+      total={total}
+      done={doneCount}
+      current={stage === "overview" ? undefined : day?.day}
+      width={168}
+    />
+  );
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  const header =
+    stage === "overview" ? (
+      <header className="jf-head">
+        <Link className="jf-exit" href="/journeys">
+          <ArrowLeft size={20} aria-hidden="true" />
+          Journeys
         </Link>
-        <span className="flex-1" />
-        <div className="text-[15px] font-semibold whitespace-nowrap truncate">{journey.title}</div>
-        <span className="flex-1" />
-        <div className="hidden sm:flex items-center gap-3">
-          <span className={MICRO}>
-            {doneCount}/{days.length}
+        <span className="jf-head-label">Journey overview</span>
+        <span />
+      </header>
+    ) : (
+      <header className="jf-head">
+        {returnTo ? (
+          <button type="button" className="jf-exit" onClick={exitToJournal}>
+            <ArrowLeft size={20} aria-hidden="true" />
+            Journal
+          </button>
+        ) : (
+          <button type="button" className="jf-exit" onClick={toOverview}>
+            <X size={20} aria-hidden="true" />
+            Exit
+          </button>
+        )}
+        <button
+          type="button"
+          className="jf-index"
+          aria-haspopup="dialog"
+          aria-expanded={indexOpen}
+          aria-label={`${journey.title} · Day ${day?.day} of ${total}. Show the ${total} days`}
+          onClick={() => setIndexOpen(true)}
+        >
+          <span className="jf-index-title">
+            <span>
+              {journey.title} · Day {day?.day} of {total}
+            </span>
+            <ChevronDown size={14} aria-hidden="true" />
           </span>
-          <span className="flex gap-[3px] w-[118px]">
-            {days.map((d, i) => {
-              const status = statusOf(i);
-              const current = stage !== "overview" && i === dayIndex;
-              return (
-                <button
-                  key={d.day}
-                  onClick={() => openDay(i)}
-                  aria-label={`Day ${d.day}`}
-                  className={`flex-1 h-1.5 rounded-full transition-colors ${
-                    status === "done"
-                      ? "bg-[var(--ds-accent)]"
-                      : current
-                        ? "bg-[var(--ds-accent-soft)] ring-1 ring-[var(--ds-accent)]"
-                        : "bg-[var(--ds-line-strong)]"
-                  }`}
-                />
-              );
-            })}
+          {progressBar}
+        </button>
+        <span className="jf-private">
+          <Lock size={14} aria-hidden="true" />
+          <span className="jf-private-label">Private</span>
+        </span>
+      </header>
+    );
+
+  /* ── Overview ───────────────────────────────────────────────── */
+  const startIndex = allDone ? 0 : nextIndex;
+  const startDay = days[startIndex];
+  const started = doneCount > 0;
+  const overviewCta = allDone
+    ? { label: "See your journey", onClick: () => setStage("complete") }
+    : { label: `${started ? "Continue" : "Begin"} Day ${startDay?.day ?? 1}`, onClick: () => openDay(startIndex) };
+  const overline = [journey.category, journey.featured ? "Featured" : null, journey.premium ? "Plus" : null].filter(Boolean).join(" · ");
+
+  /* At a glance: the journey on the left, its days on a glass card on the right.
+     Everything else lives in the «More about this journey» sheet. */
+  const overview = (
+    <main className="jf-ov">
+      <section aria-labelledby="jf-title" className="jf-ov-hero">
+        {overline ? <span className="text-overline jf-over">{overline}</span> : null}
+        <h1 id="jf-title" className="jf-display">
+          {journey.title}
+        </h1>
+        {journey.tagline ? <p className="jf-lede">{journey.tagline}</p> : null}
+        <ul className="jf-facts" role="list" aria-label="At a glance">
+          <li>
+            <Layers size={16} aria-hidden="true" />
+            {total} days
+          </li>
+          <li>
+            <Clock size={16} aria-hidden="true" />
+            {timeText} a day
+          </li>
+          <li>
+            <BookOpen size={16} aria-hidden="true" />
+            Saved privately in your journal
+          </li>
+        </ul>
+        <div className="jf-actions" style={{ marginTop: 16 }}>
+          <Button size="lg" onClick={overviewCta.onClick}>
+            {overviewCta.label}
+          </Button>
+          {locked ? (
+            <button type="button" className="jf-link" onClick={() => setPaywallOpen(true)}>
+              Day 1 is free. Plus opens the rest
+              <ChevronRight size={14} aria-hidden="true" />
+            </button>
+          ) : started ? (
+            <span className="text-body-sm" style={{ color: "var(--muted-foreground)" }}>
+              {allDone ? `All ${total} days written.` : `${doneCount} of ${total} days written. Your place is kept.`}
+            </span>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className="jf-more"
+          aria-haspopup="dialog"
+          aria-expanded={aboutOpen}
+          aria-controls="jf-sheet"
+          onClick={() => setAboutOpen(true)}
+        >
+          More about this journey
+          <ChevronRight size={16} aria-hidden="true" />
+        </button>
+      </section>
+
+      <section aria-labelledby="jf-days" className="jf-glass">
+        <div className="jf-glass-head">
+          <h2 id="jf-days">The {NUMBER_WORDS[total] ?? total} days</h2>
+          <span>
+            <Lock size={14} aria-hidden="true" />
+            One opens each day
           </span>
         </div>
-      </header>
+        <ol role="list" className="jf-gdays">
+          {days.map((d, i) => {
+            const status = statusOf(i);
+            const open = status === "done" || status === "today";
+            const mark =
+              status === "done" ? <Check size={14} aria-hidden="true" /> : status === "plus" ? <Lock size={13} aria-hidden="true" /> : d.day;
+            const caption =
+              status === "today" ? (started ? "Up next" : "First") : status === "done" ? "Written" : status === "plus" ? "Plus" : null;
+            const inner = (
+              <>
+                <span className="jf-gnum" aria-hidden="true">
+                  {mark}
+                </span>
+                <span className="jf-gtitle">{d.title}</span>
+                {caption ? <span className="jf-gcap">{caption}</span> : <span className="hs-sr-only">Not open yet</span>}
+              </>
+            );
+            const cls = `jf-gday${status === "today" ? " now" : ""}${status === "done" ? " done" : ""}`;
+            return (
+              <li key={d.day}>
+                {open || status === "plus" ? (
+                  <button type="button" className={cls} aria-current={status === "today" ? "step" : undefined} onClick={() => openDay(i)}>
+                    {inner}
+                  </button>
+                ) : (
+                  <div className={`${cls} later`} aria-disabled="true">
+                    {inner}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    </main>
+  );
 
-      {/* ══ OVERVIEW ══ */}
-      {stage === "overview" && (
-        <div>
-          <div className="relative h-[250px] overflow-hidden">
-            <span
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url("${journeyImage(journey)}")` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
-            <div className="absolute left-0 right-0 bottom-0 pb-[26px]">
-              <div className="w-[min(1160px,100%-36px)] md:w-[min(1160px,100%-48px)] mx-auto text-white">
-                <div className="flex items-center gap-2.5 text-[10.5px] font-semibold tracking-[0.11em] flex-wrap">
-                  <span className="opacity-85 uppercase">{journey.category}</span>
-                  <span className="w-[3px] h-[3px] rounded-full bg-white/50" />
-                  <span className="opacity-85 uppercase">
-                    {days.length} DAYS · {journey.time_required || "~7 MIN A DAY"}
-                  </span>
-                  {journey.premium && (
-                    <span className="px-2 py-1 rounded-full bg-[var(--ds-gold)] text-[var(--ds-on-gold)] text-[9.5px] tracking-[0.1em]">
-                      PLUS
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-[30px] md:text-[40px] font-semibold tracking-[-0.015em] mt-2">
-                  {journey.title}
-                </h1>
-              </div>
-            </div>
+  /* «More about this journey»: a side sheet, so the overview stays at a glance. */
+  const sheet = aboutOpen ? (
+    <div className="jf-sheet-scrim" onClick={() => setAboutOpen(false)}>
+      <aside
+        id="jf-sheet"
+        className="jf-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jf-sheet-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="jf-sheet-head">
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+            <span className="text-overline jf-over">{journey.title}</span>
+            <h2 id="jf-sheet-title" className="jf-sheet-title">
+              About this journey
+            </h2>
           </div>
-
-          <div className="w-[min(1160px,100%-36px)] md:w-[min(1160px,100%-48px)] mx-auto pt-[30px] pb-20 grid lg:grid-cols-[minmax(0,1fr)_344px] gap-8 lg:gap-[52px] items-start">
-            {/* Rail */}
-            <div className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-20 flex flex-col gap-3.5">
-              {locked ? (
-                <div className="p-5 rounded-2xl border border-[var(--ds-gold)] bg-[var(--ds-gold-soft)]">
-                  <div className="text-[10px] font-bold tracking-[0.13em] text-[var(--ds-gold)]">
-                    HUMANSOUL PLUS
-                  </div>
-                  <div className="text-2xl font-semibold leading-[1.25] mt-2 mb-1.5">
-                    This journey is part of Plus
-                  </div>
-                  <p className="text-sm leading-[1.65] opacity-80 mb-4">
-                    Day one is open to everyone. Plus unlocks the remaining{" "}
-                    {Math.max(days.length - 1, 0)} days, every other journey in the library, and
-                    your full journal history.
-                  </p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button onClick={() => setPaywallOpen(true)} className={GOLD_BTN}>
-                      Unlock for {PLANS[0].price} / month
-                    </button>
-                    <button onClick={() => openDay(0)} className={GHOST_BTN}>
-                      Read day 1 free
-                    </button>
-                  </div>
-                  <div className="text-[12.5px] text-[var(--ds-text-muted)] mt-3">
-                    Cancel anytime. Yearly {PLANS[1].price}.
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4 p-4 rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-                  <div className="flex-1 min-w-0">
-                    <div className={MICRO}>
-                      {doneCount === 0
-                        ? "NOT STARTED YET"
-                        : `YOU ARE ON DAY ${days[nextIndex]?.day} OF ${days.length}`}
-                    </div>
-                    <div className="text-[19px] font-semibold mt-1 truncate">
-                      {days[nextIndex]?.title}
-                    </div>
-                  </div>
-                  <button onClick={() => openDay(nextIndex)} className={PRIMARY_BTN}>
-                    {doneCount === 0 ? "Begin day 1" : "Open today"}
-                  </button>
-                </div>
-              )}
-
-              <div className="px-4 py-1 rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-                {metaRows.map(([label, value], i) => (
-                  <div
-                    key={label}
-                    className={`flex items-baseline justify-between gap-3.5 py-3 text-[13px] text-right ${
-                      i < metaRows.length - 1 ? "border-b border-[var(--ds-line)]" : ""
-                    }`}
-                  >
-                    <span className={`${EYEBROW} text-left flex-shrink-0`}>{label}</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="lg:col-start-1 lg:row-start-1 min-w-0 lg:pt-[19px]">
-              <p className="text-[17px] leading-[1.6] opacity-90 m-0 mb-[26px]">{journey.tagline}</p>
-
-              {aboutParas.length > 0 && (
-                <div className="relative mt-[30px]">
-                  <div className={EYEBROW}>ABOUT THIS JOURNEY</div>
-                  <div
-                    className={`text-[15px] leading-[1.75] text-[var(--ds-text-mid)] mt-2 overflow-hidden ${
-                      aboutOpen ? "" : "max-h-[150px]"
-                    }`}
-                  >
-                    {aboutParas.map((text, i) => (
-                      <p key={i} className="m-0 mb-[15px]">
-                        {text}
-                      </p>
-                    ))}
-                  </div>
-                  {!aboutOpen && (
-                    <div className="h-11 -mt-11 relative bg-gradient-to-t from-[var(--ds-bg)] to-transparent" />
-                  )}
-                  <button
-                    onClick={() => setAboutOpen((v) => !v)}
-                    className="mt-2 text-[12.5px] font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)]"
-                  >
-                    {aboutOpen ? "Show less" : "Read more"}
-                  </button>
-                </div>
-              )}
-
-              <div className="flex items-baseline gap-2.5 mt-[34px] mb-1.5">
-                <div className={EYEBROW}>THE {days.length} DAYS</div>
-                <span className="flex-1" />
-                <span className={MICRO}>
-                  {doneCount} OF {days.length} DONE
+          <Button variant="ghost" size="icon" icon={X} aria-label="Close" onClick={() => setAboutOpen(false)} />
+        </div>
+        <div className="jf-sheet-body">
+          {journey.purpose || aboutParas.length > 0 ? (
+            <section className="jf-sheet-sec" aria-labelledby={journey.purpose ? "jf-sh-why" : undefined}>
+              {journey.purpose ? (
+                <h3 id="jf-sh-why" className="jf-sheet-h">
+                  {journey.purpose}
+                </h3>
+              ) : null}
+              {aboutParas.map((text, i) => (
+                <p key={i} className="jf-sheet-p">
+                  {text}
+                </p>
+              ))}
+            </section>
+          ) : null}
+          <section className="jf-sheet-sec" aria-labelledby="jf-sh-find">
+            <h3 id="jf-sh-find" className="jf-sheet-h">
+              What you&apos;ll find each day
+            </h3>
+            <div className="jf-sheet-feats">
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <BookOpen size={20} />
+                </span>
+                <span>
+                  <b>A short daily reading</b>
+                  <span>A few calm paragraphs that frame the day&apos;s theme.</span>
                 </span>
               </div>
-
-              <div className="flex flex-col">
-                {days.map((d, i) => {
-                  const status = statusOf(i);
-                  const blocked = status === "locked" || status === "plus";
-                  return (
-                    <button
-                      key={d.day}
-                      onClick={() => openDay(i)}
-                      className={`flex items-center gap-[15px] w-full px-1 py-[15px] border-b border-[var(--ds-line)] text-left text-[var(--ds-text)] ${
-                        blocked ? "opacity-60 cursor-default" : "cursor-pointer"
-                      }`}
-                    >
-                      <span
-                        className={`flex-shrink-0 w-[30px] h-[30px] rounded-full grid place-items-center text-xs font-semibold ${
-                          status === "done"
-                            ? "bg-[var(--ds-accent)] text-[var(--ds-on-accent)]"
-                            : status === "today"
-                              ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] border border-[var(--ds-accent)]"
-                              : "border border-[var(--ds-line-strong)] text-[var(--ds-text-muted)]"
-                        }`}
-                      >
-                        {status === "done" ? (
-                          <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
-                        ) : status === "plus" ? (
-                          <Lock className="w-3 h-3" strokeWidth={2.2} />
-                        ) : (
-                          d.day
-                        )}
-                      </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="flex items-center gap-2">
-                          <span className="text-[15px] font-semibold">{d.title}</span>
-                          {status === "today" && (
-                            <span className="px-2 py-0.5 rounded-full bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] text-[9.5px] font-bold tracking-[0.1em]">
-                              TODAY
-                            </span>
-                          )}
-                        </span>
-                        <span className="block text-[12.5px] text-[var(--ds-text-muted)] mt-1 truncate">
-                          {status === "done"
-                            ? "Reflection saved"
-                            : status === "plus"
-                              ? "Included with Plus"
-                              : status === "today"
-                                ? (d.purpose ?? "").slice(0, 72) + "…"
-                                : `Opens after day ${d.day - 1}`}
-                        </span>
-                      </span>
-                      {!blocked && (
-                        <ChevronRight className="w-4 h-4 flex-shrink-0 text-[var(--ds-text-muted)]" />
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <PenLine size={20} />
+                </span>
+                <span>
+                  <b>One question to write about</b>
+                  <span>A single reflection, saved privately in your journal and tagged with the journey.</span>
+                </span>
+              </div>
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <Sparkles size={20} />
+                </span>
+                <span>
+                  <b>Go deeper, if you want</b>
+                  <span>An extra question for the days you want to stay a little longer.</span>
+                </span>
+              </div>
+              <div className="jf-sheet-feat">
+                <span className="jf-feat-ico" aria-hidden="true">
+                  <ShieldCheck size={20} />
+                </span>
+                <span>
+                  <b>Private, at your pace</b>
+                  <span>Only you can read it. No streaks, no scores. One day opens at a time.</span>
+                </span>
               </div>
             </div>
-          </div>
+          </section>
         </div>
-      )}
-
-      {/* ══ DAY — READ ══ */}
-      {stage === "read" && day && (
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1">
-            <div className="w-[min(1160px,100%-36px)] md:w-[min(1160px,100%-48px)] mx-auto pt-11 pb-10 grid lg:grid-cols-[minmax(0,1fr)_344px] gap-8 lg:gap-[52px] items-start">
-              <div className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-20 flex flex-col gap-3.5">
-                {day.deeper && (
-                  <div className="p-[18px] rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-                    <div className={EYEBROW}>IF YOU WANT TO GO DEEPER</div>
-                    <div className="text-[17px] font-medium leading-[1.5] mt-2">{day.deeper}</div>
-                  </div>
-                )}
-
-                {locked && dayIndex === 0 && (
-                  <div className="flex items-center gap-3 p-4 rounded-2xl border border-[var(--ds-gold)] bg-[var(--ds-gold-soft)]">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold">
-                        Day 1 of {days.length} · free preview
-                      </div>
-                      <div className="text-[12.5px] text-[var(--ds-text-muted)]">
-                        Unlock Plus to continue with the remaining days.
-                      </div>
-                    </div>
-                    <button onClick={() => setPaywallOpen(true)} className={GOLD_BTN}>
-                      Unlock Plus
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-                <div className={EYEBROW}>
-                  DAY {day.day} OF {days.length}
-                </div>
-                <h1 className="text-[28px] md:text-[35px] font-semibold leading-[1.15] tracking-[-0.015em] mt-2.5 mb-3.5">
-                  {day.title}
-                </h1>
-                {day.purpose && (
-                  <p className="text-[15px] leading-[1.7] text-[var(--ds-text-mid)] m-0 mb-6 pb-6 border-b border-[var(--ds-line)]">
-                    {day.purpose}
-                  </p>
-                )}
-
-                <div className="text-[17px] leading-[1.75]">
-                  {dayParas.map((text, i) => (
-                    <p key={i} className="m-0 mb-[19px]">
-                      {text}
-                    </p>
-                  ))}
-                </div>
-
-                {dayEntry && (
-                  <div className="mt-6 p-[18px] rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-                    <div className="flex items-center gap-2">
-                      <span className={EYEBROW}>YOUR REFLECTION</span>
-                      <span className="flex-1" />
-                      <span className={MICRO}>
-                        {new Date(dayEntry.created_at).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-[15px] leading-[1.7] opacity-85 mt-2.5 whitespace-pre-line">
-                      {entryBody(dayEntry.content)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="sticky bottom-0 px-4 md:px-6 py-3.5 border-t border-[var(--ds-line)] bg-[var(--ds-bg)]">
-            <div className="w-[min(1160px,100%-8px)] mx-auto flex items-center gap-3.5 flex-wrap">
-              <button
-                onClick={() => {
-                  setDraft(dayEntry ? entryBody(dayEntry.content) : "");
-                  setStage("write");
-                }}
-                className={`${PRIMARY_BTN} px-6 py-3`}
-              >
-                {dayEntry ? "Write again" : "Write today's reflection"}
-              </button>
-              <span className="text-[12.5px] text-[var(--ds-text-muted)]">
-                {dayEntry ? "You already wrote for this day." : "About 5 minutes"}
+        {startDay ? (
+          <div className="jf-sheet-foot">
+            <span className="jf-bar-text">
+              <b>{allDone ? "Journey complete" : started ? "Your place is kept" : "Ready when you are"}</b>
+              <span>
+                Day {startDay.day} · {startDay.title} · {timeText.toLowerCase()}
               </span>
-              <span className="flex-1" />
-              {isLastDay ? (
-                <button onClick={() => setStage("overview")} className={GHOST_BTN}>
-                  Back to journey
-                </button>
-              ) : (
-                <button
-                  onClick={() => (nextBlocked ? setPaywallOpen(true) : openDay(dayIndex + 1))}
-                  className={GHOST_BTN}
-                >
-                  Next day →
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══ DAY — WRITE ══ */}
-      {stage === "write" && day && (
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1">
-            <div className="w-[min(720px,100%-36px)] md:w-[min(720px,100%-48px)] mx-auto pt-[34px] pb-5">
-              <button
-                onClick={() => setPromptOpen((v) => !v)}
-                className="flex items-center gap-2 text-[12.5px] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors"
-              >
-                <ChevronRight
-                  className={`w-3 h-3 transition-transform ${promptOpen ? "rotate-90" : ""}`}
-                  strokeWidth={2.4}
-                />
-                {promptOpen ? "Hide the prompt" : "Show the prompt"}
-              </button>
-
-              {promptOpen && (
-                <div className="mt-3 p-4 rounded-2xl border border-[var(--ds-line)] bg-[var(--ds-surface)]">
-                  <p className="text-[14.5px] leading-[1.7] opacity-80 m-0">{dayParas[0]}</p>
-                  {day.deeper && (
-                    <p className="text-base font-medium leading-[1.55] mt-3 mb-0">{day.deeper}</p>
-                  )}
-                </div>
-              )}
-
-              <textarea
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Begin here…"
-                className="w-full min-h-[50vh] mt-5 bg-transparent border-none text-[17px] leading-[1.8] text-[var(--ds-text)] resize-none"
-              />
-              {error && <p className="text-[12.5px] text-[var(--ds-danger)]">{error}</p>}
-            </div>
-          </div>
-
-          <div className="sticky bottom-0 px-4 md:px-6 py-3.5 border-t border-[var(--ds-line)] bg-[var(--ds-bg)]">
-            <div className="w-[min(720px,100%-8px)] mx-auto flex items-center gap-2.5 flex-wrap">
-              <span className={MICRO}>{wordCount(draft)} WORDS</span>
-              <span className="flex-1" />
-              <button onClick={() => setStage("read")} className={GHOST_BTN}>
-                Back to prompt
-              </button>
-              <button onClick={saveReflection} disabled={saving || !draft.trim()} className={PRIMARY_BTN}>
-                {saving ? "Saving…" : "Save reflection"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══ DAY — DONE ══ */}
-      {stage === "done" && day && (
-        <div className="flex-1 grid place-items-center p-10">
-          <div className="max-w-[520px] text-center">
-            <span className="w-14 h-14 mx-auto rounded-full grid place-items-center bg-[var(--ds-accent)] text-[var(--ds-on-accent)]">
-              <Check className="w-[22px] h-[22px]" strokeWidth={2.2} />
             </span>
-            <h1 className="text-[30px] font-semibold leading-[1.2] mt-5 mb-2.5">
-              Day {day.day} is written
-            </h1>
-            <p className="text-[15px] leading-[1.7] opacity-80 max-w-[44ch] mx-auto mb-[26px]">
-              {isLastDay
-                ? "That is the last day of this journey. What you wrote stays in your journal."
-                : "Tomorrow's day is waiting whenever you are. What you wrote stays in your journal."}
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <button onClick={() => setStage("overview")} className={PRIMARY_BTN}>
-                Back to journey
-              </button>
-              <button onClick={() => setStage("read")} className={GHOST_BTN}>
-                See my reflection
-              </button>
-            </div>
+            <Button
+              onClick={() => {
+                setAboutOpen(false);
+                overviewCta.onClick();
+              }}
+            >
+              {overviewCta.label}
+            </Button>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  ) : null;
 
-            {locked && (
-              <div className="flex items-center gap-3 text-left mt-7 p-4 rounded-2xl border border-[var(--ds-gold)] bg-[var(--ds-gold-soft)]">
-                <div className="flex-1">
-                  <div className="text-sm font-semibold">Day {day.day + 1} is part of Plus</div>
-                  <div className="text-[12.5px] text-[var(--ds-text-muted)]">
-                    Unlock the remaining days and the full library.
-                  </div>
-                </div>
-                <button onClick={() => setPaywallOpen(true)} className={GOLD_BTN}>
-                  Unlock
-                </button>
-              </div>
+  /* ── Day: read, then write ──────────────────────────────────── */
+  const dayView = day ? (
+    <main className="jf-main jf-split">
+      <div className="jf-col-read">
+        <div className="jf-stack">
+          <span className="text-overline jf-over">
+            Day {day.day} of {total}
+          </span>
+          <h1 id="jf-title" className="jf-h1">
+            {day.title}
+          </h1>
+          <span className="jf-meta">
+            <Clock size={16} aria-hidden="true" />
+            {timeText} · read, then write
+          </span>
+        </div>
+
+        {dayParas.length > 0 ? (
+          <div className="jf-read">
+            {dayParas.map((text, i) => (
+              <p key={i}>{text}</p>
+            ))}
+          </div>
+        ) : null}
+
+        {day.purpose ? (
+          <aside aria-labelledby="jf-whyday" className="jf-why">
+            <h2 id="jf-whyday" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+              Today&apos;s intention
+            </h2>
+            <p>{day.purpose}</p>
+          </aside>
+        ) : null}
+      </div>
+
+      <section aria-labelledby="jf-write" className="jf-col-write">
+        <div className="jf-write-head">
+          <h2 id="jf-write" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+            Your reflection
+          </h2>
+          {/* No live save status while writing: the draft is kept quietly. */}
+          {!editing && dayEntry ? (
+            <span className="jf-status">
+              <CircleCheck size={14} aria-hidden="true" />
+              Written {shortDate(dayEntry.created_at)}
+            </span>
+          ) : null}
+        </div>
+        {!editing && dayEntry ? (
+          <div className="jf-box jf-written" aria-labelledby="jf-write jf-title" role="document">
+            {paragraphs(entryBody(dayEntry.content)).map((text, i) => (
+              <p key={i}>{text}</p>
+            ))}
+          </div>
+        ) : (
+          <textarea
+            className="jf-box"
+            aria-labelledby="jf-write jf-title"
+            placeholder="Start with the moment that comes to mind. A few lines are enough."
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            autoFocus={Boolean(dayEntry)}
+          />
+        )}
+        {error ? (
+          <p className="jf-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {day.deeper ? (
+          <details className="jf-deeper">
+            <summary>
+              <Sparkles size={16} aria-hidden="true" />
+              Go deeper
+              <ChevronDown size={16} className="jf-chev" aria-hidden="true" />
+            </summary>
+            <p>{day.deeper}</p>
+          </details>
+        ) : null}
+      </section>
+    </main>
+  ) : null;
+
+  /* ── Day complete ───────────────────────────────────────────── */
+  const nextDay = days[dayIndex + 1];
+  const nextStatus = nextDay ? statusOf(dayIndex + 1) : null;
+  const doneView = day ? (
+    <main className="jf-main jf-split jf-split-center">
+      <div className="jf-stack">
+        <span className="jf-badge" aria-hidden="true">
+          <Check size={24} />
+        </span>
+        <span className="text-overline jf-over">
+          Day {day.day} of {total} · Complete
+        </span>
+        <h1 id="jf-title" className="jf-h1">
+          Day {day.day} complete.
+        </h1>
+        <p role="status" className="jf-lede" style={{ marginTop: 4, fontSize: 20, lineHeight: "32px" }}>
+          Thank you for noticing. Your reflection is saved in your journal, and only you can read it.
+        </p>
+        {savedEntry ? (
+          <blockquote className="jf-quote" style={{ marginTop: 12 }}>
+            <q>{keyLine(entryBody(savedEntry.content))}</q>
+            <span className="text-body-sm" style={{ color: "var(--muted-foreground)" }}>
+              {longDateTime(savedEntry.created_at)}
+            </span>
+          </blockquote>
+        ) : null}
+        <div className="jf-actions" style={{ marginTop: 16 }}>
+          <Button size="lg" href="/dashboard">
+            Back to Home
+          </Button>
+          <Link className="jf-link" href={savedEntry ? `/journal?r=${savedEntry.id}` : "/journal"}>
+            Read it in Journal
+          </Link>
+        </div>
+      </div>
+
+      {nextDay ? (
+        <section aria-labelledby="jf-next" className="jf-panel">
+          <h2 id="jf-next" className="text-overline" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)" }}>
+            {nextStatus === "plus" ? <Lock size={14} aria-hidden="true" /> : <Compass size={14} aria-hidden="true" />}
+            Day {nextDay.day} · {nextStatus === "plus" ? "Part of Plus" : "Up next"}
+          </h2>
+          <p className="jf-next-title">{nextDay.title}</p>
+          {nextDay.purpose ? <p className="jf-next-text">{nextDay.purpose}</p> : null}
+          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
+            <span className="jf-meta jf-meta-soft">
+              <Clock size={16} aria-hidden="true" />
+              Whenever you&apos;re ready. There is nothing to catch up on.
+            </span>
+            {nextStatus === "plus" ? (
+              <Button variant="secondary" size="sm" icon={Lock} onClick={() => setPaywallOpen(true)}>
+                Unlock Plus
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => openDay(dayIndex + 1)}>
+                Begin Day {nextDay.day}
+              </Button>
             )}
           </div>
-        </div>
-      )}
+        </section>
+      ) : null}
+    </main>
+  ) : null;
 
-      {/* ══ PAYWALL SHEET ══ */}
-      {paywallOpen && (
-        <div className="fixed inset-0 z-30 grid place-items-center p-8 bg-black/55">
-          <div className="w-[min(480px,100%)] rounded-[18px] border border-[var(--ds-line)] bg-[var(--ds-surface)] p-[26px] pb-5">
-            <div className="text-[10px] font-bold tracking-[0.13em] text-[var(--ds-gold)]">
-              HUMANSOUL PLUS
-            </div>
-            <h2 className="text-[27px] font-semibold leading-[1.2] mt-2.5 mb-2">
-              Every journey, always open
+  /* ── Journey complete ───────────────────────────────────────── */
+  const written = days
+    .map((d, i) => ({ d, entry: entryFor(i) }))
+    .filter((x): x is { d: (typeof days)[number]; entry: ReflectionRow } => Boolean(x.entry));
+  const dates = written.map((x) => x.entry.created_at).sort();
+  const closingParas = paragraphs(journey.completion_message);
+  const completeView = (
+    <main className="jf-main" style={{ gap: 48 }}>
+      <div className="jf-stack">
+        <span className="text-overline jf-over">
+          Journey complete · {total} of {total} days
+        </span>
+        <h1 id="jf-title" className="jf-h1">
+          You&apos;ve walked all {NUMBER_WORDS[total] ?? total} days.
+        </h1>
+        <p className="jf-meta jf-meta-soft" style={{ margin: "4px 0 0", fontSize: 18, lineHeight: "28px" }}>
+          {journey.title}
+          {dates.length ? ` · ${monthDay(dates[0])} – ${monthDay(dates[dates.length - 1])}` : ""}
+        </p>
+      </div>
+
+      <div className="jf-read">
+        {(closingParas.length
+          ? closingParas
+          : [
+              "You have reached the end of this journey, but not the end of the questions it explored.",
+              "Some reflections may feel complete. Others may remain unfinished. That is part of being human.",
+            ]
+        ).map((text, i) => (
+          <p key={i}>{text}</p>
+        ))}
+      </div>
+
+      {!closingEntry ? (
+        <section aria-labelledby="jf-closing" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <h2 id="jf-closing" className="jf-h3">
+              A closing reflection
             </h2>
-            <p className="text-sm leading-[1.65] opacity-80 m-0 mb-[18px]">
-              Guided journeys, new ones each month, and your complete journal history kept for you.
+            <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+              Optional. {questions.length ? "Choose one question, or none." : "Write whatever stays with you."}
             </p>
-
-            <div className="flex flex-col gap-2.5 mb-5">
-              {PLUS_PERKS.map((text) => (
-                <div
-                  key={text}
-                  className="flex items-start gap-2.5 text-[13.5px] leading-[1.5] text-[var(--ds-text-mid)]"
-                >
-                  <span className="text-[var(--ds-gold)] font-bold flex-shrink-0">✓</span>
-                  {text}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2.5 mb-3.5">
-              {PLANS.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setPlan(p.key)}
-                  className={`flex-1 text-left px-4 py-3.5 rounded-xl border transition-colors ${
-                    plan === p.key
-                      ? "border-[var(--ds-gold)] bg-[var(--ds-gold-soft)]"
-                      : "border-[var(--ds-line-strong)]"
-                  }`}
-                >
-                  <span className="block text-[11px] font-semibold tracking-[0.08em] opacity-70">
-                    {p.label}
-                  </span>
-                  <span className="block text-[22px] font-semibold mt-1">{p.price}</span>
-                  <span className="block text-[11.5px] opacity-70 mt-0.5">{p.note}</span>
+          </div>
+          {questions.length ? (
+            <div role="radiogroup" aria-label="Closing question" className="jf-chips">
+              {questions.map((q, i) => (
+                <button key={i} type="button" role="radio" className="jf-chip" aria-checked={question === i} onClick={() => setQuestion(i)}>
+                  {question === i ? <CircleCheck size={18} aria-hidden="true" /> : <Circle size={18} aria-hidden="true" />}
+                  <span>{q}</span>
                 </button>
               ))}
             </div>
-
-            <Link href="/subscription" className={`${GOLD_BTN} block w-full text-center py-3.5`}>
-              Start Plus
+          ) : null}
+          <textarea
+            className="jf-box"
+            aria-label="Your closing reflection"
+            placeholder="Write as much or as little as you like."
+            value={closing}
+            onChange={(e) => setClosing(e.target.value)}
+            style={{ marginTop: 4, minHeight: 180 }}
+          />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 20 }}>
+            <Link className="jf-link" href="/dashboard">
+              Skip for now
             </Link>
-            <button
-              onClick={() => setPaywallOpen(false)}
-              className="w-full mt-2 p-2.5 text-[12.5px] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
-            >
-              Not now
-            </button>
+            <Button onClick={saveClosing} loading={closingSaving} disabled={!closing.trim()}>
+              {closingSaving ? "Saving…" : "Save closing reflection"}
+            </Button>
+          </div>
+        </section>
+      ) : (
+        <blockquote className="jf-quote">
+          <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
+            Your closing reflection
+          </span>
+          <q>{keyLine(entryBody(closingEntry.content))}</q>
+        </blockquote>
+      )}
+
+      {written.length ? (
+        <section aria-labelledby="jf-look" style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+            <h2 id="jf-look" className="text-overline" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+              Your {NUMBER_WORDS[written.length] ?? written.length} reflections
+            </h2>
+            <Link className="jf-link" href="/journal">
+              Read all
+            </Link>
+          </div>
+          <ol role="list" className="jf-look">
+            {written.map(({ d, entry }) => (
+              <li key={d.day}>
+                <span className="jf-num" aria-hidden="true">
+                  {String(d.day).padStart(2, "0")}
+                </span>
+                <Link href={`/journal?r=${entry.id}`} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, color: "inherit", textDecoration: "none" }}>
+                  <span className="jf-look-title">{d.title}</span>
+                  <span className="jf-look-text">{firstLine(entryBody(entry.content))}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="jf-nextj" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h2 id="jf-nextj" className="text-overline" style={{ margin: "0 0 4px", color: "var(--muted-foreground)" }}>
+          When you&apos;re ready
+        </h2>
+        {suggestions.length ? (
+          <div className="jf-nexts">
+            {suggestions.map((s) => (
+              <Link key={s.id} className="jf-next" href={`/journeys/${s.id}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.image} alt="" />
+                <span>{s.title}</span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, paddingTop: 8 }}>
+          <Link className="jf-link" href="/journeys">
+            Explore all journeys
+          </Link>
+          <Button variant="secondary" href="/dashboard">
+            Back to Home
+          </Button>
+        </div>
+      </section>
+    </main>
+  );
+
+  /* ── Bottom bar ─────────────────────────────────────────────── */
+  const bar =
+    stage === "day" && day ? (
+      <div className="jf-bar">
+        <div className="jf-bar-in">
+          <span style={{ flex: 1 }} />
+          {!editing && dayEntry ? (
+            <>
+              <Button variant="secondary" icon={PenLine} onClick={() => setEditing(true)} full={false}>
+                Edit
+              </Button>
+              {!returnTo && days[dayIndex + 1] && (statusOf(dayIndex + 1) === "today" || statusOf(dayIndex + 1) === "done") ? (
+                <Button onClick={() => openDay(dayIndex + 1)} full={false}>
+                  Day {days[dayIndex + 1].day}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </Button>
+              ) : returnTo ? (
+                <Button onClick={exitToJournal} full={false}>
+                  Back to Journal
+                </Button>
+              ) : (
+                <Button onClick={toOverview} full={false}>
+                  Journey overview
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {dayEntry ? (
+                <button
+                  type="button"
+                  className="jf-link"
+                  onClick={() => {
+                    writeDraft(key, "");
+                    setDraft(entryBody(dayEntry.content));
+                    setDraftState("idle");
+                    setEditing(false);
+                  }}
+                >
+                  Cancel
+                </button>
+              ) : null}
+              <Button onClick={saveReflection} loading={saving} disabled={!draft.trim()} full={false}>
+                {saving ? "Saving…" : dayEntry ? `Update Day ${day.day}` : `Save Day ${day.day}`}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    ) : null;
+
+  return (
+    <div className={`jf jf-stage-${stage}${stage === "overview" ? " jf-overview" : " jf-day"}`}>
+      <div className="jf-hero" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={image} alt="" />
+      </div>
+
+      {header}
+      {stage === "overview" && overview}
+      {stage === "overview" && sheet}
+      {stage === "day" && dayView}
+      {stage === "done" && doneView}
+      {stage === "complete" && completeView}
+      {bar}
+
+      {toast ? (
+        <div className="jf-toast" role="status" aria-live="polite">
+          <span className="jf-toast-ic" aria-hidden="true">
+            <Check size={16} />
+          </span>
+          <span style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ font: "600 14px/20px var(--hs-font-sans)" }}>Saved to your journal</span>
+            <span className="text-caption" style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>
+              {journey.title}
+              {stage === "complete" && closingEntry ? ` · ${CLOSING_TAG}` : day ? ` · Day ${day.day}` : ""}
+            </span>
+          </span>
+        </div>
+      ) : null}
+
+      {/* ── The days, from the header ── */}
+      {indexOpen ? (
+        <div className="jf-scrim" onClick={() => setIndexOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="fi-title" className="jf-dialog" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span className="text-overline" style={{ color: "var(--muted-foreground)" }}>
+                  The {NUMBER_WORDS[total] ?? total} days
+                </span>
+                <h2 id="fi-title" style={{ margin: 0, font: "600 22px/28px var(--jf-sans)", letterSpacing: "-0.01em" }}>
+                  {journey.title}
+                </h2>
+              </div>
+              <Button variant="ghost" size="icon" icon={X} aria-label="Close" onClick={() => setIndexOpen(false)} />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ flex: 1, display: "flex" }}>
+                <SegmentProgress total={total} done={doneCount} current={day?.day} width="100%" />
+              </span>
+              <span className="text-caption" style={{ fontWeight: 400, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
+                {doneCount} of {total} written
+              </span>
+            </div>
+            <ol role="list" className="jf-days" style={{ margin: "0 -12px" }}>
+              {days.map((d, i) => {
+                const status = statusOf(i);
+                const here = i === dayIndex && stage === "day";
+                const entry = entryFor(i);
+                const sub =
+                  status === "done"
+                    ? `Day ${d.day} · Written ${entry ? shortDate(entry.created_at) : ""}${here ? " · You are here" : " · Read again"}`
+                    : status === "today"
+                      ? `Day ${d.day} · Today${here ? " · You are here" : ""}`
+                      : status === "plus"
+                        ? `Day ${d.day} · Included with Plus`
+                        : `Day ${d.day} · After Day ${d.day - 1}`;
+                const step = (
+                  <span className={`jf-step${status === "done" ? " jf-step-done" : status === "today" ? " jf-step-now" : ""}`} aria-hidden="true">
+                    {status === "done" ? <Check size={14} /> : status === "today" ? d.day : <Lock size={14} />}
+                  </span>
+                );
+                const text = (
+                  <span style={{ minWidth: 0 }}>
+                    <span className="jf-daytitle">{d.title}</span>
+                    <span className="jf-daytext">{sub}</span>
+                  </span>
+                );
+                return (
+                  <li key={d.day}>
+                    {status === "locked" ? (
+                      <div className="jf-dayrow" aria-disabled="true">
+                        {step}
+                        {text}
+                      </div>
+                    ) : (
+                      <button type="button" className="jf-dayrow" aria-current={here ? "step" : undefined} onClick={() => openDay(i)}>
+                        {step}
+                        {text}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            <div className="jf-dialog-foot">
+              <span className="text-caption" style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>
+                One day opens at a time.
+              </span>
+              <button type="button" className="jf-link" onClick={toOverview}>
+                Journey overview
+                <ChevronRight size={14} aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      ) : null}
+
+      {/* ── Plus ── */}
+      {paywallOpen ? (
+        <div className="jf-scrim" onClick={() => setPaywallOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="pw-title" className="jf-dialog" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span className="text-overline" style={{ color: "var(--primary)" }}>
+                HumanSoul Plus
+              </span>
+              <h2 id="pw-title" className="text-h3" style={{ margin: 0 }}>
+                Every journey, always open
+              </h2>
+              <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
+                Day one is open to everyone. Plus unlocks the remaining {Math.max(total - 1, 0)} days, every other journey and your full journal history.
+              </p>
+            </div>
+            <ul role="list" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              {PLUS_PERKS.map((text) => (
+                <li key={text} style={{ display: "flex", gap: 10, alignItems: "flex-start", font: "400 14px/20px var(--hs-font-sans)" }}>
+                  <CircleCheck size={18} aria-hidden="true" style={{ flex: "none", color: "var(--primary)" }} />
+                  {text}
+                </li>
+              ))}
+            </ul>
+            <div style={{ display: "flex", gap: 10 }}>
+              {PLANS.map((p) => (
+                <button key={p.key} type="button" className="jf-plan" aria-pressed={plan === p.key} onClick={() => setPlan(p.key)}>
+                  <span style={{ display: "block", font: "600 11px/16px var(--hs-font-sans)", letterSpacing: ".08em", opacity: 0.75 }}>{p.label}</span>
+                  <span style={{ display: "block", font: "600 22px/28px var(--hs-font-sans)", marginTop: 4 }}>{p.price}</span>
+                  <span style={{ display: "block", font: "400 12px/16px var(--hs-font-sans)", opacity: 0.75 }}>{p.note}</span>
+                </button>
+              ))}
+            </div>
+            <Button full href="/subscription">
+              Start Plus
+            </Button>
+            <Button variant="ghost" full onClick={() => setPaywallOpen(false)}>
+              Not now
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
