@@ -2,28 +2,38 @@ import React from "react";
 import { getUsers } from "@/lib/actions/users";
 import AdminUsersBrowser from "@/components/admin/AdminUsersBrowser";
 
+const DAY = 86_400_000;
+
 export default async function AdminUsersPage() {
   const users = await getUsers();
+  const now = Date.now();
+  const since = (iso: string | null) => (iso ? now - new Date(iso).getTime() : Infinity);
 
+  const total = users.length;
   const plus = users.filter((u) => u.plan === "Plus").length;
-  const dormant = users.filter(
-    (u) => !u.lastActive || Date.now() - new Date(u.lastActive).getTime() >= 30 * 86_400_000
-  ).length;
+  const inactive = users.filter((u) => since(u.lastActive) >= 30 * DAY).length;
+  const fresh = users.filter((u) => since(u.created_at) < 7 * DAY);
+  const freshWriting = fresh.filter((u) => u.entries > 0).length;
+  const activeWeek = users.filter((u) => u.entriesWeek > 0).length;
+  const entriesWeek = users.reduce((n, u) => n + u.entriesWeek, 0);
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+
+  const kpis = [
+    { label: "New this week", value: fresh.length, note: fresh.length ? `${freshWriting} wrote their first entry` : "No new accounts yet" },
+    { label: "Active this week", value: activeWeek, note: `${pct(activeWeek)}% of everyone` },
+    { label: "On Plus", value: plus, note: `${pct(plus)}% of accounts` },
+    {
+      label: "Entries this week",
+      value: entriesWeek,
+      note: activeWeek ? `${(entriesWeek / activeWeek).toFixed(1)} per active person` : "Nobody wrote this week",
+    },
+  ];
 
   return (
-    <div className="w-full max-w-[1160px] mx-auto">
-      <div className="flex items-end gap-5 flex-wrap">
-        <div className="flex-1 min-w-[260px]">
-          <h1 className="text-[26px] md:text-[31px] font-semibold tracking-[-0.015em] m-0 mb-1.5 text-[var(--admin-text)]">
-            Users
-          </h1>
-          <p className="text-[13.5px] text-[var(--admin-text-muted)] m-0">
-            {users.length} accounts · {plus} on Plus · {dormant} inactive for a month
-          </p>
-        </div>
-      </div>
-
-      <AdminUsersBrowser users={users} />
-    </div>
+    <AdminUsersBrowser
+      users={users}
+      summary={`${total} ${total === 1 ? "account" : "accounts"} · ${plus} on Plus · ${inactive} inactive for a month`}
+      kpis={kpis}
+    />
   );
 }
