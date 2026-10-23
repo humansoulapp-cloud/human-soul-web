@@ -5,6 +5,7 @@ import JourneysFilter from "@/components/JourneysFilter";
 import { journeyImage } from "@/lib/journey-images";
 import { findActiveJourney, type Journey, type ReflectionRow } from "@/lib/journal";
 import { JourneyProgressCard } from "@/components/journeys/glass-cards";
+import { EARLIEST_TIME_ZONE } from "@/lib/journey-days";
 
 export default async function JourneysPage() {
   const journeys = await getJourneys();
@@ -16,6 +17,7 @@ export default async function JourneysPage() {
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
   let isAdmin = false;
+  let timeZone: string | null = null;
 
   if (user) {
     const [{ data: reflectionRows }, { data: profile }] = await Promise.all([
@@ -26,9 +28,10 @@ export default async function JourneysPage() {
     reflections = (reflectionRows ?? []) as ReflectionRow[];
     subscribed = Boolean(profile?.plan && profile.plan !== "free");
     isAdmin = profile?.role === "admin";
+    timeZone = (profile?.timezone as string | null | undefined) ?? null;
   }
 
-  const active = findActiveJourney(journeys as unknown as Journey[], reflections);
+  const active = findActiveJourney(journeys as unknown as Journey[], reflections, { timeZone: timeZone ?? EARLIEST_TIME_ZONE });
   const categories = Array.from(new Set(journeys.map((j) => j.category).filter(Boolean))) as string[];
 
   const activeCard = active ? (
@@ -42,6 +45,7 @@ export default async function JourneysPage() {
       total={active.totalDays}
       done={active.completedDays}
       todayTitle={active.nextDay.title}
+      waitingForMorning={active.waitingForMorning}
     />
   ) : null;
 

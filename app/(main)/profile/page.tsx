@@ -11,6 +11,8 @@ import {
   Compass,
   Download,
   Globe,
+  KeyRound,
+  LifeBuoy,
   LogOut,
   Mail,
   Monitor,
@@ -65,6 +67,12 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+
+  const [pwNew, setPwNew] = useState("");
+  const [pwAgain, setPwAgain] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwDone, setPwDone] = useState(false);
 
   const [deleteAsked, setDeleteAsked] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -149,6 +157,28 @@ export default function ProfilePage() {
     setName(nextName);
     setProfile((p) => ({ ...p, ...patch }));
     setSavedAt(Date.now());
+  };
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError("");
+    setPwDone(false);
+    if (pwNew.length < 8) return setPwError("Use at least 8 characters.");
+    if (pwNew !== pwAgain) return setPwError("The two passwords don't match.");
+    setPwSaving(true);
+    const { error: updateError } = await createClient().auth.updateUser({ password: pwNew });
+    setPwSaving(false);
+    if (updateError) {
+      /* Supabase can ask for a recent sign-in before a password change. */
+      return setPwError(
+        /reauth|recent|nonce/i.test(updateError.message)
+          ? "For your security, sign out and back in, then change your password."
+          : updateError.message
+      );
+    }
+    setPwNew("");
+    setPwAgain("");
+    setPwDone(true);
   };
 
   const savePreference = async (patch: Partial<Profile>) => {
@@ -325,6 +355,54 @@ export default function ProfilePage() {
             </div>
           </section>
 
+          <section className="ac-psec" aria-labelledby="p-pw">
+            <div className="ac-psec-h">
+              <div>
+                <h2 id="p-pw" className="ac-h3">
+                  Password
+                </h2>
+                <span className="ac-psec-n">At least 8 characters. You stay signed in on this device.</span>
+              </div>
+              {pwDone ? (
+                <span className="ac-saved" role="status">
+                  <Check className="ai" size={14} aria-hidden="true" />
+                  Password changed
+                </span>
+              ) : null}
+            </div>
+            <form className="ac-g2" onSubmit={changePassword}>
+              <div className="ac-f">
+                <label htmlFor="p-pw1">New password</label>
+                <div className="ac-in">
+                  <KeyRound className="ai" size={18} aria-hidden="true" />
+                  <input
+                    id="p-pw1"
+                    type="password"
+                    autoComplete="new-password"
+                    value={pwNew}
+                    onChange={(e) => {
+                      setPwNew(e.target.value);
+                      setPwDone(false);
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="ac-f">
+                <label htmlFor="p-pw2">Repeat it</label>
+                <div className="ac-in">
+                  <KeyRound className="ai" size={18} aria-hidden="true" />
+                  <input id="p-pw2" type="password" autoComplete="new-password" value={pwAgain} onChange={(e) => setPwAgain(e.target.value)} />
+                </div>
+              </div>
+              <div className="ac-f" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "center", gap: 16 }}>
+                <button type="submit" className="ac-btn ac-btn-sec" disabled={pwSaving || !pwNew || !pwAgain}>
+                  {pwSaving ? "Changing…" : "Change password"}
+                </button>
+                {pwError ? <p className="ac-err">{pwError}</p> : null}
+              </div>
+            </form>
+          </section>
+
           <section className="ac-psec" aria-labelledby="p-rem">
             <div>
               <h2 id="p-rem" className="ac-h3">
@@ -469,6 +547,31 @@ export default function ProfilePage() {
                 </span>
                 <ChevronRight className="end" size={18} aria-hidden="true" />
               </Link>
+            </div>
+          </section>
+
+          <section className="ac-psec" aria-labelledby="p-help">
+            <div>
+              <h2 id="p-help" className="ac-h3">
+                If things feel heavy
+              </h2>
+              <span className="ac-psec-n">HumanSoul is a space to reflect. It is not therapy or medical care.</span>
+            </div>
+            <div className="ac-acts">
+              <a className="ac-actrow" href="tel:988">
+                <span className="ac-row-i">
+                  <LifeBuoy size={18} aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="ac-row-t" style={{ display: "block" }}>
+                    Call or text 988
+                  </span>
+                  <span className="ac-row-n" style={{ display: "block" }}>
+                    The 988 Suicide &amp; Crisis Lifeline, free and open 24/7 in the US. Elsewhere, call your local emergency number.
+                  </span>
+                </span>
+                <ChevronRight className="end" size={18} aria-hidden="true" />
+              </a>
             </div>
           </section>
 

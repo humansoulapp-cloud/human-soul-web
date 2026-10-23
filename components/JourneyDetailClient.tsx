@@ -27,6 +27,7 @@ import { journeyImage } from "@/lib/journey-images";
 import { PLANS, PLUS_PERKS } from "@/lib/plans";
 import type { ReflectionRow } from "@/lib/journal";
 import { Button, SegmentProgress } from "@/components/ds";
+import { nextDayHasOpened } from "@/lib/journey-days";
 
 /**
  * The journey flow in focus mode, as designed on the canvas
@@ -36,7 +37,8 @@ import { Button, SegmentProgress } from "@/components/ds";
  */
 
 type Stage = "overview" | "day" | "done" | "complete";
-type DayStatus = "done" | "today" | "locked" | "plus";
+/* "tomorrow": the next day, written for yesterday's step, waiting for the morning. */
+type DayStatus = "done" | "today" | "tomorrow" | "locked" | "plus";
 type DraftState = "idle" | "saving" | "saved";
 export type JourneySuggestion = { id: string; title: string; image: string };
 
@@ -107,6 +109,7 @@ export default function JourneyDetailClient({
   journey,
   reflections,
   subscribed,
+  timeZone = null,
   initialDay,
   suggestions = [],
   returnTo,
@@ -115,6 +118,8 @@ export default function JourneyDetailClient({
   journey: JourneyRow;
   reflections: ReflectionRow[];
   subscribed: boolean;
+  /** The time zone saved in the profile; without one, the device's is used. */
+  timeZone?: string | null;
   initialDay?: number;
   /** Opened from Journal: Exit goes back there (with the shared-text transition). */
   returnTo?: string;
@@ -178,7 +183,22 @@ export default function JourneyDetailClient({
     });
   }, [reflections]);
 
-  /** The first day without a reflection is "today"; the rest wait their turn. */
+  /* The clock that opens the next day each morning. It starts on the profile's
+     time zone (or UTC) so the server and browser render alike, then moves to
+     the device's zone and checks again every minute while the page is open. */
+  const [clock, setClock] = useState<{ now: Date; zone: string | null }>(() => ({ now: new Date(), zone: timeZone ?? "UTC" }));
+  useEffect(() => {
+    const zone = timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tick = () => setClock({ now: new Date(), zone });
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 60_000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(id);
+    };
+  }, [timeZone]);
+
+  /** The first day without a reflection is up next; the rest wait their turn. */
   const nextIndex = useMemo(() => {
     const i = days.findIndex((_, idx) => !entryFor(idx));
     return i === -1 ? total - 1 : i;
@@ -188,16 +208,19 @@ export default function JourneyDetailClient({
     (index: number): DayStatus => {
       if (locked && index > 0) return "plus";
       if (entryFor(index)) return "done";
-      return index === nextIndex ? "today" : "locked";
+      if (index !== nextIndex) return "locked";
+      const previous = index > 0 ? entryFor(index - 1) : null;
+      if (previous && !nextDayHasOpened(previous.created_at, clock.zone, clock.now)) return "tomorrow";
+      return "today";
     },
-    [locked, entryFor, nextIndex]
+    [locked, entryFor, nextIndex, clock]
   );
 
   /* Never show a day that isn't open yet, whatever the address says. */
   useEffect(() => {
     if (stage !== "day") return;
     const st = statusOf(dayIndex);
-    if (st === "locked" || st === "plus") {
+    if (st === "locked" || st === "tomorrow" || st === "plus") {
       setStage("overview");
       if (st === "plus") setPaywallOpen(true);
       const url = new URL(window.location.href);
@@ -287,7 +310,7 @@ export default function JourneyDetailClient({
       const status = statusOf(index);
       setIndexOpen(false);
       if (status === "plus") return setPaywallOpen(true);
-      if (status === "locked") return;
+      if (status === "locked" || status === "tomorrow") return;
       setDayIndex(index);
       setStage("day");
       const url = new URL(window.location.href);
@@ -435,9 +458,12 @@ export default function JourneyDetailClient({
   const startIndex = allDone ? 0 : nextIndex;
   const startDay = days[startIndex];
   const started = doneCount > 0;
+  const waiting = !allDone && statusOf(startIndex) === "tomorrow";
   const overviewCta = allDone
     ? { label: "See your journey", onClick: () => setStage("complete") }
-    : { label: `${started ? "Continue" : "Begin"} Day ${startDay?.day ?? 1}`, onClick: () => openDay(startIndex) };
+    : waiting
+      ? { label: `Read Day ${days[startIndex - 1]?.day ?? 1} again`, onClick: () => openDay(startIndex - 1) }
+      : { label: `${started ? "Continue" : "Begin"} Day ${startDay?.day ?? 1}`, onClick: () => openDay(startIndex) };
   const overline = [journey.category, journey.featured ? "Featured" : null, journey.premium ? "Plus" : null].filter(Boolean).join(" · ");
 
   /* At a glance: the journey on the left, its days on a glass card on the right.
@@ -497,7 +523,7 @@ export default function JourneyDetailClient({
           <h2 id="jf-days">The {NUMBER_WORDS[total] ?? total} days</h2>
           <span>
             <Lock size={14} aria-hidden="true" />
-            One opens each day
+            One opens each morning
           </span>
         </div>
         <ol role="list" className="jf-gdays">
@@ -507,7 +533,17 @@ export default function JourneyDetailClient({
             const mark =
               status === "done" ? <Check size={14} aria-hidden="true" /> : status === "plus" ? <Lock size={13} aria-hidden="true" /> : d.day;
             const caption =
-              status === "today" ? (started ? "Up next" : "First") : status === "done" ? "Written" : status === "plus" ? "Plus" : null;
+              status === "today"
+                ? started
+                  ? "Up next"
+                  : "First"
+                : status === "tomorrow"
+                  ? "Tomorrow"
+                  : status === "done"
+                    ? "Written"
+                    : status === "plus"
+                      ? "Plus"
+                      : null;
             const inner = (
               <>
                 <span className="jf-gnum" aria-hidden="true">
@@ -610,7 +646,7 @@ export default function JourneyDetailClient({
                 </span>
                 <span>
                   <b>Private, at your pace</b>
-                  <span>Only you can read it. No streaks, no scores. One day opens at a time.</span>
+                  <span>Only you can read it. No streaks, no scores. A new day opens each morning.</span>
                 </span>
               </div>
             </div>
@@ -761,16 +797,18 @@ export default function JourneyDetailClient({
         <section aria-labelledby="jf-next" className="jf-panel">
           <h2 id="jf-next" className="text-overline" style={{ margin: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--muted-foreground)" }}>
             {nextStatus === "plus" ? <Lock size={14} aria-hidden="true" /> : <Compass size={14} aria-hidden="true" />}
-            Day {nextDay.day} · {nextStatus === "plus" ? "Part of Plus" : "Up next"}
+            Day {nextDay.day} · {nextStatus === "plus" ? "Part of Plus" : nextStatus === "tomorrow" ? "Tomorrow" : "Up next"}
           </h2>
           <p className="jf-next-title">{nextDay.title}</p>
           {nextDay.purpose ? <p className="jf-next-text">{nextDay.purpose}</p> : null}
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
             <span className="jf-meta jf-meta-soft">
               <Clock size={16} aria-hidden="true" />
-              Whenever you&apos;re ready. There is nothing to catch up on.
+              {nextStatus === "tomorrow"
+                ? "It opens tomorrow morning. Let today's reflection settle until then."
+                : "Whenever you're ready. There is nothing to catch up on."}
             </span>
-            {nextStatus === "plus" ? (
+            {nextStatus === "tomorrow" ? null : nextStatus === "plus" ? (
               <Button variant="secondary" size="sm" icon={Lock} onClick={() => setPaywallOpen(true)}>
                 Unlock Plus
               </Button>
@@ -1031,7 +1069,9 @@ export default function JourneyDetailClient({
                     ? `Day ${d.day} · Written ${entry ? shortDate(entry.created_at) : ""}${here ? " · You are here" : " · Read again"}`
                     : status === "today"
                       ? `Day ${d.day} · Today${here ? " · You are here" : ""}`
-                      : status === "plus"
+                      : status === "tomorrow"
+                        ? `Day ${d.day} · Opens tomorrow morning`
+                        : status === "plus"
                         ? `Day ${d.day} · Included with Plus`
                         : `Day ${d.day} · After Day ${d.day - 1}`;
                 const step = (
@@ -1047,7 +1087,7 @@ export default function JourneyDetailClient({
                 );
                 return (
                   <li key={d.day}>
-                    {status === "locked" ? (
+                    {status === "locked" || status === "tomorrow" ? (
                       <div className="jf-dayrow" aria-disabled="true">
                         {step}
                         {text}
@@ -1064,7 +1104,7 @@ export default function JourneyDetailClient({
             </ol>
             <div className="jf-dialog-foot">
               <span className="text-caption" style={{ fontWeight: 400, color: "var(--muted-foreground)" }}>
-                One day opens at a time.
+                A new day opens each morning.
               </span>
               <button type="button" className="jf-link" onClick={toOverview}>
                 Journey overview

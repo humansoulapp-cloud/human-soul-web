@@ -21,6 +21,7 @@ export function JourneyProgressCard({
   done,
   todayTitle,
   tagline,
+  waitingForMorning = false,
   variant = "wide",
 }: {
   href: string;
@@ -34,6 +35,8 @@ export function JourneyProgressCard({
   /** The day to write today. Omit for a journey not started yet (Home offers it with its tagline). */
   todayTitle?: string | null;
   tagline?: string | null;
+  /** Today's day is written; the next one opens tomorrow morning. */
+  waitingForMorning?: boolean;
   /** "wide" on the Journeys page, "home" in the Home grid (button under the text, on the left). */
   variant?: "wide" | "home";
 }) {
@@ -64,15 +67,15 @@ export function JourneyProgressCard({
               </span>
             </div>
             <p className="text-body-lg gl-today">
-              Today: <b>{todayTitle}</b>
+              {waitingForMorning ? "Tomorrow" : "Today"}: <b>{todayTitle}</b>
             </p>
           </>
         ) : tagline ? (
           <p className="text-body-lg gl-today">{tagline}</p>
         ) : null}
         <div className="gl-cta-row">
-          <Link className="gl-cta" href={dayHref}>
-            Begin Day {day}
+          <Link className="gl-cta" href={waitingForMorning ? href : dayHref}>
+            {waitingForMorning ? "See your journey" : `Begin Day ${day}`}
             <span className="gl-cta-arrow" aria-hidden="true">
               <ArrowRight size={22} strokeWidth={2.2} />
             </span>
