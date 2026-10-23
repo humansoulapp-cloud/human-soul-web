@@ -613,7 +613,7 @@ export default function JourneyEditor({
                 [BookOpen, "A short daily reading", "A few calm paragraphs that frame the day's theme."],
                 [PenLine, "One question to write about", "A single reflection, saved privately in the journal."],
                 [Sparkles, "Go deeper, if you want", "An extra question for the days you want to stay longer."],
-                [ShieldCheck, "Private, at your pace", "Only you can read it. One day opens at a time."],
+                [ShieldCheck, "Private, at your pace", "Only you can read it. A new day opens each morning."],
               ].map(([Icon, t, d]) => {
                 const I = Icon as typeof BookOpen;
                 return (
