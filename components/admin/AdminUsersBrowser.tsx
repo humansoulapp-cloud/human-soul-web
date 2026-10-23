@@ -1,47 +1,186 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowDown, ChevronDown, Copy, Download, Flame, Gem, Mail, Moon, MoreHorizontal, Search, ShieldCheck } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { updateUserPlan, type UserRow } from "@/lib/actions/users";
-import ChangeRoleButton from "./ChangeRoleButton";
 
-const FILTERS = ["All", "Plus", "Free", "Dormant"] as const;
-type Filter = (typeof FILTERS)[number];
+const DAY = 86_400_000;
+const INACTIVE_DAYS = 30;
 
-const DORMANT_DAYS = 30;
+type Filter = "all" | "plus" | "free" | "inactive" | "admins";
+type Sort = "active" | "entries" | "joined";
 
-function daysSince(date: string | null) {
-  if (!date) return Infinity;
-  return Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000);
+const FILTERS: [Filter, string][] = [
+  ["all", "All"],
+  ["plus", "Plus"],
+  ["free", "Free"],
+  ["inactive", "Inactive"],
+  ["admins", "Admins"],
+];
+
+const SORTS: [Sort, string][] = [
+  ["active", "Recently active"],
+  ["entries", "Most entries"],
+  ["joined", "Newest first"],
+];
+
+export type UserKpi = { label: string; value: number; note: string };
+
+function since(iso: string | null) {
+  return iso ? Date.now() - new Date(iso).getTime() : Infinity;
 }
 
-function lastActiveLabel(date: string | null) {
-  const days = daysSince(date);
-  if (days === Infinity) return "Never";
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  return `${days} days ago`;
+function isInactive(u: UserRow) {
+  return since(u.lastActive) >= INACTIVE_DAYS * DAY;
 }
 
-const CHIP = (on: boolean) =>
-  `inline-flex items-center gap-[7px] px-3 py-[7px] rounded-full text-[12.5px] whitespace-nowrap transition-colors ${
-    on
-      ? "border border-transparent bg-[var(--admin-accent-soft)] text-[var(--admin-text)] font-semibold"
-      : "border border-[var(--admin-border-hover)] text-[var(--admin-text-muted)]"
-  }`;
+function lastActiveLabel(iso: string | null) {
+  if (!iso) return "Never";
+  const days = Math.floor(since(iso) / DAY);
+  if (days < 1) return "Today";
+  if (days < 2) return "Yesterday";
+  if (days < 60) return `${days} days ago`;
+  const months = Math.round(days / 30);
+  return months < 12 ? `${months} months ago` : "Over a year ago";
+}
 
-export default function AdminUsersBrowser({ users }: { users: UserRow[] }) {
+function joined(iso: string) {
+  const d = new Date(iso);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: sameYear ? undefined : "numeric" });
+}
+
+function initials(name: string) {
+  return (
+    name
+      .split(/[\s._-]+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
+function RowMenu({ user, onNotice }: { user: UserRow; onNotice: (text: string) => void }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  const plus = user.plan === "Plus";
+  const hasEmail = user.email.includes("@");
+
+  const togglePlan = () =>
+    start(async () => {
+      const res = await updateUserPlan(user.id, plus ? "free" : "plus");
+      setOpen(false);
+      if (res && "error" in res && res.error) return onNotice(res.error);
+      onNotice(plus ? `${user.name} is back on the free plan.` : `${user.name} now has Plus.`);
+      router.refresh();
+    });
+
+  const copyEmail = async () => {
+    setOpen(false);
+    try {
+      await navigator.clipboard.writeText(user.email);
+      onNotice("Email copied.");
+    } catch {
+      onNotice(user.email);
+    }
+  };
+
+  const sendReset = () =>
+    start(async () => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      setOpen(false);
+      onNotice(error ? error.message : `Password reset sent to ${user.email}.`);
+    });
+
+  return (
+    <div className="hsa-menu-wrap" ref={ref}>
+      <button
+        type="button"
+        className="hsa-icon-btn"
+        aria-label={`More actions for ${user.name}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={pending}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreHorizontal size={18} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="hsa-menu" role="menu">
+          <button type="button" role="menuitem" onClick={togglePlan}>
+            <Gem size={16} className="ai" aria-hidden="true" />
+            {plus ? "Remove Plus" : "Give Plus"}
+          </button>
+          {hasEmail ? (
+            <>
+              <span className="hsa-menu-sep" aria-hidden="true" />
+              <button type="button" role="menuitem" onClick={copyEmail}>
+                <Copy size={16} className="ai" aria-hidden="true" />
+                Copy email
+              </button>
+              <button type="button" role="menuitem" onClick={sendReset}>
+                <Mail size={16} className="ai" aria-hidden="true" />
+                Send password reset
+              </button>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function AdminUsersBrowser({
+  users,
+  summary,
+  kpis,
+}: {
+  users: UserRow[];
+  summary: string;
+  kpis: UserKpi[];
+}) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("All");
-  const [sortByEntries, setSortByEntries] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("active");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   const counts = useMemo(
     () => ({
-      All: users.length,
-      Plus: users.filter((u) => u.plan === "Plus").length,
-      Free: users.filter((u) => u.plan === "Free").length,
-      Dormant: users.filter((u) => daysSince(u.lastActive) >= DORMANT_DAYS).length,
+      all: users.length,
+      plus: users.filter((u) => u.plan === "Plus").length,
+      free: users.filter((u) => u.plan !== "Plus").length,
+      inactive: users.filter(isInactive).length,
+      admins: users.filter((u) => u.role === "admin").length,
     }),
     [users]
   );
@@ -49,23 +188,22 @@ export default function AdminUsersBrowser({ users }: { users: UserRow[] }) {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = users.filter((u) => {
-      if (filter === "Plus" && u.plan !== "Plus") return false;
-      if (filter === "Free" && u.plan !== "Free") return false;
-      if (filter === "Dormant" && daysSince(u.lastActive) < DORMANT_DAYS) return false;
-      if (!q) return true;
-      return `${u.name} ${u.email}`.toLowerCase().includes(q);
+      if (filter === "plus" && u.plan !== "Plus") return false;
+      if (filter === "free" && u.plan === "Plus") return false;
+      if (filter === "inactive" && !isInactive(u)) return false;
+      if (filter === "admins" && u.role !== "admin") return false;
+      return !q || `${u.name} ${u.email}`.toLowerCase().includes(q);
     });
-
-    return sortByEntries
-      ? [...list].sort((a, b) => b.entries - a.entries)
-      : [...list].sort((a, b) => daysSince(a.lastActive) - daysSince(b.lastActive));
-  }, [users, query, filter, sortByEntries]);
+    if (sort === "entries") return [...list].sort((a, b) => b.entries - a.entries);
+    if (sort === "joined") return [...list].sort((a, b) => since(a.created_at) - since(b.created_at));
+    return [...list].sort((a, b) => since(a.lastActive) - since(b.lastActive));
+  }, [users, query, filter, sort]);
 
   const exportCsv = () => {
-    const header = "name,email,plan,role,entries,streak,last_active\n";
+    const header = "name,email,plan,role,joined,entries,entries_last_7_days,streak,last_active\n";
     const rows = shown
       .map((u) =>
-        [u.name, u.email, u.plan, u.role, u.entries, u.streak, u.lastActive ?? ""]
+        [u.name, u.email, u.plan, u.role, u.created_at, u.entries, u.entriesWeek, u.streak, u.lastActive ?? ""]
           .map((v) => `"${String(v).replace(/"/g, '""')}"`)
           .join(",")
       )
@@ -79,149 +217,138 @@ export default function AdminUsersBrowser({ users }: { users: UserRow[] }) {
     URL.revokeObjectURL(url);
   };
 
-  const togglePlan = (user: UserRow) =>
-    startTransition(async () => {
-      await updateUserPlan(user.id, user.plan === "Plus" ? "free" : "plus");
-    });
+  const sortLabel = SORTS.find(([k]) => k === sort)![1];
 
   return (
     <>
-      <div className="flex justify-end -mt-12 mb-6">
-        <button
-          onClick={exportCsv}
-          className="px-4 py-2.5 rounded-[9px] border border-[var(--admin-border-hover)] text-[var(--admin-text-secondary)] text-[13px]"
-        >
-          Export CSV
-        </button>
+      <div className="hsa-head">
+        <div className="hsa-head-t">
+          <h1 className="text-h1" style={{ margin: 0 }}>
+            Users
+          </h1>
+          <span className="hs-hint">{summary}</span>
+        </div>
+        <div className="hsa-head-a">
+          <button type="button" className="hs-btn hs-btn-secondary" onClick={exportCsv}>
+            <Download size={16} aria-hidden="true" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 px-4 h-[46px] rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)]">
-        <Search className="w-4 h-4 flex-shrink-0 text-[var(--admin-text-muted)]" strokeWidth={1.8} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or email"
-          className="flex-1 min-w-0 bg-transparent border-none text-sm text-[var(--admin-text)]"
-        />
-        {query && (
-          <button
-            onClick={() => setQuery("")}
-            className="text-[12.5px] font-semibold text-[var(--admin-accent)]"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 mt-3.5 flex-wrap">
-        {FILTERS.map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={CHIP(filter === f)}>
-            {f}
-            <span className="text-[11px] font-semibold opacity-60">{counts[f]}</span>
-          </button>
+      <div className="hsa-kpis">
+        {kpis.map((k) => (
+          <div key={k.label} className="hsa-card hsa-kpi">
+            <span className="hsa-kpi-l">{k.label}</span>
+            <b>{k.value.toLocaleString("en-US")}</b>
+            <small>{k.note}</small>
+          </div>
         ))}
-        <span className="flex-1" />
-        <button
-          onClick={() => setSortByEntries((v) => !v)}
-          className="px-3 py-[7px] rounded-full border border-[var(--admin-border-hover)] text-[var(--admin-text-muted)] text-xs whitespace-nowrap"
-        >
-          {sortByEntries ? "Most entries" : "Recently active"}
-        </button>
       </div>
+
+      <div className="hsa-tools">
+        <label className="hsa-srch">
+          <span className="sr-only">Search users</span>
+          <Search size={18} className="ai" aria-hidden="true" />
+          <input type="search" placeholder="Search by name or email" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </label>
+        <div className="hsa-seg" role="group" aria-label="Show">
+          {FILTERS.map(([k, label]) => (
+            <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>
+              {label}
+              <span className="n">{counts[k]}</span>
+            </button>
+          ))}
+        </div>
+        <label className="hsa-pill">
+          <span className="sr-only">Sort</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort users">
+            {SORTS.map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="ai" aria-hidden="true" />
+        </label>
+      </div>
+
+      {notice ? (
+        <div className="hsa-banner ok hsa-u-notice" role="status">
+          {notice}
+        </div>
+      ) : null}
 
       {shown.length === 0 ? (
-        <div className="mt-4 px-6 py-11 rounded-[14px] border border-dashed border-[var(--admin-border-hover)] bg-[var(--admin-surface)] text-center">
-          <div className="text-[17px] font-semibold text-[var(--admin-text)]">
-            No users match that
-          </div>
-          <p className="text-[13.5px] text-[var(--admin-text-muted)] mt-2">
-            Try a shorter search or another filter.
-          </p>
+        <div className="hsa-card hsa-empty" style={{ marginTop: 16 }}>
+          {users.length ? "Nobody matches that. Try a shorter search or another filter." : "No accounts yet."}
         </div>
       ) : (
-        <div className="mt-5 rounded-[13px] border border-[var(--admin-border)] bg-[var(--admin-surface)] overflow-x-auto">
-          <div className="min-w-[780px]">
-            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-[var(--admin-border)] text-[9.5px] font-bold tracking-[0.11em] text-[var(--admin-text-muted)]">
-              <span className="flex-1 min-w-0">USER</span>
-              <span className="w-20 text-right flex-shrink-0">PLAN</span>
-              <span className="w-20 text-right flex-shrink-0">ENTRIES</span>
-              <span className="w-20 text-right flex-shrink-0">STREAK</span>
-              <span className="w-[110px] text-right flex-shrink-0">LAST ACTIVE</span>
-              <span className="w-[210px] flex-shrink-0" />
-            </div>
-
-            {shown.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center gap-3.5 px-4 py-3 border-b border-[var(--admin-border)] last:border-b-0"
-              >
-                <span className="flex-1 min-w-0 flex items-center gap-3">
-                  <span className="w-[34px] h-[34px] flex-shrink-0 rounded-full grid place-items-center bg-[var(--admin-accent-soft)] text-[var(--admin-accent)] text-xs font-bold">
-                    {user.name
-                      .split(/[\s._-]+/)
-                      .filter(Boolean)
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-[var(--admin-text)] truncate">
-                      {user.name}
-                      {user.role === "admin" && (
-                        <span className="ml-2 text-[9.5px] font-bold tracking-[0.1em] text-[var(--admin-accent)]">
-                          ADMIN
-                        </span>
-                      )}
-                    </span>
-                    <span className="block text-[12.5px] text-[var(--admin-text-muted)] truncate">
-                      {user.email}
-                    </span>
-                  </span>
-                </span>
-
-                <span className="w-20 flex-shrink-0 text-right">
-                  <span
-                    className={`inline-block px-2.5 py-[3px] rounded-full text-[10px] font-bold tracking-[0.08em] uppercase ${
-                      user.plan === "Plus"
-                        ? "bg-[var(--admin-gold-soft)] text-[var(--admin-gold)]"
-                        : "bg-[var(--admin-surface-2)] text-[var(--admin-text-muted)]"
-                    }`}
-                  >
-                    {user.plan}
-                  </span>
-                </span>
-                <span className="w-20 flex-shrink-0 text-right text-[13.5px] text-[var(--admin-text-secondary)]">
-                  {user.entries || "—"}
-                </span>
-                <span className="w-20 flex-shrink-0 text-right text-[13.5px] text-[var(--admin-text-secondary)]">
-                  {user.streak ? `${user.streak} d` : "—"}
-                </span>
-                <span className="w-[110px] flex-shrink-0 text-right text-[12.5px] text-[var(--admin-text-muted)]">
-                  {lastActiveLabel(user.lastActive)}
-                </span>
-
-                <span className="w-[210px] flex-shrink-0 flex gap-2 justify-end">
-                  <button
-                    onClick={() => togglePlan(user)}
-                    disabled={isPending}
-                    className="px-3 py-[7px] rounded-lg border border-[var(--admin-border-hover)] text-[var(--admin-text-secondary)] text-xs whitespace-nowrap disabled:opacity-50"
-                  >
-                    {user.plan === "Plus" ? "Downgrade" : "Give Plus"}
-                  </button>
-                  <ChangeRoleButton
-                    userId={user.id}
-                    currentRole={user.role === "admin" ? "admin" : "user"}
-                  />
-                </span>
-              </div>
-            ))}
+        <section className="hsa-card hsa-list" aria-label="Users">
+          <div className="hsa-u-cols">
+            <span>User</span>
+            <span>Plan</span>
+            <span>Joined</span>
+            <span className="r">Entries</span>
+            <span className="r">Streak</span>
+            <span className="on">
+              {sortLabel === "Recently active" ? (
+                <>
+                  Last active
+                  <ArrowDown size={14} aria-hidden="true" />
+                </>
+              ) : (
+                "Last active"
+              )}
+            </span>
+            <span />
           </div>
-        </div>
+          <ul className="hsa-rows">
+            {shown.map((u) => {
+              const off = isInactive(u);
+              return (
+                <li key={u.id} className={`hsa-u-row${off ? " off" : ""}`}>
+                  <div className="hsa-u-main">
+                    <span className="hsa-av" aria-hidden="true">
+                      {initials(u.name)}
+                    </span>
+                    <span className="hsa-r-txt">
+                      <span className="hsa-u-n">
+                        <span className="t">{u.name}</span>
+                        {u.role === "admin" ? (
+                          <span className="hsa-tg">
+                            <ShieldCheck size={13} aria-hidden="true" />
+                            Admin
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="hsa-u-e">{u.email}</span>
+                    </span>
+                  </div>
+                  <span className={`hsa-plan${u.plan === "Plus" ? " plus" : ""}`}>
+                    {u.plan === "Plus" ? <Gem size={14} aria-hidden="true" /> : null}
+                    {u.plan}
+                  </span>
+                  <span className="hsa-u-soft">{joined(u.created_at)}</span>
+                  <span className={`num${u.entries ? "" : " hsa-dash"}`}>{u.entries.toLocaleString("en-US")}</span>
+                  <span className={`num hsa-u-streak${u.streak ? "" : " hsa-dash"}`}>
+                    {u.streak ? <Flame size={14} aria-hidden="true" /> : null}
+                    {u.streak ? `${u.streak} d` : "0"}
+                  </span>
+                  <span className={`hsa-u-last${off ? " off" : ""}`}>
+                    {off ? <Moon size={13} aria-hidden="true" /> : null}
+                    {lastActiveLabel(u.lastActive)}
+                  </span>
+                  <RowMenu user={u} onNotice={setNotice} />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
-
-      <div className="flex items-center gap-3.5 mt-4 flex-wrap">
-        <span className="text-[12.5px] text-[var(--admin-text-muted)]">
+      <div className="hsa-foot">
+        <span>Inactive means nothing written in the last {INACTIVE_DAYS} days</span>
+        <span>
           Showing {shown.length} of {users.length}
         </span>
       </div>

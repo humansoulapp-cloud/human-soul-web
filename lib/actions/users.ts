@@ -14,6 +14,8 @@ export type UserRow = {
   streak: number;
   lastActive: string | null;
   created_at: string;
+  /** Entries written in the last 7 days. */
+  entriesWeek: number;
 };
 
 async function requireAdmin() {
@@ -80,6 +82,8 @@ export async function getUsers(): Promise<UserRow[]> {
       }
 
       const lastWritten = dates.sort().at(-1) ?? null;
+      const weekAgo = Date.now() - 7 * 86_400_000;
+      const entriesWeek = dates.filter((d) => new Date(d).getTime() >= weekAgo).length;
 
       return {
         id: p.user_id,
@@ -91,6 +95,7 @@ export async function getUsers(): Promise<UserRow[]> {
         streak,
         lastActive: lastWritten ?? auth?.lastSignIn ?? null,
         created_at: p.created_at,
+        entriesWeek,
       };
     }
   );
@@ -106,19 +111,6 @@ export async function updateUserPlan(userId: string, plan: "free" | "plus") {
   return { success: true };
 }
 
-export async function updateUserRole(userId: string, role: "admin" | "user") {
-  const serviceClient = await requireAdmin();
-
-  const { error } = await serviceClient
-    .from("profiles")
-    .update({ role })
-    .eq("user_id", userId);
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/admin/users");
-  return { success: true };
-}
 
 export async function getStats() {
   const serviceClient = createServiceClient();
