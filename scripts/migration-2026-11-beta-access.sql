@@ -131,7 +131,18 @@ create trigger beta_claim_invite
   after insert on auth.users
   for each row execute function public.beta_claim_invite();
 
+-- ─────────────────────────────────────────────────────────────
+-- 6. API access. Some projects don't grant new tables to the API roles
+--    automatically; without this the server can't read them. RLS above still
+--    decides which rows each person sees.
+-- ─────────────────────────────────────────────────────────────
+grant select, insert, update, delete on public.beta_settings, public.beta_invites, public.waitlist to service_role;
+grant select on public.beta_invites to authenticated;
+
 commit;
+
+-- Make the API notice the new tables right away.
+notify pgrst, 'reload schema';
 
 -- Quick check after running (should return one row with invite_only = true):
 -- select * from public.beta_settings;
