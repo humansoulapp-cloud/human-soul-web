@@ -1,0 +1,23 @@
+/* App dialogs (components/dialog.tsx). Prefixed `hsd-`. */
+.hsd { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(12, 11, 10, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: hsd-fade .18s ease-out; font-family: var(--hs-font-sans); }
+.hsd-card { width: 100%; max-width: 420px; padding: 28px; border-radius: 24px; background: var(--card); color: var(--foreground); box-shadow: var(--hs-shadow-lg), 0 0 0 1px color-mix(in srgb, var(--foreground) 6%, transparent); animation: hsd-in .24s cubic-bezier(.22, 1, .36, 1); }
+.hsd-t { margin: 0; font: 400 24px/30px var(--hs-font-serif); letter-spacing: -.01em; font-variation-settings: "SOFT" 100, "WONK" 0; text-wrap: balance; }
+.hsd-b { margin-top: 10px; font: 400 15px/23px var(--hs-font-sans); color: var(--muted-foreground); text-wrap: pretty; }
+.hsd-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 28px; }
+.hsd-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 9999px; font: 600 15px/20px var(--hs-font-sans); cursor: pointer; transition: background-color .15s; }
+.hsd-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.hsd-btn.ghost { background: transparent; color: var(--foreground); }
+.hsd-btn.ghost:hover { background: var(--fill); }
+.hsd-btn.pri { background: var(--primary); color: var(--primary-foreground); }
+.hsd-btn.pri:hover { background: color-mix(in srgb, var(--primary) 86%, var(--foreground)); }
+.hsd-btn.danger { background: var(--destructive); color: var(--destructive-foreground); }
+.hsd-btn.danger:hover { background: color-mix(in srgb, var(--destructive) 88%, var(--foreground)); }
+@keyframes hsd-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hsd-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (max-width: 640px) {
+  .hsd { align-items: flex-end; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .hsd-card { max-width: none; padding: 24px; }
+  .hsd-acts { flex-direction: column-reverse; }
+  .hsd-btn { width: 100%; min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) { .hsd, .hsd-card { animation: none; } }

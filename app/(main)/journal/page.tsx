@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/dialog";
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -277,7 +278,13 @@ function JournalPageInner() {
 
   const removeEntry = async (entry: Reflection) => {
     setMenuOpen(false);
-    if (!window.confirm("Delete this reflection? This cannot be undone.")) return;
+    const ok = await askConfirm({
+      title: "Delete this reflection?",
+      body: "It will be gone for good, along with any photo it has. This can't be undone.",
+      confirm: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
     const supabase = createClient();
     const { error } = await supabase.from("reflections").delete().eq("id", entry.id);
     if (error) {
@@ -326,7 +333,13 @@ function JournalPageInner() {
 
   const deleteJournal = async () => {
     if (!activeJournal) return;
-    if (!window.confirm(`Delete the journal "${activeJournal.title}"? Its reflections stay in your Journal.`)) return;
+    const ok = await askConfirm({
+      title: `Delete “${activeJournal.title}”?`,
+      body: "The journal goes away, but its reflections stay in your Journal.",
+      confirm: "Delete journal",
+      tone: "danger",
+    });
+    if (!ok) return;
     const { error } = await createClient().from("journals").delete().eq("id", activeJournal.id);
     if (error) {
       setJournalError(error.message);

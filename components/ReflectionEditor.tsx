@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/dialog";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Camera, Check, ChevronDown, Compass, Plus, X } from "lucide-react";
@@ -293,9 +294,18 @@ export default function ReflectionEditor({
     }
   };
 
-  const close = () => {
+  const close = async () => {
     // A new reflection keeps its draft; changes to a saved one would be lost.
-    if (!isNew && dirty && !window.confirm("Leave without saving your changes?")) return;
+    if (!isNew && dirty) {
+      const ok = await askConfirm({
+        title: "Leave without saving?",
+        body: "Your changes to this reflection will be lost.",
+        confirm: "Leave",
+        cancel: "Keep editing",
+        tone: "danger",
+      });
+      if (!ok) return;
+    }
     if (onDone) return onDone(null);
     router.push(id ? `/journal?r=${id}` : "/journal");
   };

@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/dialog";
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -228,8 +229,14 @@ export default function JourneyEditor({
       setOpenDay(i + by);
       return { ...f, days: renumber(days) };
     });
-  const removeDay = (i: number) => {
-    if (!window.confirm(`Remove Day ${i + 1}? You can still leave without saving.`)) return;
+  const removeDay = async (i: number) => {
+    const ok = await askConfirm({
+      title: `Remove Day ${i + 1}?`,
+      body: "Its reading and question go with it. Until you save, you can still leave without saving to keep it.",
+      confirm: "Remove day",
+      tone: "danger",
+    });
+    if (!ok) return;
     setForm((f) => ({ ...f, days: renumber(f.days.filter((_, n) => n !== i)) }));
     setOpenDay(null);
   };

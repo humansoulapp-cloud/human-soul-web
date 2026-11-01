@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/dialog";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, Copy, MailPlus, Trash2, UserPlus } from "lucide-react";
@@ -302,11 +303,16 @@ export default function AdminBetaBrowser({
                       title={i.joined_at ? "Remove (their beta access ends now)" : "Remove invite"}
                       aria-label={`Remove ${i.email}`}
                       disabled={pending}
-                      onClick={() => {
-                        const ask = i.joined_at
-                          ? `Remove ${i.email}? Their beta access ends now. Their account and writing stay.`
-                          : `Remove the invite for ${i.email}?`;
-                        if (window.confirm(ask)) run(() => removeInvite(i.id), `${i.email} removed.`);
+                      onClick={async () => {
+                        const ok = await askConfirm({
+                          title: i.joined_at ? `Remove ${i.email}?` : "Remove this invite?",
+                          body: i.joined_at
+                            ? "Their beta access ends now. Their account and writing stay."
+                            : `${i.email} won't be able to create an account with this invite.`,
+                          confirm: "Remove",
+                          tone: "danger",
+                        });
+                        if (ok) run(() => removeInvite(i.id), `${i.email} removed.`);
                       }}
                     >
                       <Trash2 size={17} aria-hidden="true" />

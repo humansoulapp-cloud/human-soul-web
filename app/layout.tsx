@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans, Public_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { DialogHost } from "@/components/dialog";
 
 /* Design System v2: Fraunces (headings, SOFT axis) + Instrument Sans (text).
    The wordmark uses Instrument Sans + Times New Roman (system font, see ds.css).
@@ -58,6 +59,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col selection:bg-[var(--ds-accent)]/20 selection:text-[var(--ds-text)]">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <DialogHost />
         </ThemeProvider>
       </body>
     </html>

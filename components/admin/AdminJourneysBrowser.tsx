@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm, showNotice } from "@/components/dialog";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -88,7 +89,7 @@ function RowMenu({ item }: { item: AdminJourneyItem }) {
   const run = (action: () => Promise<{ error?: string } | { success: boolean }>) =>
     start(async () => {
       const res = await action();
-      if (res && "error" in res && res.error) window.alert(res.error);
+      if (res && "error" in res && res.error) await showNotice({ title: "That didn't work", body: res.error });
       setOpen(false);
       router.refresh();
     });
@@ -139,10 +140,15 @@ function RowMenu({ item }: { item: AdminJourneyItem }) {
             type="button"
             role="menuitem"
             className="danger"
-            onClick={() => {
-              if (window.confirm(`Delete “${item.title}” and all its days? This can't be undone.`)) {
-                run(() => deleteJourney(item.id));
-              }
+            onClick={async () => {
+              setOpen(false);
+              const ok = await askConfirm({
+                title: `Delete “${item.title}”?`,
+                body: "This removes the journey and all its days. It can't be undone.",
+                confirm: "Delete journey",
+                tone: "danger",
+              });
+              if (ok) run(() => deleteJourney(item.id));
             }}
           >
             <Trash2 size={16} className="ai" aria-hidden="true" />
