@@ -68,13 +68,13 @@ function layout({ preheader, hero, body, footer }: { preheader: string; hero?: s
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Instrument+Sans:wght@400;600&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <title>HumanSoul</title></head>
 <body style="margin:0;padding:0;background:${C.page}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 16px 48px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border-radius:24px;overflow:hidden">
-<tr><td style="padding:32px 40px 0;font-size:22px;line-height:1;color:${C.ink}"><span style="font-family:'DM Sans',${SANS};font-weight:500">Human</span><span style="font-family:${SERIF}">Soul</span></td></tr>
+<tr><td style="padding:32px 40px 0;font-size:22px;line-height:1;color:${C.ink};white-space:nowrap"><span style="font-family:${SANS};font-weight:500;letter-spacing:-.04em">Human</span><span style="font-family:'Times New Roman',Times,serif;font-weight:400;font-size:23px;letter-spacing:-.03em;margin-left:1px;color:#617D65">Soul</span></td></tr>
 ${heroImg}
 <tr><td style="padding:32px 40px 40px">${body}</td></tr>
 <tr><td style="padding:24px 40px 32px;background:${C.soft};font:400 13px/20px ${SANS};color:${C.muted}">${footer}</td></tr>
