@@ -66,8 +66,7 @@
   --hs-font-serif: var(--font-hedvig), "Hedvig Letters Serif", Georgia, serif;
   --hs-font-sans: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
   --hs-font-wordmark: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
-  /* Times New Roman is a system font (macOS, Windows); Liberation Serif / Tinos share its metrics. */
-  --hs-font-wordmark-serif: "Times New Roman", TimesNewRomanPSMT, "Times New Roman MT", Tinos, "Liberation Serif", Times, serif;
+  --hs-font-wordmark-serif: var(--font-hedvig), "Hedvig Letters Serif", Georgia, serif;
 
   /* App layout */
   --hs-container: 1120px;
@@ -142,11 +141,11 @@
 @media (prefers-reduced-motion: reduce) { .hs-spin, .hs-skeleton { animation: none !important; } .hs * { transition: none !important; } }
 
 /* Logo */
-/* Wordmark: "Human" in Instrument Sans 500 + "Soul" in Times New Roman, upright, in wordmark-soul.
-   "Soul" is 1.057x so its cap height matches the H of Human on a shared baseline. */
+/* Wordmark: "Human" in Instrument Sans 500 + "Soul" in Hedvig Letters Serif, upright, in wordmark-soul.
+   "Soul" is 1.029x so its cap height matches the H of Human on a shared baseline. */
 .hs-logo { display: inline-flex; align-items: baseline; color: var(--foreground); line-height: 1; white-space: nowrap; }
 .hs-logo-human { font-family: var(--hs-font-wordmark); font-weight: 500; letter-spacing: -0.04em; }
-.hs-logo-soul { font-family: var(--hs-font-wordmark-serif); font-weight: 400; font-style: normal; font-size: 1.057em; letter-spacing: -0.03em; margin-left: 0.0625em; color: var(--wordmark-soul); }
+.hs-logo-soul { font-family: var(--hs-font-wordmark-serif); font-weight: 400; font-style: normal; font-size: 1.029em; letter-spacing: -0.03em; margin-left: 0.0625em; color: var(--wordmark-soul); }
 
 /* Button */
 .hs-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: var(--hs-radius-full); font: 600 15px/20px var(--hs-font-sans); cursor: pointer; text-decoration: none; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s; min-height: 44px; padding: 0 20px; -webkit-tap-highlight-color: transparent; }

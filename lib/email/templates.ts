@@ -74,7 +74,7 @@ function layout({ preheader, hero, body, footer }: { preheader: string; hero?: s
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 16px 48px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border-radius:24px;overflow:hidden">
-<tr><td style="padding:32px 40px 0;font-size:22px;line-height:1;color:${C.ink};white-space:nowrap"><span style="font-family:${SANS};font-weight:500;letter-spacing:-.04em">Human</span><span style="font-family:'Times New Roman',Times,serif;font-weight:400;font-size:23px;letter-spacing:-.03em;margin-left:1px;color:#617D65">Soul</span></td></tr>
+<tr><td style="padding:32px 40px 0;font-size:22px;line-height:1;color:${C.ink};white-space:nowrap"><span style="font-family:${SANS};font-weight:500;letter-spacing:-.04em">Human</span><span style="font-family:'Hedvig Letters Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:22.6px;letter-spacing:-.03em;margin-left:1px;color:#617D65">Soul</span></td></tr>
 ${heroImg}
 <tr><td style="padding:32px 40px 40px">${body}</td></tr>
 <tr><td style="padding:24px 40px 32px;background:${C.soft};font:400 13px/20px ${SANS};color:${C.muted}">${footer}</td></tr>

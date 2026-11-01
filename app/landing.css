@@ -206,7 +206,7 @@
 /* ── App wiring ───────────────────────────────────────────── */
 .lp{--font-serif:var(--hs-font-serif);--font-sans:var(--hs-font-sans);--font-wordmark:var(--hs-font-wordmark);--font-wordmark-serif:var(--hs-font-wordmark-serif);overflow:visible;overflow-x:clip;min-height:100vh;width:100%}
 .lp .wm-a{font-family:var(--font-wordmark);font-weight:500;letter-spacing:-0.04em}
-.lp .wm-b{font-family:var(--font-wordmark-serif);font-weight:400;font-style:normal;font-size:1.057em;letter-spacing:-0.03em;margin-left:0.0625em;color:var(--wordmark-soul)}
+.lp .wm-b{font-family:var(--font-wordmark-serif);font-weight:400;font-style:normal;font-size:1.029em;letter-spacing:-0.03em;margin-left:0.0625em;color:var(--wordmark-soul)}
 .lp .btn{transition:transform .25s cubic-bezier(.2,.7,.2,1),background-color .2s,box-shadow .25s}
 .lp .btn-pri:hover{background:color-mix(in srgb,var(--primary) 86%,#fff);box-shadow:0 10px 30px color-mix(in srgb,var(--primary) 30%,transparent);transform:translateY(-1px)}
 .lp .btn-sec:hover{background:var(--fill-strong);transform:translateY(-1px)}

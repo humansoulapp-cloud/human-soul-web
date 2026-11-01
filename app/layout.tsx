@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { DialogHost } from "@/components/dialog";
 
 /* Design System v2: Hedvig Letters Serif (headings) + Instrument Sans (text).
-   The wordmark uses Instrument Sans + Times New Roman (system font, see ds.css).
+   The wordmark uses Instrument Sans + Hedvig Letters Serif (see ds.css).
    Public Sans stays for Admin. */
 const hedvig = Hedvig_Letters_Serif({
   variable: "--font-hedvig",
