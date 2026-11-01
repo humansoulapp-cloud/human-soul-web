@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { checkSignupAllowed, joinWaitlist } from "@/lib/actions/beta";
 import {
   AUTH_FIELD,
   AUTH_INPUT,
@@ -31,6 +32,9 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  /* Set when the beta is invite-only and this email can't join yet. */
+  const [closed, setClosed] = useState<null | "not_invited" | "full">(null);
+  const [waitlisted, setWaitlisted] = useState(false);
 
   const level = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
   const strength = ["", "Too short", "Fine", "Strong"][level];
@@ -44,6 +48,12 @@ export default function SignUpPage() {
     setLoading(true);
     setError("");
 
+    const gate = await checkSignupAllowed(email).catch(() => ({ ok: true as const }));
+    if (!gate.ok) {
+      setLoading(false);
+      return setClosed(gate.reason);
+    }
+
     const supabase = createClient();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
@@ -55,7 +65,13 @@ export default function SignUpPage() {
     });
 
     setLoading(false);
-    if (signUpError) return setError(signUpError.message);
+    if (signUpError) {
+      // The database refuses accounts without an invite (see the beta migration).
+      if (/invite-only|beta is full|database error saving new user/i.test(signUpError.message)) {
+        return setClosed(/full/i.test(signUpError.message) ? "full" : "not_invited");
+      }
+      return setError(signUpError.message);
+    }
 
     if (data.session) {
       router.push("/onboarding");
@@ -87,6 +103,19 @@ export default function SignUpPage() {
         </>
       }
     >
+      {closed ? (
+        <BetaClosed
+          reason={closed}
+          email={email}
+          waitlisted={waitlisted}
+          onJoined={() => setWaitlisted(true)}
+          onBack={() => {
+            setClosed(null);
+            setWaitlisted(false);
+          }}
+        />
+      ) : (
+      <>
       <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">Create your account</h1>
       <p className="text-sm text-[var(--ds-text-muted)] m-0">
         Start today&apos;s reflection in about a minute.
@@ -184,9 +213,75 @@ export default function SignUpPage() {
         </button>
       </form>
 
+      </>
+      )}
+
       <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-[18px]">
         Already have an account? <Link href="/sign-in">Sign in</Link>
       </p>
     </AuthShell>
+  );
+}
+
+/* Shown instead of the form while HumanSoul is invite-only and this email has no invite. */
+function BetaClosed({
+  reason,
+  email,
+  waitlisted,
+  onJoined,
+  onBack,
+}: {
+  reason: "not_invited" | "full";
+  email: string;
+  waitlisted: boolean;
+  onJoined: () => void;
+  onBack: () => void;
+}) {
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  const join = async () => {
+    setSending(true);
+    setError("");
+    const res = await joinWaitlist(email).catch(() => ({ ok: false, error: "Couldn't add you right now. Try again in a moment." }));
+    setSending(false);
+    if (!res.ok) return setError(res.error ?? "Couldn't add you right now.");
+    onJoined();
+  };
+
+  return (
+    <div role="status">
+      <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
+        {reason === "full" ? "The beta is full" : "HumanSoul is in private beta"}
+      </h1>
+      <p className="text-sm leading-[1.6] text-[var(--ds-text-muted)] m-0">
+        {reason === "full"
+          ? "Every beta place is taken for now. Leave your email and we'll write when HumanSoul opens to everyone."
+          : <>Right now only invited people can create an account. If you were invited, use the exact email the invitation was sent to. Otherwise, join the waitlist and we&apos;ll write when there&apos;s a place for you.</>}
+      </p>
+
+      {waitlisted ? (
+        <div className="mt-5 px-3.5 py-3 rounded-[10px] bg-[var(--ds-accent-soft)] text-[var(--ds-text-mid)] text-[13px]">
+          You&apos;re on the list. We&apos;ll write to <b>{email.trim()}</b>.
+        </div>
+      ) : (
+        <button type="button" onClick={join} disabled={sending} className={AUTH_SUBMIT}>
+          {sending ? "Adding you…" : `Join the waitlist with ${email.trim()}`}
+        </button>
+      )}
+      {error && (
+        <div className="mt-4 px-3.5 py-3 rounded-[10px] border border-[var(--ds-danger)] text-[var(--ds-danger)] text-[12.5px]">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onBack}
+        className="mt-4 text-[12.5px] text-[var(--ds-text-muted)] underline underline-offset-2 hover:text-[var(--ds-text)] bg-transparent border-0 p-0 cursor-pointer"
+      >
+        Use a different email
+      </button>
+    </div>
   );
 }

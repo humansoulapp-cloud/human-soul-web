@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import JourneyDetailClient from "@/components/JourneyDetailClient";
 import type { ReflectionRow } from "@/lib/journal";
 import { EARLIEST_TIME_ZONE, nextDayHasOpened } from "@/lib/journey-days";
+import { accessFrom, loadBetaUntil } from "@/lib/access";
 
 export default async function JourneyDetailPage({
   params,
@@ -27,7 +28,7 @@ export default async function JourneyDetailPage({
   let profileTimeZone: string | null = null;
 
   if (user) {
-    const [{ data: reflectionRows }, { data: headerRows }, { data: profile }] = await Promise.all([
+    const [{ data: reflectionRows }, { data: headerRows }, { data: profile }, betaUntil] = await Promise.all([
       supabase
         .from("reflections")
         .select("*")
@@ -42,12 +43,13 @@ export default async function JourneyDetailPage({
         .like("content", `[${journey.title.replace(/[%_\\]/g, "\\$&")} - Day %`)
         .order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+      loadBetaUntil(supabase, user.id),
     ]);
 
     const byId = new Map<string, ReflectionRow>();
     for (const r of [...(reflectionRows ?? []), ...(headerRows ?? [])] as ReflectionRow[]) byId.set(r.id, r);
     reflections = [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
-    subscribed = Boolean(profile?.plan && profile.plan !== "free");
+    subscribed = accessFrom(profile?.plan, betaUntil).full;
     profileTimeZone = (profile?.timezone as string | null | undefined) ?? null;
   }
 

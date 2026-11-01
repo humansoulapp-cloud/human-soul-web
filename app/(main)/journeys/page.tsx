@@ -6,6 +6,7 @@ import { journeyImage } from "@/lib/journey-images";
 import { findActiveJourney, type Journey, type ReflectionRow } from "@/lib/journal";
 import { JourneyProgressCard } from "@/components/journeys/glass-cards";
 import { EARLIEST_TIME_ZONE } from "@/lib/journey-days";
+import { accessFrom, loadBetaUntil } from "@/lib/access";
 
 export default async function JourneysPage() {
   const journeys = await getJourneys();
@@ -20,13 +21,14 @@ export default async function JourneysPage() {
   let timeZone: string | null = null;
 
   if (user) {
-    const [{ data: reflectionRows }, { data: profile }] = await Promise.all([
+    const [{ data: reflectionRows }, { data: profile }, betaUntil] = await Promise.all([
       supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+      loadBetaUntil(supabase, user.id),
     ]);
 
     reflections = (reflectionRows ?? []) as ReflectionRow[];
-    subscribed = Boolean(profile?.plan && profile.plan !== "free");
+    subscribed = accessFrom(profile?.plan, betaUntil).full;
     isAdmin = profile?.role === "admin";
     timeZone = (profile?.timezone as string | null | undefined) ?? null;
   }

@@ -8,6 +8,7 @@ const NAV = [
   { label: "Dashboard", href: "/admin", exact: true },
   { label: "Journeys", href: "/admin/journeys" },
   { label: "Users", href: "/admin/users" },
+  { label: "Beta", href: "/admin/beta" },
 ];
 
 /** Admin top bar: same pill navigation and container width as the app. */

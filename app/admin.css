@@ -455,3 +455,31 @@
   .hsa-tools .hsa-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   .hsa-u-row { padding: 12px 8px 12px 16px; gap: 12px; }
 }
+
+/* ── Beta (Admin → Beta) ───────────────────────────────────────── */
+.hsa-beta-top { margin-top: 24px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.hsa-beta-top + .hsa-list { margin-top: 24px; }
+.hsa-beta-form { display: flex; flex-direction: column; gap: 14px; }
+.hsa-beta-emails { min-height: 88px; resize: vertical; font: 400 15px/22px var(--hs-font-sans); }
+.hsa-beta-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+.hsa-beta-actions .hs-hint { flex: 1 1 220px; font-size: 13px; line-height: 18px; }
+.hsa-beta-switch { align-items: flex-start; margin-bottom: 12px; }
+.hsa-beta-switch .hs-switch { margin-top: 2px; }
+.hsa-beta-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.hsa-beta-cols, .hsa-beta-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 170px 88px; gap: 20px; align-items: center; padding: 0 16px 0 20px; }
+.hsa-beta-cols { min-height: 40px; font: 500 12px/16px var(--hs-font-sans); color: var(--muted-foreground); }
+.hsa-beta-row { min-height: 68px; padding-top: 10px; padding-bottom: 10px; }
+.hsa-beta-row + .hsa-beta-row { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent); }
+.hsa-beta-row.off { opacity: .6; }
+.hsa-beta-row .hsa-u-soft { font: 400 13px/18px var(--hs-font-sans); color: var(--muted-foreground); }
+.hsa-beta-btns { display: flex; justify-content: flex-end; gap: 4px; }
+@media (max-width: 1023px) {
+  .hsa-beta-top { grid-template-columns: 1fr; }
+  .hsa-beta-cols { display: none; }
+  .hsa-beta-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; }
+  .hsa-beta-row > .hsa-u-soft { grid-column: 1; }
+  .hsa-beta-row > .hsa-beta-btns { grid-column: 2; grid-row: 1 / span 2; }
+}
+@media (max-width: 640px) {
+  .hsa-beta-row { padding: 12px 8px 12px 16px; gap: 12px; }
+}

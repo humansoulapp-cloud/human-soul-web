@@ -26,6 +26,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { deleteOwnAccount } from "@/lib/actions/account";
 import { PLANS } from "@/lib/plans";
+import { accessFrom, loadBetaUntil } from "@/lib/access";
 import { writtenDays, type Journey, type ReflectionRow } from "@/lib/journal";
 import PageLoader from "@/components/PageLoader";
 import "../../account.css";
@@ -74,6 +75,8 @@ export default function ProfilePage() {
   const [pwError, setPwError] = useState("");
   const [pwDone, setPwDone] = useState(false);
 
+  const [betaUntil, setBetaUntil] = useState<string | null>(null);
+
   const [deleteAsked, setDeleteAsked] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -92,11 +95,13 @@ export default function ProfilePage() {
       const display = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
       setName(display);
 
-      const [{ data: profileRow }, { data: reflectionRows }, { data: journeyRows }] = await Promise.all([
+      const [{ data: profileRow }, { data: reflectionRows }, { data: journeyRows }, beta] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("journeys").select("id, title, journey_days(day)"),
+        loadBetaUntil(supabase, user.id),
       ]);
+      setBetaUntil(beta);
 
       const p = (profileRow ?? {}) as Profile;
       setProfile(p);
@@ -110,7 +115,13 @@ export default function ProfilePage() {
     load();
   }, []);
 
-  const plus = Boolean(profile.plan && profile.plan !== "free");
+  const access = accessFrom(profile.plan, betaUntil);
+  const plus = access.kind === "plus";
+  const beta = access.kind === "beta";
+  const betaEnded = access.kind === "free" && Boolean(betaUntil);
+  const betaDate = betaUntil
+    ? new Date(betaUntil).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : "";
   const yearly = !profile.plan || /year|annual/i.test(profile.plan);
   const daysWritten = useMemo(() => writtenDays(reflections).size, [reflections]);
 
@@ -223,7 +234,7 @@ export default function ProfilePage() {
   if (loading) return <PageLoader />;
 
   const initial = (profile.alias || name || email || "·").trim().charAt(0).toUpperCase();
-  const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : "Free plan";
+  const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : "Free plan";
   const yearPlan = PLANS.find((p) => p.key === "year")!;
   const monthPlan = PLANS.find((p) => p.key === "month")!;
 
@@ -345,7 +356,11 @@ export default function ProfilePage() {
                 <span>
                   {plus
                     ? `Every day of every journey, for ${yearly ? `${yearPlan.price} a year` : `${monthPlan.price} a month`}.`
-                    : `Day one of every journey is free. Plus opens every day, for ${yearPlan.price} a year or ${monthPlan.price} a month.`}
+                    : beta
+                      ? `Thank you for being part of the beta. Every day of every journey is open until ${betaDate} (${access.betaDaysLeft} ${access.betaDaysLeft === 1 ? "day" : "days"} left).`
+                      : betaEnded
+                        ? `Your beta access ended on ${betaDate}. Everything you wrote is still here. Day one of every journey is free; Plus opens every day.`
+                        : `Day one of every journey is free. Plus opens every day, for ${yearPlan.price} a year or ${monthPlan.price} a month.`}
                 </span>
               </div>
               <Link className={`ac-btn ${plus ? "ac-btn-sec" : "ac-btn-pri"}`} href="/subscription">

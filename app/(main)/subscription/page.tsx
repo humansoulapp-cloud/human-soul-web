@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Check, ChevronDown, Compass, Download, Lock, Shield, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { accessFrom, loadBetaUntil, type Access } from "@/lib/access";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
 import { PLANS, YEARLY_SAVING } from "@/lib/plans";
@@ -52,6 +53,7 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [plus, setPlus] = useState(false);
   const [planName, setPlanName] = useState<string | null>(null);
+  const [beta, setBeta] = useState<Access | null>(null);
   const [since, setSince] = useState<string | null>(null);
   const [plan, setPlan] = useState<"year" | "month">("year");
   const [open, setOpen] = useState(0);
@@ -61,14 +63,17 @@ export default function SubscriptionPage() {
     async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      const [{ data: profile }, { data: journeys }] = await Promise.all([
+      const [{ data: profile }, { data: journeys }, betaUntil] = await Promise.all([
         user
           ? supabase.from("profiles").select("*").eq("user_id", user.id).single()
           : Promise.resolve({ data: null }),
         supabase.from("journeys").select("*, journey_days(day, title)").order("created_at", { ascending: true }),
+        user ? loadBetaUntil(supabase, user.id) : Promise.resolve(null),
       ]);
       const p = profile as { plan?: string | null; created_at?: string } | null;
-      setPlus(Boolean(p?.plan && p.plan !== "free"));
+      const access = accessFrom(p?.plan, betaUntil);
+      setPlus(access.kind === "plus");
+      setBeta(access.kind === "beta" ? access : null);
       setPlanName(p?.plan ?? null);
       setSince(p?.created_at ?? user?.created_at ?? null);
       const list = ((journeys ?? []) as Journey[]).filter((j) => (j.status || "published") === "published");
@@ -105,6 +110,69 @@ export default function SubscriptionPage() {
       </div>
     </section>
   );
+
+  if (beta) {
+    const until = new Date(beta.betaUntil!).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return (
+      <div className="ac">
+        <div className="ac-head">
+          <span className="ac-over">
+            <Sparkles size={14} aria-hidden="true" />
+            HumanSoul beta
+          </span>
+          <h1 className="ac-h1">Your beta access</h1>
+        </div>
+        <div className="ac-act">
+          <section className="ac-card" aria-labelledby="sub-plan">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <h2 id="sub-plan" className="ac-h3">
+                Beta · full access
+              </h2>
+              <span className="ac-status">
+                <Check size={14} aria-hidden="true" />
+                Active
+              </span>
+            </div>
+            <div className="ac-kv">
+              <div>
+                <span>Open until</span>
+                <b>{until}</b>
+              </div>
+              <div>
+                <span>Days left</span>
+                <b>{beta.betaDaysLeft}</b>
+              </div>
+            </div>
+            <ul className="ac-list">
+              <li>
+                <Check className="ai" size={16} aria-hidden="true" />
+                Every day of every journey, free during the beta
+              </li>
+              <li>
+                <Check className="ai" size={16} aria-hidden="true" />
+                Your Journal, unlimited and exportable
+              </li>
+            </ul>
+          </section>
+          <aside className="ac-side" aria-label="After the beta">
+            <div className="ac-side-a">
+              <span>
+                When the beta ends
+                <small>Nothing is deleted. Your Journal stays, and Day one of every journey stays free.</small>
+              </span>
+            </div>
+            <Link className="ac-side-a" href="/profile">
+              <span>
+                Download your writing
+                <small>Everything you wrote, in one file.</small>
+              </span>
+            </Link>
+          </aside>
+        </div>
+        {faq}
+      </div>
+    );
+  }
 
   if (plus) {
     const yearly = !planName || /year|annual/i.test(planName);
