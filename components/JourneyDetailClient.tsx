@@ -1,5 +1,6 @@
 "use client";
 
+import { sendJourneyFinishedEmail } from "@/lib/actions/emails";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -367,8 +368,9 @@ export default function JourneyDetailClient({
     // Editing a written day from Journal: stay on the day, back in reading mode.
     if (returnTo && dayEntry) setEditing(false);
     else setStage(finished ? "complete" : "done");
+    if (finished && !dayEntry) sendJourneyFinishedEmail(journey.id).catch(() => null);
     router.refresh();
-  }, [draft, day, dayEntry, journey.title, key, days, dayIndex, entryFor, router, returnTo]);
+  }, [draft, day, dayEntry, journey.title, journey.id, key, days, dayIndex, entryFor, router, returnTo]);
 
   const questions = (journey.reflection_questions ?? []).filter(Boolean);
 

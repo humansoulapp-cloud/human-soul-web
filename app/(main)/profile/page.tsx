@@ -418,7 +418,7 @@ export default function ProfilePage() {
             </form>
           </section>
 
-          <section className="ac-psec" aria-labelledby="p-rem">
+          <section className="ac-psec" id="reminders" aria-labelledby="p-rem" style={{ scrollMarginTop: 96 }}>
             <div>
               <h2 id="p-rem" className="ac-h3">
                 Reminders

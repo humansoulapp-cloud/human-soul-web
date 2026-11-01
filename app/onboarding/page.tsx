@@ -22,6 +22,7 @@ import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
 import { PLANS, YEARLY_SAVING } from "@/lib/plans";
 import { Logo } from "@/components/ds";
+import { sendWelcomeEmail } from "@/lib/actions/emails";
 import "./onboarding.css";
 
 /* ── What brings you here ─────────────────────────────────────── */
@@ -154,6 +155,7 @@ export default function OnboardingPage() {
     try {
       localStorage.setItem("onboarding_done", "true");
     } catch {}
+    sendWelcomeEmail().catch(() => null);
     setSaving(false);
     setDone(true);
   };
@@ -163,6 +165,7 @@ export default function OnboardingPage() {
     try {
       localStorage.setItem("onboarding_done", "true");
     } catch {}
+    await sendWelcomeEmail().catch(() => null);
     router.push("/dashboard");
   };
 

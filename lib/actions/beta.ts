@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendEmail } from "@/lib/email/send";
+import { placeReadyEmail } from "@/lib/email/templates";
 
 /*
  * Beta access: invite-only sign-up, a cap on people, and N days of full access.
@@ -159,6 +161,15 @@ export async function inviteToBeta(raw: string, note?: string): Promise<{ added:
 
   const { error } = await service.from("beta_invites").insert(rows);
   if (error) return { added: 0, skipped, error: error.message };
+
+  // People who were waiting (and have no account yet) hear that their place is ready.
+  const { data: waiting } = await service.from("waitlist").select("email");
+  const onList = new Set(((waiting ?? []) as { email: string }[]).map((w) => w.email.toLowerCase()));
+  await Promise.all(
+    rows
+      .filter((r) => !r.user_id && onList.has(r.email))
+      .map((r) => sendEmail({ to: r.email, tag: "place_ready", ...placeReadyEmail({ email: r.email }) }).catch(() => null))
+  );
 
   revalidatePath("/admin/beta");
   return { added: rows.length, skipped };

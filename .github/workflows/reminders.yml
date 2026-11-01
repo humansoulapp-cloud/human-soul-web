@@ -1,0 +1,21 @@
+# Hourly trigger for the daily reminder emails (app/api/cron/reminders).
+# The route itself decides who is due, by each person's time zone and chosen hour.
+# Needs the repository secret CRON_SECRET, with the same value as CRON_SECRET in Vercel.
+name: Reminder emails
+on:
+  schedule:
+    - cron: "2 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send due reminders
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" https://humansoul.co/api/cron/reminders)
+          cat response.json; echo
+          test "$code" = "200"
