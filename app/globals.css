@@ -161,3 +161,19 @@
   --admin-danger:        #a35a4c;
   --admin-danger-bg:     rgba(163, 90, 76, 0.1);
 }
+
+/* Page transitions (lib/view-transition.ts): navigation starts at once; the page
+   dims slightly with a thin progress bar, then the destination fades in. */
+html.pt-leaving body { opacity: .55; transition: opacity .15s ease-out; cursor: progress; }
+html.pt-leaving::after {
+  content: ""; position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 9999;
+  background: var(--primary); transform-origin: left; pointer-events: none;
+  animation: pt-bar 1.6s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+html.pt-entering body { animation: pt-in .22s ease-out both; }
+@keyframes pt-bar { from { transform: scaleX(0); } to { transform: scaleX(.85); } }
+@keyframes pt-in { from { opacity: .55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  html.pt-leaving body, html.pt-entering body { opacity: 1; animation: none; transition: none; }
+  html.pt-leaving::after { display: none; }
+}
