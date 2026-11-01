@@ -539,3 +539,12 @@ a.hs-day:hover { background: var(--secondary); }
 @keyframes hs-breathe { 0%, 80%, 100% { opacity: .25; transform: scale(.75); } 40% { opacity: 1; transform: scale(1); } }
 .hs-loader-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .hs-loader-dots i { animation-duration: 2.4s; transform: none; } }
+
+/* ── Status pages (404 and errors) ─────────────────────────────── */
+.hs-status-page { min-height: 100vh; min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 28px; max-width: 460px; margin: 0 auto; padding: 32px 16px; background: var(--background); color: var(--foreground); }
+.hs-status-body { display: flex; flex-direction: column; gap: 10px; }
+.hs-status-body h1 { margin: 0; }
+.hs-status-over { margin: 0; font: 600 12px/16px var(--hs-font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.hs-status-text { margin: 0; font-size: 16px; line-height: 1.55; color: var(--muted-foreground); }
+.hs-status-ref { margin: 0; font-size: 13px; color: var(--muted-foreground); opacity: .8; }
+.hs-status-actions { display: flex; flex-wrap: wrap; gap: 10px; }

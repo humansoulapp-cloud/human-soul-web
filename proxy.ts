@@ -41,6 +41,20 @@ export async function proxy(request: NextRequest) {
   // the landing and stay previewable.
   const isAppHost = host.startsWith('my.');
 
+  // ─── Email links ──────────────────────────────────────────────────────────
+  // Supabase sends confirmation links to the Site URL ("/") when no redirect is
+  // given or allowed. Hand them to /auth/callback so they sign the person in.
+  // The callback and the cron job must work without a session.
+  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/api/cron/')) {
+    return supabaseResponse;
+  }
+  const params = request.nextUrl.searchParams;
+  if (pathname === '/' && (params.has('code') || params.has('token_hash'))) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    return NextResponse.redirect(url);
+  }
+
   if (pathname === '/') {
     if (isAppHost || user) {
       const url = request.nextUrl.clone();

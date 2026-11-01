@@ -111,42 +111,6 @@ export async function updateUserPlan(userId: string, plan: "free" | "plus") {
   return { success: true };
 }
 
-
-export async function getStats() {
-  const serviceClient = createServiceClient();
-
-  const [journeysRes, usersRes] = await Promise.all([
-    serviceClient.from("journeys").select("id, featured, premium, status, scheduled_publish_at"),
-    serviceClient.from("profiles").select("user_id", { count: "exact", head: true }),
-  ]);
-
-  const journeys = (journeysRes.data ?? []) as {
-    id: string;
-    featured: boolean;
-    premium: boolean;
-    status?: string | null;
-    scheduled_publish_at?: string | null;
-  }[];
-
-  const scheduled = journeys.filter(
-    (j) => j.status === "scheduled" && j.scheduled_publish_at && new Date(j.scheduled_publish_at) > new Date()
-  );
-  const drafts = journeys.filter((j) => j.status === "draft");
-  const archived = journeys.filter((j) => j.status === "archived");
-
-  return {
-    totalJourneys: journeys.length,
-    totalUsers: usersRes.count ?? 0,
-    featuredJourneys: journeys.filter((j) => j.featured).length,
-    premiumJourneys: journeys.filter((j) => j.premium).length,
-    scheduledJourneys: scheduled.length,
-    draftJourneys: drafts.length,
-    archivedJourneys: archived.length,
-    publishedJourneys: journeys.length - scheduled.length - drafts.length - archived.length,
-  };
-}
-
-
 export type JourneyPerformance = {
   id: string;
   title: string;
@@ -168,7 +132,7 @@ export type JourneyPerformance = {
  * people falls the most is where the journey loses them.
  */
 export async function getJourneyPerformance(): Promise<JourneyPerformance[]> {
-  const serviceClient = createServiceClient();
+  const serviceClient = await requireAdmin();
 
   const [{ data: journeys }, { data: reflections }] = await Promise.all([
     serviceClient.from("journeys").select("id, title, category, status, journey_days(day)"),
@@ -229,7 +193,7 @@ export async function getJourneyPerformance(): Promise<JourneyPerformance[]> {
 }
 
 export async function getWritingStats() {
-  const serviceClient = createServiceClient();
+  const serviceClient = await requireAdmin();
 
   const since = new Date();
   since.setDate(since.getDate() - 30);

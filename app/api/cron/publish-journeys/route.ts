@@ -11,10 +11,11 @@ import { publishOverdueJourneys } from "@/lib/actions/journeys";
  */
 export async function GET(request: Request) {
   try {
-    // Optional cron secret verification if set in environment
+    // Vercel Cron sends "Authorization: Bearer $CRON_SECRET" when the variable
+    // is set in the project. Without it the route stays closed.
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -25,9 +26,9 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
       ...result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }
