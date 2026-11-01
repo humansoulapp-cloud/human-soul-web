@@ -26,7 +26,7 @@ export type WaitlistEntry = { id: string; email: string; created_at: string };
 
 export type BetaOverview =
   | { ready: true; settings: BetaSettings; invites: BetaInvite[]; waitlist: WaitlistEntry[] }
-  | { ready: false };
+  | { ready: false; error: string };
 
 const DEFAULTS: BetaSettings = { invite_only: true, max_users: 30, access_days: 90 };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,8 +94,16 @@ export async function joinWaitlist(rawEmail: string): Promise<{ ok: boolean; err
 
 export async function getBetaOverview(): Promise<BetaOverview> {
   const service = await requireAdmin();
-  const settings = await readSettings(service);
-  if (!settings) return { ready: false };
+  const { data: row, error: settingsError } = await service
+    .from("beta_settings")
+    .select("invite_only, max_users, access_days")
+    .eq("id", 1)
+    .maybeSingle();
+  if (settingsError) {
+    const e = settingsError as { code?: string; message?: string; hint?: string | null };
+    return { ready: false, error: [e.code, e.message, e.hint].filter(Boolean).join(" · ") };
+  }
+  const settings = (row as BetaSettings | null) ?? DEFAULTS;
 
   const [{ data: invites }, { data: waitlist }] = await Promise.all([
     service.from("beta_invites").select("*").order("invited_at", { ascending: false }),

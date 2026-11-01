@@ -18,9 +18,13 @@ export default async function AdminBetaPage() {
           </div>
         </div>
         <div className="hsa-banner err" role="alert" style={{ marginTop: 16 }}>
-          The beta tables aren&apos;t in the database yet. In Supabase → SQL Editor, run
-          scripts/migration-2026-11-beta-access.sql from the repository, then reload this page.
+          The app can&apos;t read the beta tables. In Supabase → SQL Editor, run
+          scripts/migration-2026-11-beta-access.sql from the repository (in the same project this site uses), then
+          reload this page.
         </div>
+        <p className="hsa-soft" style={{ marginTop: 12 }}>
+          Supabase says: <code>{overview.error}</code>
+        </p>
       </>
     );
   }
