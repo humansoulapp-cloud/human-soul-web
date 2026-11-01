@@ -27,6 +27,7 @@ import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import { PLANS, PLUS_PERKS } from "@/lib/plans";
 import type { ReflectionRow } from "@/lib/journal";
+import { journeyInfo } from "@/lib/reflections";
 import { Button, SegmentProgress } from "@/components/ds";
 import { nextDayHasOpened } from "@/lib/journey-days";
 
@@ -114,6 +115,7 @@ export default function JourneyDetailClient({
   initialDay,
   suggestions = [],
   returnTo,
+  entryId,
   startEditing = false,
 }: {
   journey: JourneyRow;
@@ -124,6 +126,8 @@ export default function JourneyDetailClient({
   initialDay?: number;
   /** Opened from Journal: Exit goes back there (with the shared-text transition). */
   returnTo?: string;
+  /** The reflection opened from Journal: when a day has more than one, this is the one shown and edited. */
+  entryId?: string;
   /** Open the day's written reflection straight in the editor. */
   startEditing?: boolean;
   suggestions?: JourneySuggestion[];
@@ -165,15 +169,18 @@ export default function JourneyDetailClient({
       const n = days[index]?.day;
       if (n == null) return null;
       const header = `[${journey.title} - Day ${n}:`;
-      return (
-        entries.find((r) => {
-          const tags = r.tags ?? [];
-          if (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || (r.content ?? "").startsWith(header))) return true;
-          return (r.content ?? "").trim().startsWith(header);
-        }) ?? null
-      );
+      const matches = (r: ReflectionRow) => {
+        const tags = r.tags ?? [];
+        if (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || (r.content ?? "").startsWith(header))) return true;
+        if ((r.content ?? "").trim().startsWith(header)) return true;
+        const info = journeyInfo(r);
+        return Boolean(info && info.title === journey.title && info.day === n);
+      };
+      /* Opened from Journal: edit exactly that reflection, not another one for the same day. */
+      const opened = entryId ? entries.find((r) => r.id === entryId && matches(r)) : undefined;
+      return opened ?? entries.find(matches) ?? null;
     },
-    [entries, days, journey.title]
+    [entries, days, journey.title, entryId]
   );
 
   /* Keep what the server returns after a refresh, without losing rows saved here. */

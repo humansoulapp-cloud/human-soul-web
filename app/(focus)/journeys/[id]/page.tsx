@@ -4,6 +4,7 @@ import { journeyImage } from "@/lib/journey-images";
 import { createClient } from "@/lib/supabase/server";
 import JourneyDetailClient from "@/components/JourneyDetailClient";
 import type { ReflectionRow } from "@/lib/journal";
+import { journeyInfo, type Reflection } from "@/lib/reflections";
 import { EARLIEST_TIME_ZONE, nextDayHasOpened } from "@/lib/journey-days";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
 
@@ -48,6 +49,12 @@ export default async function JourneyDetailPage({
 
     const byId = new Map<string, ReflectionRow>();
     for (const r of [...(reflectionRows ?? []), ...(headerRows ?? [])] as ReflectionRow[]) byId.set(r.id, r);
+    /* The reflection opened from Journal, even when its tags and header no longer
+       match the queries above (it is then recognised by its journey fields). */
+    if (from === "journal" && r && !byId.has(r)) {
+      const { data: opened } = await supabase.from("reflections").select("*").eq("user_id", user.id).eq("id", r).maybeSingle();
+      if (opened && journeyInfo(opened as Reflection)?.title === journey.title) byId.set(opened.id, opened as ReflectionRow);
+    }
     reflections = [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
     subscribed = accessFrom(profile?.plan, betaUntil).full;
     profileTimeZone = (profile?.timezone as string | null | undefined) ?? null;
@@ -71,7 +78,9 @@ export default async function JourneyDetailPage({
     return reflections.find((r) => {
       const tags = r.tags ?? [];
       const text = (r.content ?? "").trim();
-      return (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || text.startsWith(header))) || text.startsWith(header);
+      if ((tags.includes(`Day ${n}`) && (tags.includes(journey.title) || text.startsWith(header))) || text.startsWith(header)) return true;
+      const info = journeyInfo(r as Reflection);
+      return Boolean(info && info.title === journey.title && info.day === n);
     });
   };
   const firstOpen = sortedDays.findIndex((d) => !entryFor(d.day));
@@ -111,6 +120,7 @@ export default async function JourneyDetailPage({
       initialDay={Number.isFinite(initialDay) ? initialDay : undefined}
       suggestions={suggestions}
       returnTo={from === "journal" ? (r ? `/journal?r=${encodeURIComponent(r)}` : "/journal") : undefined}
+      entryId={from === "journal" ? r : undefined}
       startEditing={edit === "1"}
     />
   );
