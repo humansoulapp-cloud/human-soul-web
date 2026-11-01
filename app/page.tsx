@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 const MOTION_FLAG = `document.documentElement.classList.add("lp-js")`;
 
 const Wordmark = ({ size = 22 }: { size?: number }) => (
-  <span style={{ fontSize: size, lineHeight: 1 }}>
+  <span style={{ fontSize: size, lineHeight: 1, whiteSpace: "nowrap" }}>
     <span className="wm-a">Human</span>
     <span className="wm-b">Soul</span>
   </span>

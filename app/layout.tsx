@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Fraunces, Instrument_Sans, Public_Sans } from "next/font/google";
-import localFont from "next/font/local";
+import { Fraunces, Instrument_Sans, Public_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 /* Design System v2: Fraunces (headings, SOFT axis) + Instrument Sans (text).
-   DM Sans and Bernstein only draw the wordmark. Public Sans stays for Admin. */
+   The wordmark uses Instrument Sans + Times New Roman (system font, see ds.css).
+   Public Sans stays for Admin. */
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
@@ -16,19 +16,6 @@ const instrumentSans = Instrument_Sans({
   variable: "--font-instrument-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["500"],
-});
-
-const bernstein = localFont({
-  variable: "--font-bernstein",
-  src: "./fonts/BernsteinSerial-Regular.ttf",
-  weight: "400",
-  display: "swap",
 });
 
 const publicSans = Public_Sans({
@@ -65,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${instrumentSans.variable} ${dmSans.variable} ${bernstein.variable} ${publicSans.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${instrumentSans.variable} ${publicSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col selection:bg-[var(--ds-accent)]/20 selection:text-[var(--ds-text)]">

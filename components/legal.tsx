@@ -4,9 +4,9 @@ import "@/app/legal.css";
 export type LegalSection = { id: string; title: string; body: React.ReactNode };
 
 const Wordmark = () => (
-  <span>
-    <span style={{ fontFamily: "var(--hs-font-wordmark)", fontWeight: 500 }}>Human</span>
-    <span style={{ fontFamily: "var(--hs-font-wordmark-serif)" }}>Soul</span>
+  <span className="hs-logo">
+    <span className="hs-logo-human">Human</span>
+    <span className="hs-logo-soul">Soul</span>
   </span>
 );
 
