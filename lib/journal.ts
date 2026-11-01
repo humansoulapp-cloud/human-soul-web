@@ -4,6 +4,8 @@
  * These helpers keep that derivation in one place.
  */
 
+import { nextDayHasOpened } from "@/lib/journey-days";
+
 export type UserJournal = {
   id: string;
   user_id: string;
@@ -187,6 +189,8 @@ export type ActiveJourney = {
   completedDays: number;
   totalDays: number;
   nextDay: JourneyDay;
+  /** The next day was earned today and opens tomorrow morning (see lib/journey-days). */
+  waitingForMorning: boolean;
 };
 
 const DAY_TAG = /^Day (\d+)$/;
@@ -195,7 +199,11 @@ const DAY_TAG = /^Day (\d+)$/;
  * Progress lives implicitly in `reflections`: each journey reflection is
  * tagged with the journey title and `Day N` (see JourneyDetailClient).
  */
-export function findActiveJourney(journeys: Journey[], reflections: ReflectionRow[]): ActiveJourney | null {
+export function findActiveJourney(
+  journeys: Journey[],
+  reflections: ReflectionRow[],
+  { timeZone, now = new Date() }: { timeZone?: string | null; now?: Date } = {}
+): ActiveJourney | null {
   const byTitle = new Map(journeys.map((j) => [j.title, j]));
   const seen = new Set<string>();
 
@@ -222,7 +230,13 @@ export function findActiveJourney(journeys: Journey[], reflections: ReflectionRo
     // finished journeys are no longer "in progress" — keep looking
     if (!nextDay) continue;
 
-    return { journey, completedDays, totalDays: days.length, nextDay };
+    const lastWritten = reflections.find((x) => {
+      const tags = x.tags ?? [];
+      return tags.includes(journey.title) && tags.includes(`Day ${completedDays}`);
+    });
+    const waitingForMorning = lastWritten ? !nextDayHasOpened(lastWritten.created_at, timeZone, now) : false;
+
+    return { journey, completedDays, totalDays: days.length, nextDay, waitingForMorning };
   }
 
   return null;

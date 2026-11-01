@@ -45,8 +45,8 @@ export default function TermsPage() {
                 substitute for professional care</b>, and nothing in the app is medical or psychological advice.
               </p>
               <p>
-                If you are in crisis or thinking about harming yourself, contact your local emergency number or a crisis line in your country
-                right away.
+                If you are in crisis or thinking about harming yourself, call or text <b>988</b> (the 988 Suicide &amp; Crisis Lifeline, free and
+                open 24/7 in the US) or your local emergency number right away.
               </p>
             </>
           ),

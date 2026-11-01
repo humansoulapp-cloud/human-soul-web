@@ -71,6 +71,7 @@ export default function HomePage() {
     load();
   }, []);
 
+  /* Home runs in the browser, so the device's time zone decides when the next day opens. */
   const active = useMemo(() => findActiveJourney(journeys, reflections), [journeys, reflections]);
 
   /** Journeys the person has not written in yet; featured ones first. */
@@ -116,6 +117,7 @@ export default function HomePage() {
             total={active.totalDays}
             done={active.completedDays}
             todayTitle={active.nextDay.title}
+            waitingForMorning={active.waitingForMorning}
           />
         ) : offer ? (
           <JourneyProgressCard
@@ -207,7 +209,7 @@ export default function HomePage() {
 
       <HomeTour
         journeyTitle={(active?.journey ?? offer)?.title}
-        dayHref={active ? `/journeys/${active.journey.id}?day=${active.nextDay.day}` : offer ? `/journeys/${offer.id}?day=1` : "/journeys"}
+        dayHref={active ? (active.waitingForMorning ? `/journeys/${active.journey.id}` : `/journeys/${active.journey.id}?day=${active.nextDay.day}`) : offer ? `/journeys/${offer.id}?day=1` : "/journeys"}
       />
     </div>
   );

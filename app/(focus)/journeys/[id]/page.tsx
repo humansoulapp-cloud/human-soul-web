@@ -4,6 +4,7 @@ import { journeyImage } from "@/lib/journey-images";
 import { createClient } from "@/lib/supabase/server";
 import JourneyDetailClient from "@/components/JourneyDetailClient";
 import type { ReflectionRow } from "@/lib/journal";
+import { EARLIEST_TIME_ZONE, nextDayHasOpened } from "@/lib/journey-days";
 
 export default async function JourneyDetailPage({
   params,
@@ -23,6 +24,7 @@ export default async function JourneyDetailPage({
 
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
+  let profileTimeZone: string | null = null;
 
   if (user) {
     const [{ data: reflectionRows }, { data: headerRows }, { data: profile }] = await Promise.all([
@@ -46,6 +48,7 @@ export default async function JourneyDetailPage({
     for (const r of [...(reflectionRows ?? []), ...(headerRows ?? [])] as ReflectionRow[]) byId.set(r.id, r);
     reflections = [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
     subscribed = Boolean(profile?.plan && profile.plan !== "free");
+    profileTimeZone = (profile?.timezone as string | null | undefined) ?? null;
   }
 
   /* Two journeys to offer when this one is complete: featured first. */
@@ -54,25 +57,31 @@ export default async function JourneyDetailPage({
     .slice(0, 2)
     .map((j) => ({ id: j.id, title: j.title, image: journeyImage(j) }));
 
-  /* Days unlock in order: the first day without a reflection is open, later
-     ones stay shut, and Plus journeys open only Day 1 without a subscription.
-     Locked days reach the browser with their title only, and a ?day= link to a
-     locked day goes back to the journey's overview. */
+  /* Days unlock in order, one each morning: the first day without a reflection
+     opens once a new morning has come since the day before it was written.
+     Plus journeys open only Day 1 without a subscription. Locked days reach the
+     browser with their title only, and a ?day= link to a locked day goes back
+     to the journey's overview. */
   const premiumLocked = Boolean(journey.premium) && !subscribed;
   const sortedDays = [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day);
-  const hasEntry = (n: number) => {
+  const entryFor = (n: number) => {
     const header = `[${journey.title} - Day ${n}:`;
-    return reflections.some((r) => {
+    return reflections.find((r) => {
       const tags = r.tags ?? [];
       const text = (r.content ?? "").trim();
       return (tags.includes(`Day ${n}`) && (tags.includes(journey.title) || text.startsWith(header))) || text.startsWith(header);
     });
   };
-  const firstOpen = sortedDays.findIndex((d) => !hasEntry(d.day));
+  const firstOpen = sortedDays.findIndex((d) => !entryFor(d.day));
   const nextIndex = firstOpen === -1 ? sortedDays.length - 1 : firstOpen;
+  const timeZone = profileTimeZone ?? EARLIEST_TIME_ZONE;
   const isOpen = (index: number) => {
     if (premiumLocked && index > 0) return false;
-    return hasEntry(sortedDays[index].day) || index === nextIndex;
+    if (entryFor(sortedDays[index].day)) return true;
+    if (index !== nextIndex) return false;
+    if (index === 0) return true;
+    const previous = entryFor(sortedDays[index - 1].day);
+    return !previous || nextDayHasOpened(previous.created_at, timeZone);
   };
   const openDays = new Set(sortedDays.filter((_, i) => isOpen(i)).map((d) => d.day));
   const safeJourney = {
@@ -96,6 +105,7 @@ export default async function JourneyDetailPage({
       journey={safeJourney}
       reflections={reflections}
       subscribed={subscribed}
+      timeZone={profileTimeZone}
       initialDay={Number.isFinite(initialDay) ? initialDay : undefined}
       suggestions={suggestions}
       returnTo={from === "journal" ? (r ? `/journal?r=${encodeURIComponent(r)}` : "/journal") : undefined}
