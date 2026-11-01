@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Instrument_Sans, Public_Sans } from "next/font/google";
+import { Hedvig_Letters_Serif, Instrument_Sans, Public_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DialogHost } from "@/components/dialog";
 
-/* Design System v2: Fraunces (headings, SOFT axis) + Instrument Sans (text).
+/* Design System v2: Hedvig Letters Serif (headings) + Instrument Sans (text).
    The wordmark uses Instrument Sans + Times New Roman (system font, see ds.css).
    Public Sans stays for Admin. */
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const hedvig = Hedvig_Letters_Serif({
+  variable: "--font-hedvig",
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
+  weight: "400",
 });
 
 const instrumentSans = Instrument_Sans({
@@ -53,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${instrumentSans.variable} ${publicSans.variable} h-full antialiased`}
+      className={`${hedvig.variable} ${instrumentSans.variable} ${publicSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col selection:bg-[var(--ds-accent)]/20 selection:text-[var(--ds-text)]">

@@ -63,7 +63,7 @@
   --hs-radius-lg: 20px;
   --hs-radius-xl: 24px;
   --hs-radius-full: 9999px;
-  --hs-font-serif: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --hs-font-serif: var(--font-hedvig), "Hedvig Letters Serif", Georgia, serif;
   --hs-font-sans: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
   --hs-font-wordmark: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
   /* Times New Roman is a system font (macOS, Windows); Liberation Serif / Tinos share its metrics. */
@@ -349,7 +349,7 @@
 .hs-reveal:hover { background: var(--accent); color: var(--accent-foreground); }
 .hs-reveal:disabled { opacity: .5; cursor: not-allowed; }
 
-/* Fraunces: rounded terminals on every heading */
+/* Headings: variation settings are ignored by Hedvig Letters Serif, kept harmless */
 .text-display, .text-h1, .text-h2, .text-h3, .text-h4 { font-variation-settings: "SOFT" 100, "WONK" 0; font-optical-sizing: auto; }
 
 /* Textarea, writing variant (focus mode) */

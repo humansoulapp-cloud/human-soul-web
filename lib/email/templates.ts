@@ -2,7 +2,7 @@
  * HumanSoul emails, as plain HTML strings with inline styles so they render the
  * same in every mail client. Designs live in the canvas, page "Emails".
  *
- * Fonts: Fraunces and Instrument Sans load where the client allows it; others
+ * Fonts: Hedvig Letters Serif and Instrument Sans load where the client allows it; others
  * fall back to Georgia and the system sans.
  */
 
@@ -20,7 +20,7 @@ const C = {
   greenSoft: "#E8EFE7",
   greenInk: "#3B5641",
 };
-const SERIF = `'Fraunces', Georgia, 'Times New Roman', serif`;
+const SERIF = `'Hedvig Letters Serif', Georgia, 'Times New Roman', serif`;
 const SANS = `'Instrument Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif`;
 
 export function esc(value: string) {
@@ -68,7 +68,7 @@ function layout({ preheader, hero, body, footer }: { preheader: string; hero?: s
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <title>HumanSoul</title></head>
 <body style="margin:0;padding:0;background:${C.page}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
