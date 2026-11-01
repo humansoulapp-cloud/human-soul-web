@@ -1,79 +1,172 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { BookOpen, Check, Compass, Eye, EyeOff, Lock, Sun } from "lucide-react";
+import { Logo } from "@/components/ds";
+import "@/app/auth.css";
+
+export const QUOTE_IMAGE = "/landing/final.jpg";
+export const SIGN_UP_IMAGE = "/auth/sign-up.jpg";
 
 /**
- * The redesign's auth layout: the form on the left, an image panel on the
- * right that each screen fills with its own content. The panel is hidden
- * below lg, where the form takes the whole width.
+ * Auth layout (Design System v2): the form on the left and a photo panel on the
+ * right. Below 1024px the panel gives way to a short photo banner above the form.
  */
 export function AuthShell({
   children,
-  aside,
+  panel,
   image,
+  banner,
 }: {
   children: React.ReactNode;
-  aside: React.ReactNode;
+  panel: React.ReactNode;
   image: string;
+  banner: string;
 }) {
   return (
-    <main className="min-h-screen grid lg:grid-cols-2 bg-[var(--ds-bg)] text-[var(--ds-text)]">
-      <div className="flex flex-col px-6 py-8 md:px-11">
-        <Link
-          href="/"
-          className="text-[19px] font-bold tracking-[-0.015em] text-[var(--ds-text)] hover:text-[var(--ds-text)]"
-        >
-          Human<span className="font-normal">Soul</span>
+    <main className="au">
+      <div className="au-side">
+        <Link href="/" className="au-logo" aria-label="HumanSoul home">
+          <Logo size={24} />
         </Link>
-
-        <div className="flex-1 flex flex-col justify-center w-full max-w-[400px] mx-auto py-10">
-          {children}
+        <div className="au-mph" aria-hidden="true">
+          <img src={image} alt="" />
+          <span>{banner}</span>
         </div>
-
-        <div className="text-[11.5px] text-[var(--ds-text-muted)]">
+        <div className="au-form">{children}</div>
+        <div className="au-foot">
+          <Lock size={14} className="ai" aria-hidden="true" />
           Private by default. Your entries are yours.
         </div>
       </div>
-
-      <div className="relative overflow-hidden hidden lg:flex items-end">
-        <span className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${image}")` }} />
-        <span className="absolute inset-0 bg-gradient-to-b from-black/25 to-black/80" />
-        <div className="relative p-11 max-w-[560px]">{aside}</div>
-      </div>
+      <aside className="au-ph" aria-hidden="true">
+        <img src={image} alt="" />
+        <div className="au-ph-in">{panel}</div>
+      </aside>
     </main>
   );
 }
 
-export const AUTH_FIELD = "flex flex-col gap-[7px]";
-export const AUTH_LABEL = "text-[9.5px] font-bold tracking-[0.11em] text-[var(--ds-text-muted)]";
-export const AUTH_INPUT =
-  "w-full px-3.5 py-3 rounded-[10px] border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text)] text-sm";
-export const AUTH_SUBMIT =
-  "block w-full mt-5 p-3.5 rounded-[10px] bg-[var(--ds-accent)] hover:bg-[var(--ds-accent-hover)] text-[var(--ds-on-accent)] text-sm font-semibold text-center transition-colors disabled:opacity-60";
-export const AUTH_SMALL_LINK = "text-xs font-semibold text-[var(--ds-accent)]";
-
-/** Social sign-in is designed but not wired up yet, so the buttons are inert. */
-export function SocialButtons({ verb }: { verb: string }) {
+export function QuotePanel() {
   return (
     <>
-      <div className="flex flex-col gap-2.5 mt-6">
-        {["Apple", "Google"].map((provider) => (
-          <button
-            key={provider}
-            type="button"
-            disabled
-            title="Coming soon"
-            className="flex items-center justify-center gap-2.5 p-3 rounded-[10px] border border-[var(--ds-line-strong)] bg-[var(--ds-surface)] text-[var(--ds-text)] text-[13.5px] font-semibold opacity-50 cursor-not-allowed"
-          >
-            {verb} with {provider}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 my-5 text-[10px] font-bold tracking-[0.12em] text-[var(--ds-text-muted)]">
-        <span className="flex-1 h-px bg-[var(--ds-line)]" />
-        OR
-        <span className="flex-1 h-px bg-[var(--ds-line)]" />
+      <p className="au-q">“Most of life unfolds in ordinary moments that rarely seem important while they are happening.”</p>
+      <div className="au-q-src">
+        <Compass size={16} className="ai" aria-hidden="true" />
+        Becoming More Human · Day 1
       </div>
     </>
+  );
+}
+
+export function BenefitsPanel() {
+  return (
+    <>
+      <h2 className="au-ph-h">A quiet place to notice yourself</h2>
+      <ul className="au-ben">
+        <li>
+          <i>
+            <Sun size={18} aria-hidden="true" />
+          </i>
+          A question each day, one day at a time
+        </li>
+        <li>
+          <i>
+            <Compass size={18} aria-hidden="true" />
+          </i>
+          Guided journeys at your own pace
+        </li>
+        <li>
+          <i>
+            <BookOpen size={18} aria-hidden="true" />
+          </i>
+          A private journal, kept and searchable
+        </li>
+      </ul>
+    </>
+  );
+}
+
+export function Field({
+  label,
+  action,
+  children,
+  hint,
+}: {
+  label: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  hint?: React.ReactNode;
+}) {
+  return (
+    <label className="au-f">
+      <span className="au-lab">
+        {label}
+        {action}
+      </span>
+      {children}
+      {hint}
+    </label>
+  );
+}
+
+export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <span className="au-in">
+      <input {...props} />
+    </span>
+  );
+}
+
+export function PasswordInput(props: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="au-in pw">
+      <input {...props} type={show ? "text" : "password"} />
+      <button
+        type="button"
+        className="au-eye"
+        aria-label={show ? "Hide password" : "Show password"}
+        aria-pressed={show}
+        onClick={() => setShow((v) => !v)}
+      >
+        {show ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+      </button>
+    </span>
+  );
+}
+
+/** Four bars and a word; nothing until the person starts typing. */
+export function Strength({ password }: { password: string }) {
+  if (!password) return null;
+  const level = password.length < 8 ? 1 : password.length < 10 ? 2 : password.length < 13 ? 3 : 4;
+  const label = ["", "Too short", "Fine", "Good password", "Strong password"][level];
+  return (
+    <span className="au-str" aria-live="polite">
+      <span className={`au-str-t${level < 2 ? " weak" : ""}`} aria-hidden="true">
+        {[1, 2, 3, 4].map((i) => (
+          <span key={i} className={i <= level ? "on" : ""} />
+        ))}
+      </span>
+      {label}
+    </span>
+  );
+}
+
+export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button type="button" role="checkbox" aria-checked={checked} aria-label={label} className="au-ck" onClick={() => onChange(!checked)}>
+      <Check size={14} strokeWidth={3} aria-hidden="true" />
+    </button>
+  );
+}
+
+export function AuthError({ children }: { children: React.ReactNode }) {
+  if (!children) return null;
+  return (
+    <div className="au-err" role="alert">
+      {children}
+    </div>
   );
 }

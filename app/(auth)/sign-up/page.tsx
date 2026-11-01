@@ -3,25 +3,20 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, CircleCheck, Clock, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { checkSignupAllowed, joinWaitlist } from "@/lib/actions/beta";
 import {
-  AUTH_FIELD,
-  AUTH_INPUT,
-  AUTH_LABEL,
-  AUTH_SUBMIT,
+  AuthError,
   AuthShell,
-  SocialButtons,
+  BenefitsPanel,
+  Checkbox,
+  Field,
+  PasswordInput,
+  SIGN_UP_IMAGE,
+  Strength,
+  TextInput,
 } from "@/components/auth-shell";
-
-const IMAGE =
-  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1600&q=80";
-
-const PERKS = [
-  "A question each morning, one day at a time",
-  "Guided journeys you move through at your own pace",
-  "Your full journal history, kept and searchable",
-];
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -31,19 +26,17 @@ export default function SignUpPage() {
   const [terms, setTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  /* Set when the account exists but the email still has to be confirmed. */
+  const [confirm, setConfirm] = useState(false);
   /* Set when the beta is invite-only and this email can't join yet. */
   const [closed, setClosed] = useState<null | "not_invited" | "full">(null);
   const [waitlisted, setWaitlisted] = useState(false);
-
-  const level = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
-  const strength = ["", "Too short", "Fine", "Strong"][level];
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !email.includes("@")) return setError("Enter a valid email address.");
     if (password.length < 8) return setError("Use at least 8 characters for your password.");
-    if (!terms) return setError("Accept the terms to continue.");
+    if (!terms) return setError("Accept the Terms and the Privacy Policy to continue.");
 
     setLoading(true);
     setError("");
@@ -77,32 +70,12 @@ export default function SignUpPage() {
       router.push("/onboarding");
       router.refresh();
     } else {
-      setInfo("Account created. Check your email to confirm your registration.");
+      setConfirm(true);
     }
   };
 
   return (
-    <AuthShell
-      image={IMAGE}
-      aside={
-        <>
-          <div className="flex flex-col gap-3.5">
-            {PERKS.map((text) => (
-              <div
-                key={text}
-                className="flex items-start gap-3 text-[17px] leading-[1.5] text-[#f6f4ed]"
-              >
-                <span className="text-[#cfe0c9] font-bold flex-shrink-0">✓</span>
-                {text}
-              </div>
-            ))}
-          </div>
-          <div className="text-[11.5px] font-semibold tracking-[0.1em] uppercase text-white/70 mt-6">
-            Guided journeys · new ones each month
-          </div>
-        </>
-      }
-    >
+    <AuthShell image={SIGN_UP_IMAGE} banner="A quiet place to notice yourself" panel={<BenefitsPanel />}>
       {closed ? (
         <BetaClosed
           reason={closed}
@@ -114,111 +87,76 @@ export default function SignUpPage() {
             setWaitlisted(false);
           }}
         />
-      ) : (
-      <>
-      <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">Create your account</h1>
-      <p className="text-sm text-[var(--ds-text-muted)] m-0">
-        Start today&apos;s reflection in about a minute.
-      </p>
-
-      <SocialButtons verb="Sign up" />
-
-      <form onSubmit={handleSignUp}>
-        <div className="flex flex-col gap-3">
-          <label className={AUTH_FIELD}>
-            <span className={AUTH_LABEL}>NAME</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="How you want to be greeted"
-              className={AUTH_INPUT}
-            />
-          </label>
-
-          <label className={AUTH_FIELD}>
-            <span className={AUTH_LABEL}>EMAIL</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className={AUTH_INPUT}
-            />
-          </label>
-
-          <label className={AUTH_FIELD}>
-            <span className={AUTH_LABEL}>PASSWORD</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className={AUTH_INPUT}
-            />
-            <span className="flex items-center gap-2 mt-0.5">
-              <span className="flex-1 h-1 rounded-full bg-[var(--ds-line)] block overflow-hidden">
-                <span
-                  className={`block h-full rounded-full transition-all ${
-                    level < 2 ? "bg-[var(--ds-gold)]" : "bg-[var(--ds-accent)]"
-                  }`}
-                  style={{ width: `${level * 33}%` }}
-                />
-              </span>
-              <span className="text-[11px] text-[var(--ds-text-muted)] w-16 text-right">
-                {strength}
-              </span>
-            </span>
-          </label>
-
-          <div className="flex items-start gap-2.5 mt-0.5">
-            <button
-              type="button"
-              onClick={() => setTerms((v) => !v)}
-              aria-pressed={terms}
-              className={`w-[19px] h-[19px] flex-shrink-0 mt-0.5 rounded-md grid place-items-center text-[11px] font-bold border ${
-                terms
-                  ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-on-accent)]"
-                  : "border-[var(--ds-line-strong)]"
-              }`}
-            >
-              {terms ? "✓" : ""}
+      ) : confirm ? (
+        <>
+          <span className="au-over">
+            <Mail size={14} aria-hidden="true" />
+            One last step
+          </span>
+          <h1 className="au-h">Check your email</h1>
+          <p className="au-p">
+            We sent a link to <b>{email.trim()}</b>. Open it to confirm your account and we&apos;ll take you to your first journey.
+          </p>
+          <div className="au-box">
+            <Clock size={20} className="ai" aria-hidden="true" />
+            <div>
+              <b>It should arrive in a minute</b>
+              If you don&apos;t see it, look in spam or promotions.
+            </div>
+          </div>
+          <p className="au-alt">
+            Wrong email?{" "}
+            <button type="button" onClick={() => setConfirm(false)}>
+              Use another one
             </button>
-            <span className="text-xs leading-[1.55] text-[var(--ds-text-muted)]">
-              I agree to the{" "}
-              <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-[var(--ds-text)]">
-                Terms
-              </Link>{" "}
-              and the{" "}
-              <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-[var(--ds-text)]">
-                Privacy Policy
-              </Link>
-              . Entries are private and never used to train anything.
-            </span>
-          </div>
-        </div>
+          </p>
+        </>
+      ) : (
+        <>
+          <span className="au-over">Join HumanSoul</span>
+          <h1 className="au-h">Create your account</h1>
+          <p className="au-p">It takes a minute. Then we&apos;ll help you choose where to begin.</p>
 
-        {error && (
-          <div className="mt-4 px-3.5 py-3 rounded-[10px] border border-[var(--ds-danger)] text-[var(--ds-danger)] text-[12.5px]">
-            {error}
-          </div>
-        )}
-        {info && (
-          <div className="mt-4 px-3.5 py-3 rounded-[10px] bg-[var(--ds-accent-soft)] text-[var(--ds-text-mid)] text-[12.5px]">
-            {info}
-          </div>
-        )}
+          <form onSubmit={handleSignUp} noValidate>
+            <div className="au-fields">
+              <Field label="What should we call you?">
+                <TextInput autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your first name" />
+              </Field>
+              <Field label="Email">
+                <TextInput type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </Field>
+              <Field label="Password" hint={<Strength password={password} />}>
+                <PasswordInput autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+              </Field>
+              <div className="au-terms">
+                <Checkbox checked={terms} onChange={setTerms} label="I agree to the Terms and the Privacy Policy" />
+                <span>
+                  I agree to the{" "}
+                  <Link href="/terms" target="_blank">
+                    Terms
+                  </Link>{" "}
+                  and the{" "}
+                  <Link href="/privacy" target="_blank">
+                    Privacy Policy
+                  </Link>
+                  . What I write stays private and is never used to train AI.
+                </span>
+              </div>
+            </div>
 
-        <button type="submit" disabled={loading} className={AUTH_SUBMIT}>
-          {loading ? "Creating account…" : "Create account"}
-        </button>
-      </form>
+            <AuthError>{error}</AuthError>
 
-      </>
+            <button type="submit" disabled={loading} className="au-btn">
+              {loading ? "Creating account…" : "Create account"}
+              {!loading && <ArrowRight size={16} aria-hidden="true" />}
+            </button>
+          </form>
+
+          <p className="au-alt">
+            Already have an account? <Link href="/sign-in">Sign in</Link>
+          </p>
+        </>
       )}
-
-      <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-[18px]">
-        Already have an account? <Link href="/sign-in">Sign in</Link>
-      </p>
     </AuthShell>
   );
 }
@@ -251,37 +189,53 @@ function BetaClosed({
 
   return (
     <div role="status">
-      <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
-        {reason === "full" ? "The beta is full" : "HumanSoul is in private beta"}
-      </h1>
-      <p className="text-sm leading-[1.6] text-[var(--ds-text-muted)] m-0">
+      <button type="button" className="au-back" onClick={onBack}>
+        <ArrowLeft size={16} aria-hidden="true" />
+        Back
+      </button>
+      <span className="au-over">Private beta</span>
+      <h1 className="au-h">{reason === "full" ? "The beta is full, for now" : "HumanSoul is invite only, for now"}</h1>
+      <p className="au-p">
         {reason === "full"
-          ? "Every beta place is taken for now. Leave your email and we'll write when HumanSoul opens to everyone."
-          : <>Right now only invited people can create an account. If you were invited, use the exact email the invitation was sent to. Otherwise, join the waitlist and we&apos;ll write when there&apos;s a place for you.</>}
+          ? "Every beta place is taken. Leave your email and we'll write when HumanSoul opens to everyone."
+          : "Only invited people can create an account right now. If you were invited, use the exact email the invitation was sent to."}
       </p>
 
       {waitlisted ? (
-        <div className="mt-5 px-3.5 py-3 rounded-[10px] bg-[var(--ds-accent-soft)] text-[var(--ds-text-mid)] text-[13px]">
-          You&apos;re on the list. We&apos;ll write to <b>{email.trim()}</b>.
+        <div className="au-box">
+          <CircleCheck size={20} className="ai" aria-hidden="true" />
+          <div>
+            <b>You&apos;re on the list</b>
+            We&apos;ll write to {email.trim()} when there&apos;s a place for you.
+          </div>
         </div>
       ) : (
-        <button type="button" onClick={join} disabled={sending} className={AUTH_SUBMIT}>
-          {sending ? "Adding you…" : `Join the waitlist with ${email.trim()}`}
-        </button>
+        <>
+          <div className="au-fields">
+            <Field label="Email">
+              <TextInput type="email" value={email.trim()} readOnly />
+            </Field>
+          </div>
+          <button type="button" onClick={join} disabled={sending} className="au-btn">
+            {sending ? "Adding you…" : "Join the waitlist"}
+          </button>
+          <div className="au-box soft">
+            <Clock size={18} className="ai" aria-hidden="true" />
+            <div>
+              <b>No spam, one email</b>
+              We&apos;ll write once, when there&apos;s a place for you.
+            </div>
+          </div>
+        </>
       )}
-      {error && (
-        <div className="mt-4 px-3.5 py-3 rounded-[10px] border border-[var(--ds-danger)] text-[var(--ds-danger)] text-[12.5px]">
-          {error}
-        </div>
-      )}
+      <AuthError>{error}</AuthError>
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-4 text-[12.5px] text-[var(--ds-text-muted)] underline underline-offset-2 hover:text-[var(--ds-text)] bg-transparent border-0 p-0 cursor-pointer"
-      >
-        Use a different email
-      </button>
+      <p className="au-alt">
+        Have an invite?{" "}
+        <button type="button" onClick={onBack}>
+          Try another email
+        </button>
+      </p>
     </div>
   );
 }

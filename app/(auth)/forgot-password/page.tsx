@@ -2,17 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, Clock, KeyRound, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  AUTH_FIELD,
-  AUTH_INPUT,
-  AUTH_LABEL,
-  AUTH_SUBMIT,
-  AuthShell,
-} from "@/components/auth-shell";
-
-const IMAGE =
-  "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=1600&q=80";
+import { AuthError, AuthShell, Field, QUOTE_IMAGE, QuotePanel, TextInput } from "@/components/auth-shell";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,8 +12,7 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const send = async () => {
     if (!email.trim()) return setError("Enter the email you signed up with.");
 
     setLoading(true);
@@ -41,77 +32,65 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell
-      image={IMAGE}
-      aside={
-        <>
-          <div className="text-[22px] leading-[1.55] font-medium text-[#f6f4ed]">
-            “Your journal is where you left it.”
-          </div>
-          <div className="text-[11.5px] font-semibold tracking-[0.1em] uppercase text-white/70 mt-4">
-            Nothing you wrote is affected by this
-          </div>
-        </>
-      }
-    >
+    <AuthShell image={QUOTE_IMAGE} banner="Nothing you wrote is affected" panel={<QuotePanel />}>
       {sent ? (
         <>
-          <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">Check your email</h1>
-          <p className="text-sm leading-[1.7] text-[var(--ds-text-muted)] m-0">
-            If there is an account for <strong>{email.trim()}</strong>, a link to choose a new
-            password is on its way. It is valid for one hour.
+          <span className="au-over">
+            <Mail size={14} aria-hidden="true" />
+            Link sent
+          </span>
+          <h1 className="au-h">Check your email</h1>
+          <p className="au-p">
+            If there is an account for <b>{email.trim()}</b>, a link to choose a new password is on its way. Open it on this device to continue.
           </p>
-          <p className="text-[12.5px] text-[var(--ds-text-muted)] leading-[1.6] mt-5">
-            Nothing arrived? Look in spam, or{" "}
-            <button
-              type="button"
-              onClick={() => setSent(false)}
-              className="font-semibold text-[var(--ds-accent)]"
-            >
-              try another address
+          <div className="au-box">
+            <Clock size={20} className="ai" aria-hidden="true" />
+            <div>
+              <b>The link works for one hour</b>
+              If you don&apos;t see it, look in spam or promotions.
+            </div>
+          </div>
+          <button type="button" className="au-btn sec" disabled={loading} onClick={send}>
+            {loading ? "Sending…" : "Resend the email"}
+          </button>
+          <AuthError>{error}</AuthError>
+          <p className="au-alt">
+            Wrong email?{" "}
+            <button type="button" onClick={() => setSent(false)}>
+              Use another one
             </button>
-            .
-          </p>
-          <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-4">
-            <Link href="/sign-in">Back to sign in</Link>
           </p>
         </>
       ) : (
         <>
-          <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
-            Forgot your password
-          </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">
-            Tell us your email and we will send you a link to choose a new one.
-          </p>
+          <Link href="/sign-in" className="au-back">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to sign in
+          </Link>
+          <span className="au-over">
+            <KeyRound size={14} aria-hidden="true" />
+            Password reset
+          </span>
+          <h1 className="au-h">Forgot your password?</h1>
+          <p className="au-p">Enter the email you signed up with and we&apos;ll send you a link to choose a new one.</p>
 
-          <form onSubmit={handleSubmit} className="mt-6">
-            <label className={AUTH_FIELD}>
-              <span className={AUTH_LABEL}>EMAIL</span>
-              <input
-                type="email"
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className={AUTH_INPUT}
-              />
-            </label>
-
-            {error && (
-              <div className="mt-4 px-3.5 py-3 rounded-[10px] border border-[var(--ds-danger)] text-[var(--ds-danger)] text-[12.5px]">
-                {error}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className={AUTH_SUBMIT}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+            noValidate
+          >
+            <div className="au-fields">
+              <Field label="Email">
+                <TextInput type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </Field>
+            </div>
+            <AuthError>{error}</AuthError>
+            <button type="submit" disabled={loading} className="au-btn">
               {loading ? "Sending…" : "Send the link"}
             </button>
           </form>
-
-          <p className="text-[12.5px] text-[var(--ds-text-muted)] mt-4">
-            Remembered it? <Link href="/sign-in">Sign in</Link>
-          </p>
         </>
       )}
     </AuthShell>

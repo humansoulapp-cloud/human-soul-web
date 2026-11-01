@@ -3,18 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  AUTH_FIELD,
-  AUTH_INPUT,
-  AUTH_LABEL,
-  AUTH_SMALL_LINK,
-  AUTH_SUBMIT,
-  AuthShell,
-} from "@/components/auth-shell";
-
-const IMAGE =
-  "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1600&q=80";
+import { AuthError, AuthShell, Field, PasswordInput, QUOTE_IMAGE, QuotePanel, Strength } from "@/components/auth-shell";
 
 type Stage = "checking" | "ready" | "invalid" | "done";
 
@@ -22,7 +13,6 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("checking");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,34 +60,28 @@ export default function ResetPasswordPage() {
     setStage("done");
   };
 
+  const goHome = () => {
+    router.push("/dashboard");
+    router.refresh();
+  };
+
   return (
-    <AuthShell
-      image={IMAGE}
-      aside={
-        <>
-          <div className="text-[22px] leading-[1.55] font-medium text-[#f6f4ed]">
-            “Everything you have written is still there, waiting.”
-          </div>
-          <div className="text-[11.5px] font-semibold tracking-[0.1em] uppercase text-white/70 mt-4">
-            Choose a new password and carry on
-          </div>
-        </>
-      }
-    >
-      {stage === "checking" && (
-        <p className="text-sm text-[var(--ds-text-muted)]">Checking your link…</p>
-      )}
+    <AuthShell image={QUOTE_IMAGE} banner="Everything you wrote is still there" panel={<QuotePanel />}>
+      {stage === "checking" && <p className="au-muted">Checking your link…</p>}
 
       {stage === "invalid" && (
         <>
-          <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
-            This link has expired
-          </h1>
-          <p className="text-sm leading-[1.7] text-[var(--ds-text-muted)] m-0">
-            Recovery links last an hour and can only be used once. Ask for a new one and it will
-            work.
-          </p>
-          <Link href="/forgot-password" className={AUTH_SUBMIT}>
+          <span className="au-over">Password reset</span>
+          <h1 className="au-h">This link has expired</h1>
+          <p className="au-p">Recovery links last an hour and can only be used once. Ask for a new one and it will work.</p>
+          <div className="au-box soft">
+            <Clock size={20} className="ai" aria-hidden="true" />
+            <div>
+              <b>Nothing has changed</b>
+              Your account and your journal are exactly as you left them.
+            </div>
+          </div>
+          <Link href="/forgot-password" className="au-btn">
             Send me a new link
           </Link>
         </>
@@ -105,39 +89,17 @@ export default function ResetPasswordPage() {
 
       {stage === "ready" && (
         <>
-          <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
-            Choose a new password
-          </h1>
-          <p className="text-sm text-[var(--ds-text-muted)] m-0">
-            You will stay signed in on this device once it is saved.
-          </p>
-
-          <form onSubmit={handleSubmit} className="mt-6">
-            <label className={AUTH_FIELD}>
-              <span className={AUTH_LABEL}>NEW PASSWORD</span>
-              <input
-                type={show ? "text" : "password"}
-                autoFocus
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className={AUTH_INPUT}
-              />
-            </label>
-
-            <div className="flex justify-end mt-2">
-              <button type="button" onClick={() => setShow((v) => !v)} className={AUTH_SMALL_LINK}>
-                {show ? "Hide password" : "Show password"}
-              </button>
+          <span className="au-over">Almost there</span>
+          <h1 className="au-h">Choose a new password</h1>
+          <p className="au-p">Use at least 8 characters. Once it&apos;s saved you&apos;ll go straight to your journal.</p>
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="au-fields">
+              <Field label="New password" hint={<Strength password={password} />}>
+                <PasswordInput autoComplete="new-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+              </Field>
             </div>
-
-            {error && (
-              <div className="mt-4 px-3.5 py-3 rounded-[10px] border border-[var(--ds-danger)] text-[var(--ds-danger)] text-[12.5px]">
-                {error}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className={AUTH_SUBMIT}>
+            <AuthError>{error}</AuthError>
+            <button type="submit" disabled={loading} className="au-btn">
               {loading ? "Saving…" : "Save and continue"}
             </button>
           </form>
@@ -146,19 +108,10 @@ export default function ResetPasswordPage() {
 
       {stage === "done" && (
         <>
-          <h1 className="text-[30px] font-semibold tracking-[-0.015em] m-0 mb-2">
-            Your password is changed
-          </h1>
-          <p className="text-sm leading-[1.7] text-[var(--ds-text-muted)] m-0">
-            Nothing else about your account or your journal has changed.
-          </p>
-          <button
-            onClick={() => {
-              router.push("/dashboard");
-              router.refresh();
-            }}
-            className={AUTH_SUBMIT}
-          >
+          <span className="au-over">All set</span>
+          <h1 className="au-h">Your password is changed</h1>
+          <p className="au-p">Nothing else about your account or your journal has changed.</p>
+          <button type="button" onClick={goHome} className="au-btn">
             Go to your journal
           </button>
         </>
