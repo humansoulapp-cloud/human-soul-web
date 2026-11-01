@@ -75,7 +75,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <AuthShell image={SIGN_UP_IMAGE} banner="A quiet place to notice yourself" panel={<BenefitsPanel />}>
+    <AuthShell image={SIGN_UP_IMAGE} panel={<BenefitsPanel />}>
       {closed ? (
         <BetaClosed
           reason={closed}

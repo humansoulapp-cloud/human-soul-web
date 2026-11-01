@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <AuthShell image={QUOTE_IMAGE} banner="Everything you wrote is still there" panel={<QuotePanel />}>
+    <AuthShell image={QUOTE_IMAGE} panel={<QuotePanel />}>
       {stage === "checking" && <p className="au-muted">Checking your link…</p>}
 
       {stage === "invalid" && (

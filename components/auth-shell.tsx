@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Check, Compass, Eye, EyeOff, Lock, Sun } from "lucide-react";
+import { BookOpen, Check, Compass, Eye, EyeOff, Sun } from "lucide-react";
 import { Logo } from "@/components/ds";
 import "@/app/auth.css";
 
@@ -11,18 +11,16 @@ export const SIGN_UP_IMAGE = "/auth/sign-up.jpg";
 
 /**
  * Auth layout (Design System v2): the form on the left and a photo panel on the
- * right. Below 1024px the panel gives way to a short photo banner above the form.
+ * right. Below 1024px only the form shows.
  */
 export function AuthShell({
   children,
   panel,
   image,
-  banner,
 }: {
   children: React.ReactNode;
   panel: React.ReactNode;
   image: string;
-  banner: string;
 }) {
   return (
     <main className="au">
@@ -30,15 +28,7 @@ export function AuthShell({
         <Link href="/" className="au-logo" aria-label="HumanSoul home">
           <Logo size={24} />
         </Link>
-        <div className="au-mph" aria-hidden="true">
-          <img src={image} alt="" />
-          <span>{banner}</span>
-        </div>
         <div className="au-form">{children}</div>
-        <div className="au-foot">
-          <Lock size={14} className="ai" aria-hidden="true" />
-          Private by default. Your entries are yours.
-        </div>
       </div>
       <aside className="au-ph" aria-hidden="true">
         <img src={image} alt="" />

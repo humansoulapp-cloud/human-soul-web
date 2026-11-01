@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell image={QUOTE_IMAGE} banner="Nothing you wrote is affected" panel={<QuotePanel />}>
+    <AuthShell image={QUOTE_IMAGE} panel={<QuotePanel />}>
       {sent ? (
         <>
           <span className="au-over">

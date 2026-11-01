@@ -37,7 +37,7 @@ export default function SignInPage() {
   };
 
   return (
-    <AuthShell image={QUOTE_IMAGE} banner="Most of life unfolds in ordinary moments" panel={<QuotePanel />}>
+    <AuthShell image={QUOTE_IMAGE} panel={<QuotePanel />}>
       <span className="au-over">Welcome back</span>
       <h1 className="au-h">Your journal is where you left it</h1>
 
