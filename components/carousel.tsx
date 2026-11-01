@@ -50,7 +50,10 @@ export function CarouselSection({
   const page = (dir: 1 | -1) => {
     const el = row.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: "smooth" });
+    // One page is exactly the visible cards: the row width minus its bleed padding, plus one gap.
+    const cs = getComputedStyle(el);
+    const step = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + parseFloat(cs.columnGap || "0");
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
   };
 
   const scrollable = !(atStart && atEnd);

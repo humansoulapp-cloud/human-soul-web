@@ -346,11 +346,12 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
 /* The scroll box reaches past the cards so their shadows aren't clipped (overflow clips both axes);
    the negative margin keeps the cards aligned with the page, scroll-padding keeps the snap there. */
 .cr { --cr-bleed: 16px; display: grid; grid-auto-flow: column; grid-auto-columns: 82%; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--cr-bleed); scrollbar-width: none; margin: -16px calc(-1 * var(--cr-bleed)) -44px; padding: 16px var(--cr-bleed) 44px; overscroll-behavior-x: contain; }
-@media (min-width: 768px) { .cr { --cr-bleed: 28px; } }
 .cr::-webkit-scrollbar { display: none; }
 .cr > * { scroll-snap-align: start; min-width: 0; }
-@media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2.25); } }
-@media (min-width: 1024px) { .cr { gap: 24px; grid-auto-columns: calc((100% - 48px) / 3.25); } }
+/* From tablet up the row shows whole cards only (2, then 3), never one cut at the container edge.
+   The bleed matches the gap so the next card starts exactly where the view ends. */
+@media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2); } }
+@media (min-width: 1024px) { .cr { --cr-bleed: 24px; gap: 24px; grid-auto-columns: calc((100% - 48px) / 3); } }
 .cr-cards .ct-card { min-height: 300px; height: 100%; }
 .cr-cards .ct-tag { -webkit-line-clamp: 1; }
 .cr-nav { display: flex; align-items: center; gap: 8px; }
