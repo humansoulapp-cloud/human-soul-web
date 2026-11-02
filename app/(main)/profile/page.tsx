@@ -23,7 +23,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { deleteOwnAccount } from "@/lib/actions/account";
 import { PLANS } from "@/lib/plans";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
@@ -86,7 +86,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (!user) return setLoading(false);
 
       setUserId(user.id);

@@ -21,7 +21,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { markPageReady, transitionTo } from "@/lib/view-transition";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
@@ -342,9 +342,7 @@ export default function JourneyDetailClient({
     setError("");
 
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await currentUser(supabase);
     if (!user) {
       setSaving(false);
       setError("You need to be signed in to save this reflection.");
@@ -385,9 +383,7 @@ export default function JourneyDetailClient({
     if (!closing.trim()) return;
     setClosingSaving(true);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await currentUser(supabase);
     if (!user) {
       setClosingSaving(false);
       return;

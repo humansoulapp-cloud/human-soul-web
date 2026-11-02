@@ -17,7 +17,7 @@ import {
   Sun,
   Sunset,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
 import { PLANS, YEARLY_SAVING } from "@/lib/plans";
@@ -91,7 +91,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (user) {
         setUserId(user.id);
         setName((user.user_metadata?.display_name || "").trim().split(/\s+/)[0] || "");

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Heart, PenLine, Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { findActiveJourney, type Journey, type UserJournal } from "@/lib/journal";
 import { journeyImage } from "@/lib/journey-images";
 import {
@@ -46,9 +46,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
 
       const { data: journeysData } = await supabase
         .from("journeys")

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Check, ChevronDown, Compass, Download, Lock, Shield, Sparkles } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { accessFrom, loadBetaUntil, type Access } from "@/lib/access";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
@@ -62,7 +62,7 @@ export default function SubscriptionPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       const [{ data: profile }, { data: journeys }, betaUntil] = await Promise.all([
         user
           ? supabase.from("profiles").select("*").eq("user_id", user.id).single()

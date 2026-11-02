@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Compass, Heart, Home, LogOut, Moon, PenLine, Shield, Sparkles, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
 import { Avatar, Button, Icon, Logo } from "@/components/ds";
 
@@ -46,9 +46,7 @@ export function Navigation() {
   React.useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (!user) return;
 
       setName(user.user_metadata?.display_name || user.email?.split("@")[0] || "");

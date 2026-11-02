@@ -17,34 +17,36 @@ export default async function JourneyDetailPage({
 }) {
   const { id } = await params;
   const { day, from, r, edit } = await searchParams;
-  const journey = await getJourney(id);
+  const supabase = await createClient();
+  // Everything that doesn't depend on the user loads side by side. The proxy has
+  // already checked the session, so the user id comes from its verified token.
+  const othersPromise = getJourneys().catch(() => []);
+  const [journey, { data: auth }] = await Promise.all([getJourney(id), supabase.auth.getClaims()]);
 
   if (!journey) notFound();
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = auth?.claims.sub ?? null;
 
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
   let profileTimeZone: string | null = null;
 
-  if (user) {
+  if (userId) {
     const [{ data: reflectionRows }, { data: headerRows }, { data: profile }, betaUntil] = await Promise.all([
       supabase
         .from("reflections")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .contains("tags", [journey.title])
         .order("created_at", { ascending: false }),
       /* Entries whose tags were changed later still carry the day's header in their text. */
       supabase
         .from("reflections")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .like("content", `[${journey.title.replace(/[%_\\]/g, "\\$&")} - Day %`)
         .order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-      loadBetaUntil(supabase, user.id),
+      supabase.from("profiles").select("*").eq("user_id", userId).single(),
+      loadBetaUntil(supabase, userId),
     ]);
 
     const byId = new Map<string, ReflectionRow>();
@@ -52,7 +54,7 @@ export default async function JourneyDetailPage({
     /* The reflection opened from Journal, even when its tags and header no longer
        match the queries above (it is then recognised by its journey fields). */
     if (from === "journal" && r && !byId.has(r)) {
-      const { data: opened } = await supabase.from("reflections").select("*").eq("user_id", user.id).eq("id", r).maybeSingle();
+      const { data: opened } = await supabase.from("reflections").select("*").eq("user_id", userId).eq("id", r).maybeSingle();
       if (opened && journeyInfo(opened as Reflection)?.title === journey.title) byId.set(opened.id, opened as ReflectionRow);
     }
     reflections = [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -61,7 +63,7 @@ export default async function JourneyDetailPage({
   }
 
   /* Two journeys to offer when this one is complete: featured first. */
-  const others = (await getJourneys().catch(() => [])).filter((j) => j.id !== journey.id);
+  const others = (await othersPromise).filter((j) => j.id !== journey.id);
   const suggestions = [...others.filter((j) => j.featured), ...others.filter((j) => !j.featured)]
     .slice(0, 2)
     .map((j) => ({ id: j.id, title: j.title, image: journeyImage(j) }));

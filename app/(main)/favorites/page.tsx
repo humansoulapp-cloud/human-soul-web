@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDownUp, BookOpen, Compass, Heart, Search, Sparkles } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
   entryBody,
@@ -51,7 +51,7 @@ export default function FavoritesPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (!user) return setLoading(false);
       const [{ data }, { data: journalRows }] = await Promise.all([
         supabase

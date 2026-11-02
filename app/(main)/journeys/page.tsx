@@ -9,22 +9,24 @@ import { EARLIEST_TIME_ZONE } from "@/lib/journey-days";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
 
 export default async function JourneysPage() {
-  const journeys = await getJourneys();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // The journeys and the user's own data load side by side, not one after another.
+  // The proxy has already checked the session for this request, so the user id
+  // comes from its verified token (getClaims) instead of another auth round trip.
+  const [journeys, { data: auth }] = await Promise.all([getJourneys(), supabase.auth.getClaims()]);
+  const userId = auth?.claims.sub ?? null;
 
   let reflections: ReflectionRow[] = [];
   let subscribed = false;
   let isAdmin = false;
   let timeZone: string | null = null;
 
-  if (user) {
+  if (userId) {
     const [{ data: reflectionRows }, { data: profile }, betaUntil] = await Promise.all([
-      supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-      loadBetaUntil(supabase, user.id),
+      // Only what the in-progress card needs, not every reflection's text.
+      supabase.from("reflections").select("id, tags, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("profiles").select("plan, role, timezone").eq("user_id", userId).single(),
+      loadBetaUntil(supabase, userId),
     ]);
 
     reflections = (reflectionRows ?? []) as ReflectionRow[];

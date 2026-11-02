@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 
 type Step = { target: string[]; title: string; body: string };
 
@@ -102,7 +102,7 @@ export default function HomeTour({ journeyTitle, dayHref }: { journeyTitle?: str
       localStorage.setItem("hs_tour_done", "true");
     } catch {}
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await currentUser(supabase);
     if (!user) return;
     const { data } = await supabase.from("profiles").select("preferences").eq("user_id", user.id).maybeSingle();
     await supabase

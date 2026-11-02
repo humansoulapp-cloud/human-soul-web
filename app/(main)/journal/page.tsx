@@ -8,7 +8,7 @@ import { ArrowLeft, BookOpen, Compass, Heart, MoreHorizontal, PenLine, Plus, Sea
 import ReflectionEditor from "@/components/ReflectionEditor";
 import { loadJourneyPrompt, type JourneyPrompt } from "@/components/journeys/prompt-card";
 import { markPageReady, transitionTo } from "@/lib/view-transition";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
   dayGroupLabel,
@@ -108,9 +108,7 @@ function JournalPageInner() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (!user) return setLoading(false);
       setUserId(user.id);
       const [{ data: rows }, { data: journalRows }] = await Promise.all([

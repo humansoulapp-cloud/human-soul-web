@@ -4,7 +4,7 @@ import { askConfirm } from "@/components/dialog";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Camera, Check, ChevronDown, Compass, Plus, X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, currentUser } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
   MAX_PHOTO_BYTES,
@@ -120,9 +120,7 @@ export default function ReflectionEditor({
     if (init) return;
     async function load() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await currentUser(supabase);
       if (!user) {
         if (!embedded) router.push("/sign-in");
         return;

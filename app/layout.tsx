@@ -3,6 +3,7 @@ import { Hedvig_Letters_Serif, Instrument_Sans, Public_Sans } from "next/font/go
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DialogHost } from "@/components/dialog";
+import TopProgress from "@/components/TopProgress";
 
 /* Design System v2: Hedvig Letters Serif (headings) + Instrument Sans (text).
    The wordmark uses Instrument Sans + Hedvig Letters Serif (see ds.css).
@@ -60,6 +61,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <DialogHost />
+          <TopProgress />
         </ThemeProvider>
       </body>
     </html>

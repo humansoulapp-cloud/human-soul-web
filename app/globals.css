@@ -162,18 +162,17 @@
   --admin-danger-bg:     rgba(163, 90, 76, 0.1);
 }
 
-/* Page transitions (lib/view-transition.ts): navigation starts at once; the page
-   dims slightly with a thin progress bar, then the destination fades in. */
-html.pt-leaving body { opacity: .55; transition: opacity .15s ease-out; cursor: progress; }
-html.pt-leaving::after {
-  content: ""; position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 9999;
-  background: var(--primary); transform-origin: left; pointer-events: none;
-  animation: pt-bar 1.6s cubic-bezier(.2, .7, .3, 1) forwards;
+/* The app's single loading indicator (components/TopProgress): a thin bar along
+   the top while a page loads or gathers its data. New content fades in. */
+.hs-progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 9999; pointer-events: none;
+  background: var(--primary); transform-origin: left; transform: scaleX(0); opacity: 0;
 }
-html.pt-entering body { animation: pt-in .22s ease-out both; }
-@keyframes pt-bar { from { transform: scaleX(0); } to { transform: scaleX(.85); } }
-@keyframes pt-in { from { opacity: .55; } to { opacity: 1; } }
+.hs-progress-running { opacity: 1; transform: scaleX(.85); transition: transform 2.4s cubic-bezier(.1, .6, .3, 1), opacity .15s; }
+.hs-progress-finishing { opacity: 0; transform: scaleX(1); transition: transform .2s ease-out, opacity .25s ease .15s; }
+.hs-page > *, .hs-focus > * { animation: hs-fade-in .24s ease-out both; }
+@keyframes hs-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  html.pt-leaving body, html.pt-entering body { opacity: 1; animation: none; transition: none; }
-  html.pt-leaving::after { display: none; }
+  .hs-progress-running, .hs-progress-finishing { transition: opacity .2s; }
+  .hs-page > *, .hs-focus > * { animation: none; }
 }
