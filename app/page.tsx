@@ -758,16 +758,16 @@ export default async function LandingPage() {
               <p className="bt-sub">In return, we&apos;ll ask for your honest feedback on what works and what could be better.</p>
               <div className="bt-stats">
                 <div>
-                  <b>30</b>
-                  <span>places</span>
-                </div>
-                <div>
                   <b>90</b>
-                  <span>days free</span>
+                  <span>days of full access</span>
                 </div>
                 <div>
-                  <b>0</b>
-                  <span>card needed</span>
+                  <b>7</b>
+                  <span>days per journey</span>
+                </div>
+                <div>
+                  <b>7</b>
+                  <span>minutes a day</span>
                 </div>
               </div>
             </div>
