@@ -192,7 +192,7 @@
 .lp .q-h .ai{color:var(--muted-foreground)}
 .lp .q p{margin:0;padding:0 24px 22px;font:400 16px/26px var(--font-sans);color:color-mix(in srgb,var(--foreground) 80%,transparent)}
 /* final */
-.lp .final{position:relative;margin:140px 0 0;width:100%;min-height:calc(100svh - 72px);padding:120px 32px 140px;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lp .final{position:relative;margin:140px 0 0;width:100%;min-height:100svh;padding:120px 32px 140px;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .lp .final img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .lp .final::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,19,18,.55),rgba(20,19,18,.85))}
 .lp .final > *:not(img){position:relative;z-index:1}
@@ -217,7 +217,8 @@
 .lp .foot-r a:hover{color:var(--foreground)}
 
 /* Nav: turns to glass once the page scrolls */
-.lp .nav{transition:padding .3s,background-color .3s}
+.lp .nav{transition:padding .3s,background-color .3s,transform .5s cubic-bezier(.2,.7,.2,1),opacity .4s}
+.lp.lp-end .nav{transform:translateY(-110%);opacity:0;pointer-events:none}
 .lp .nav::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;background:color-mix(in srgb,var(--background) 72%,transparent);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);box-shadow:0 1px 0 color-mix(in srgb,var(--foreground) 6%,transparent);transition:opacity .3s}
 .lp.lp-scrolled .nav{padding-top:12px;padding-bottom:12px;background:transparent}
 .lp.lp-scrolled .nav::before{opacity:1}
@@ -407,3 +408,23 @@
 .lp .final-foot nav{display:flex;gap:24px}
 .lp .final-foot a{font-size:14px;line-height:20px;color:#CFCAC2}
 .lp .final-foot a:hover{color:#F8F6F2}
+
+/* Final invitation: the photo settles, then logo, title, text and form arrive one after another */
+.lp-js .lp .final[data-reveal]{opacity:1;transform:none;filter:none}
+.lp-js .lp .final img{scale:1.18;transition:scale 2.6s cubic-bezier(.2,.7,.2,1)}
+.lp-js .lp .final.in img{scale:1}
+.lp-js .lp .final > :not(img):not(.final-foot){opacity:0;transform:translateY(28px);filter:blur(6px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1),filter 1s}
+.lp-js .lp .final.in > :not(img):not(.final-foot){opacity:1;transform:none;filter:none}
+.lp-js .lp .final.in > .final-mark{transition-delay:.2s}
+.lp-js .lp .final.in > .h2{transition-delay:.38s}
+.lp-js .lp .final.in > .sub{transition-delay:.56s}
+.lp-js .lp .final.in > .final-req{transition-delay:.74s}
+.lp-js .lp .final .final-mark{letter-spacing:.18em;transition-property:opacity,transform,filter,letter-spacing;transition-duration:1s,1s,1s,1.6s}
+.lp-js .lp .final.in .final-mark{letter-spacing:0}
+.lp-js .lp .final .final-foot{opacity:0;transition:opacity 1s 1s}
+.lp-js .lp .final.in .final-foot{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .lp-js .lp .final > *,.lp-js .lp .final .final-foot{opacity:1 !important;transform:none !important;filter:none !important;letter-spacing:normal !important}
+  .lp-js .lp .final img{scale:1 !important}
+  .lp.lp-end .nav{transform:none;opacity:1;pointer-events:auto}
+}

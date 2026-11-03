@@ -42,6 +42,8 @@ export default function LandingMotion() {
       raf = requestAnimationFrame(() => {
         const y = window.scrollY;
         root.classList.toggle("lp-scrolled", y > 8);
+        // The final invitation takes the whole screen: the menu steps aside once it fills most of it
+        if (final) root.classList.toggle("lp-end", final.getBoundingClientRect().top < window.innerHeight * 0.3);
         if (reduce) return;
         if (shot) {
           const r = shot.getBoundingClientRect();
