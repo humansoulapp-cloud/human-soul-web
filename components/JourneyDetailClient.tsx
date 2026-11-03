@@ -16,6 +16,7 @@ import {
   Compass,
   Layers,
   Lock,
+  Sunrise,
   PenLine,
   ShieldCheck,
   Sparkles,
@@ -443,7 +444,7 @@ export default function JourneyDetailClient({
           <ArrowLeft size={20} aria-hidden="true" />
           Journeys
         </Link>
-        <span className="jf-head-label">Journey overview</span>
+        <span />
         <span />
       </header>
     ) : (
@@ -468,17 +469,15 @@ export default function JourneyDetailClient({
           onClick={() => setIndexOpen(true)}
         >
           <span className="jf-index-title">
+            {/* Day first, so it stays visible when a long title is cut on a phone. */}
             <span>
-              {journey.title} · Day {day?.day} of {total}
+              Day {day?.day} of {total} · {journey.title}
             </span>
             <ChevronDown size={14} aria-hidden="true" />
           </span>
           {progressBar}
         </button>
-        <span className="jf-private">
-          <Lock size={14} aria-hidden="true" />
-          <span className="jf-private-label">Private</span>
-        </span>
+        <span />
       </header>
     );
 
@@ -514,11 +513,26 @@ export default function JourneyDetailClient({
             Saved privately in your journal
           </li>
         </ul>
+        {/* While the next day waits for the morning, say so first; reading
+            the last day again is the quieter option. */}
+        {waiting && startDay ? (
+          <div className="jf-wait" style={{ marginTop: 16 }}>
+            <span className="jf-wait-ico" aria-hidden="true">
+              <Sunrise size={20} />
+            </span>
+            <span className="jf-bar-text">
+              <b>Day {startDay.day} opens tomorrow morning</b>
+              <span>
+                {doneCount} of {total} days written · {startDay.title}
+              </span>
+            </span>
+          </div>
+        ) : null}
         <div className="jf-actions" style={{ marginTop: 16 }}>
-          <Button size="lg" onClick={overviewCta.onClick}>
+          <Button size="lg" variant={waiting ? "secondary" : undefined} onClick={overviewCta.onClick}>
             {overviewCta.label}
           </Button>
-          {locked ? (
+          {waiting ? null : locked ? (
             <button type="button" className="jf-link" onClick={() => setPaywallOpen(true)}>
               Included with Plus
               <ChevronRight size={14} aria-hidden="true" />
@@ -714,17 +728,11 @@ export default function JourneyDetailClient({
   const dayView = day ? (
     <main className="jf-main jf-split">
       <div className="jf-col-read">
+        {/* The header already says which day this is, with the progress bar. */}
         <div className="jf-stack">
-          <span className="text-overline jf-over">
-            Day {day.day} of {total}
-          </span>
           <h1 id="jf-title" className="jf-h1">
             {day.title}
           </h1>
-          <span className="jf-meta">
-            <PenLine size={16} aria-hidden="true" />
-            Read, then write
-          </span>
         </div>
 
         {dayParas.length > 0 ? (

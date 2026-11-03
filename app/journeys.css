@@ -409,3 +409,6 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
   .cr-img { width: 56px; height: 56px; }
   .cr-btn { grid-column: 1 / -1; justify-content: center; }
 }
+/* Overview while the next day waits for the morning. */
+.jf-wait { display: flex; align-items: center; gap: 12px; padding: 14px 18px 14px 14px; border-radius: 18px; background: color-mix(in srgb, var(--foreground) 8%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); max-width: 440px; }
+.jf-wait-ico { width: 40px; height: 40px; flex: none; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
