@@ -381,14 +381,6 @@ function JournalPageInner() {
       icon: <Compass size={14} aria-hidden="true" />,
       onClick: () => setFilter({ kind: "journeys" }),
     },
-    {
-      key: "favorites",
-      label: "Favorites",
-      n: counts.favorites,
-      on: filter.kind === "favorites",
-      icon: <Heart size={14} aria-hidden="true" />,
-      onClick: () => setFilter({ kind: "favorites" }),
-    },
   ];
 
   const selectedJourney = selected ? journeyInfo(selected) : null;
@@ -401,13 +393,10 @@ function JournalPageInner() {
       {/* ── Left: find ── */}
       <section className="jl" aria-labelledby="jl-title">
         <div className="jl-head">
-          <h1 id="jl-title" className="text-h2" style={{ margin: 0 }}>
+          {/* No "New" button: the blank page on the right is the new entry, and Reflect is in the navigation. */}
+          <h1 id="jl-title" className="text-h1" style={{ margin: 0 }}>
             Journal
           </h1>
-          <button type="button" className="jl-head-new" onClick={() => startWriting({ focus: "title" })}>
-            <Plus size={16} aria-hidden="true" />
-            New
-          </button>
         </div>
 
         <label className="jl-search">

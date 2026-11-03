@@ -244,10 +244,12 @@ export default function ProfilePage() {
 
   return (
     <div className="ac">
-      <div className="ac-head">
-        <h1 className="ac-h1">Profile</h1>
-        <span className="ac-sub">Your account, your plan and how HumanSoul behaves.</span>
-      </div>
+      <header className="hs-phead">
+        <div className="hs-phead-t">
+          <h1 className="text-h1">Profile</h1>
+          <p className="hs-phead-sub">Your account, your plan and how HumanSoul behaves.</p>
+        </div>
+      </header>
 
       <div className="ac-lay">
         <aside className="ac-me" aria-label="You">

@@ -147,3 +147,47 @@ export function CatalogCard({
     </article>
   );
 }
+
+/** A slim "continue" row: the journey in progress without taking over the page. */
+export function JourneyContinueRow({
+  href,
+  dayHref,
+  image,
+  title,
+  day,
+  total,
+  done,
+  todayTitle,
+  waitingForMorning = false,
+}: {
+  href: string;
+  dayHref: string;
+  image: string;
+  title: string;
+  day: number;
+  total: number;
+  done: number;
+  todayTitle: string;
+  waitingForMorning?: boolean;
+}) {
+  return (
+    <article className="cr-row">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="cr-img" src={image} alt="" />
+      <div className="cr-text">
+        <span className="cr-over">Continue</span>
+        <h2 className="cr-title">
+          <Link href={href}>{title}</Link>
+        </h2>
+        <span className="cr-meta">
+          {done} of {total} days written · {waitingForMorning ? "Tomorrow" : "Today"}: {todayTitle}
+        </span>
+      </div>
+      <Link className="cr-btn" href={waitingForMorning ? href : dayHref}>
+        {waitingForMorning ? "See your journey" : `Begin Day ${day}`}
+        <ArrowRight size={16} aria-hidden="true" />
+      </Link>
+    </article>
+  );
+}
+

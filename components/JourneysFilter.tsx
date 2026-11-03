@@ -44,33 +44,31 @@ export default function JourneysFilter({
 
   return (
     <>
+      <header className="hs-phead">
+        <div className="hs-phead-t">
+          <h1 id="journeys-all" className="text-h1">
+            Journeys
+          </h1>
+          <p className="hs-phead-sub">A theme and a prompt for each day, over seven days.</p>
+        </div>
+        <div className="jy-tools">
+          <Input
+            icon={Search}
+            placeholder="Search journeys"
+            aria-label="Search journeys"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShown(PAGE);
+            }}
+            className="w-full md:w-[320px]"
+          />
+        </div>
+      </header>
+
       {inProgress ? <section aria-label="Your journey in progress">{inProgress}</section> : null}
 
       <section className="hs-sec" aria-labelledby="journeys-all" style={{ gap: 20 }}>
-        <div className="jy-head">
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-            <h1 id="journeys-all" className="text-h2" style={{ margin: 0 }}>
-              Journeys
-            </h1>
-            <p className="text-body" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-              A theme and a prompt for each day, over seven days.
-            </p>
-          </div>
-          <div className="jy-tools">
-            <Input
-              icon={Search}
-              placeholder="Search journeys"
-              aria-label="Search journeys"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setShown(PAGE);
-              }}
-              className="w-full md:w-[320px]"
-            />
-          </div>
-        </div>
-
         <div className="hs-tabs" role="tablist" aria-label="Filter by category">
           {[ALL, ...categories].map((cat) => (
             <button

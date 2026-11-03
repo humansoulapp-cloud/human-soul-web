@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import JourneysFilter from "@/components/JourneysFilter";
 import { journeyImage } from "@/lib/journey-images";
 import { findActiveJourney, type Journey, type ReflectionRow } from "@/lib/journal";
-import { JourneyProgressCard } from "@/components/journeys/glass-cards";
+import { JourneyContinueRow } from "@/components/journeys/glass-cards";
 import { EARLIEST_TIME_ZONE } from "@/lib/journey-days";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
 
@@ -39,11 +39,10 @@ export default async function JourneysPage() {
   const categories = Array.from(new Set(journeys.map((j) => j.category).filter(Boolean))) as string[];
 
   const activeCard = active ? (
-    <JourneyProgressCard
+    <JourneyContinueRow
       href={`/journeys/${active.journey.id}`}
       dayHref={`/journeys/${active.journey.id}?day=${active.nextDay.day}`}
       image={journeyImage(active.journey)}
-      category={active.journey.category}
       title={active.journey.title}
       day={active.nextDay.day}
       total={active.totalDays}

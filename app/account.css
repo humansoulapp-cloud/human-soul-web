@@ -222,3 +222,16 @@
   .ac-danger, .ac-pl { grid-template-columns: 1fr; }
   .ac-times { padding-left: 0; }
 }
+
+/* Read again (Favorites): one quiet card, the words first. */
+.ac-ra { position: relative; display: block; margin-top: 24px; border-radius: 20px; background: var(--card); box-shadow: var(--hs-shadow-sm); }
+.ac-ra-link { display: flex; flex-direction: column; gap: 8px; padding: 20px 64px 20px 24px; color: inherit; text-decoration: none; border-radius: inherit; }
+.ac-ra-link:hover { color: inherit; background: color-mix(in srgb, var(--foreground) 3%, transparent); }
+.ac-ra-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ac-ra-over { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/16px var(--hs-font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.ac-ra-q { font: 400 20px/30px var(--ac-serif, var(--hs-font-serif)); font-variation-settings: "SOFT" 100, "WONK" 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-wrap: pretty; }
+.ac-ra-meta { font: 400 13px/18px var(--hs-font-sans); color: var(--muted-foreground); }
+.ac-ra-next { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border: 0; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.ac-ra-next:hover { background: var(--fill); color: var(--foreground); }
+.ac > .hs-phead { padding: 8px 0; }
+.ac > .hs-phead + .ac-grid { margin-top: 24px; }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowDownUp, BookOpen, Compass, Heart, Search, Sparkles } from "lucide-react";
+import { ArrowDownUp, BookOpen, Compass, Heart, RefreshCw, Search, Sparkles } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import type { UserJournal } from "@/lib/journal";
 import {
@@ -101,18 +101,17 @@ export default function FavoritesPage() {
   if (loading) return <PageLoader />;
 
   const again = items[pick] ?? items[0];
-  const anotherAvailable = items.length > 1;
 
   return (
     <div className="ac">
-      <div className="ac-head">
-        <h1 className="ac-h1">Favorites</h1>
-        <span className="ac-sub">
-          {items.length
-            ? `The moments you wanted to keep close · ${items.length} saved`
-            : "The moments you wanted to keep close"}
-        </span>
-      </div>
+      <header className="hs-phead">
+        <div className="hs-phead-t">
+          <h1 className="text-h1">Favorites</h1>
+          <p className="hs-phead-sub">
+            {items.length ? `The moments you wanted to keep close · ${items.length} saved` : "The moments you wanted to keep close"}
+          </p>
+        </div>
+      </header>
 
       {items.length === 0 ? (
         <section className="ac-empty" aria-labelledby="fav-empty">
@@ -143,50 +142,34 @@ export default function FavoritesPage() {
         </section>
       ) : (
         <>
-          {again && (
-            <section className="ac-again" aria-labelledby="fav-again">
-              <div>
-                <span className="ac-over">
+          {/* Read again: one older favorite, brought back quietly. Only worth it
+              once there are a few to choose from, otherwise it repeats the list. */}
+          {again && items.length >= 3 && (
+            <section className="ac-ra" aria-labelledby="fav-again">
+              <Link className="ac-ra-link" href={`/journal?r=${encodeURIComponent(again.id)}`}>
+                <span id="fav-again" className="ac-ra-over">
                   <Sparkles size={14} aria-hidden="true" />
-                  Read again · {ago(again.created_at)}
+                  Read again
                 </span>
-                <h2 id="fav-again" className="ac-again-t">
-                  {entryTitle(again)}
-                </h2>
-                <p className="ac-again-q">“{entryBody(again.content)}”</p>
-                <div className="ac-again-meta">
-                  <span className="ac-tag">
-                    {journeyInfo(again) ? <Compass size={14} aria-hidden="true" /> : <BookOpen size={14} aria-hidden="true" />}
-                    {entryLabels(again, journals)[0]}
-                  </span>
-                  <span>
-                    {new Date(again.created_at).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                  </span>
-                </div>
-              </div>
-              <div className="ac-again-side">
-                <p className="ac-again-note">
-                  One of your favorites, brought back each time you visit. Sometimes the words read differently a few weeks later.
-                </p>
-                <div className="ac-again-acts">
-                  <Link className="ac-btn ac-btn-sec" href={`/journal?r=${encodeURIComponent(again.id)}`}>
-                    <BookOpen size={16} aria-hidden="true" />
-                    Open in Journal
-                  </Link>
-                  {anotherAvailable && (
-                    <button
-                      type="button"
-                      className="ac-btn ac-btn-ghost"
-                      onClick={() => setPick((p) => (p + 1 + Math.floor(Math.random() * (items.length - 1))) % items.length)}
-                    >
-                      Show another
-                    </button>
-                  )}
-                </div>
-              </div>
+                <span className="ac-ra-q">{entryBody(again.content)}</span>
+                <span className="ac-ra-meta">
+                  {entryTitle(again)} · {ago(again.created_at)}
+                </span>
+              </Link>
+              <button
+                type="button"
+                className="ac-ra-next"
+                aria-label="Show another"
+                title="Show another"
+                onClick={() => setPick((p) => (p + 1 + Math.floor(Math.random() * (items.length - 1))) % items.length)}
+              >
+                <RefreshCw size={16} aria-hidden="true" />
+              </button>
             </section>
           )}
 
+          {/* Search, filters and order only help once there is something to sort. */}
+          {items.length >= 6 && (
           <div className="ac-tools">
             <label className="ac-srch">
               <span className="sr-only">Search favorites</span>
@@ -212,6 +195,7 @@ export default function FavoritesPage() {
               {newest ? "Recently saved" : "Oldest first"}
             </button>
           </div>
+          )}
 
           {visible.length === 0 ? (
             <section className="ac-empty" aria-live="polite">

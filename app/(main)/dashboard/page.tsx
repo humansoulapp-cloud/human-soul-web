@@ -110,7 +110,7 @@ export default function HomePage() {
 
   return (
     <div className="hc">
-      <h1 className="text-h2 hc-hello">
+      <h1 className="text-h1 hc-hello">
         {greeting()}
         {name ? `, ${name}` : ""}
       </h1>

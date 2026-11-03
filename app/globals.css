@@ -192,3 +192,10 @@ html { scrollbar-gutter: stable; }
   mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
   padding-right: 48px;
 }
+
+/* One page header for every app page: title, a quiet line under it, tools on the right. */
+.hs-phead { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 768px) { .hs-phead { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 24px; } }
+.hs-phead-t { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hs-phead .text-h1 { margin: 0; }
+.hs-phead-sub { margin: 0; font: 400 16px/24px var(--hs-font-sans); color: var(--muted-foreground); }
