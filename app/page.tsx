@@ -104,7 +104,7 @@ export default async function LandingPage() {
             <Link className="signin" href="/sign-in">
               Sign in
             </Link>
-            <a className="btn btn-pri" href="#beta">
+            <a className="btn btn-pri" href="#join">
               Request beta access
             </a>
           </div>
@@ -125,7 +125,7 @@ export default async function LandingPage() {
               entirely in your hands.
             </p>
             <div className="ctas">
-              <a className="btn btn-pri btn-lg" href="#beta">
+              <a className="btn btn-pri btn-lg" href="#join">
                 Request beta access
               </a>
               <a className="btn btn-sec btn-lg" href="#how">
@@ -562,7 +562,7 @@ export default async function LandingPage() {
                     <a
                       className="lc"
                       key={j.id}
-                      href="#beta"
+                      href="#join"
                       data-reveal=""
                       style={{ ["--d" as string]: i }}
                       aria-label={`${j.title}, request beta access`}
@@ -740,70 +740,60 @@ export default async function LandingPage() {
         </section>
 
         <section className="sec" id="beta">
-          <div className="w">
-            <div className="sec-head" data-reveal="">
+          <div className="w bt">
+            <div className="bt-l" data-reveal="">
               <span className="over">
                 <Sparkles className="ai" size={14} aria-hidden="true" />
                 The HumanSoul beta
               </span>
-              <h2 className="h2 serif" style={{ fontSize: 50 }}>
-                A small beginning, shaped together.
+              <h2 className="h2 serif">
+                A small beginning,
+                <br />
+                shaped together.
               </h2>
-              <p className="beta-lead">
-                We&apos;re inviting 30 people to experience HumanSoul during our first 90-day beta. You&apos;ll
-                receive complete access to everything HumanSoul has to offer, free of charge.
+              <p className="bt-lead">
+                We&apos;re inviting 30 people into our first 90-day beta, with full access to everything, free of
+                charge.
               </p>
-              <p className="beta-sub">
-                In return, we&apos;ll ask you to share your honest feedback to help us understand what&apos;s
-                working, what could be better, and how the experience feels.
-              </p>
-            </div>
-            <div className="price">
-              <div className="pc plus" data-reveal="">
-                <span className="pc-n">What you&apos;ll receive</span>
-                <ul>
-                  <li>
-                    <Check className="ai" size={16} />
-                    90 days of free access
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Every guided reflection journey
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Your own personal journaling space
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Access to all available features
-                  </li>
-                </ul>
-              </div>
-              <div className="pc" data-reveal="" style={{ ["--d" as string]: 1 }}>
-                <span className="pc-n">What we&apos;ll ask</span>
-                <ul>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Explore HumanSoul at your own pace
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Share honest feedback about your experience
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Complete occasional feedback surveys
-                  </li>
-                  <li>
-                    <Check className="ai" size={16} />
-                    Help us understand what feels useful and what could be improved
-                  </li>
-                </ul>
+              <p className="bt-sub">In return, we&apos;ll ask for your honest feedback on what works and what could be better.</p>
+              <div className="bt-stats">
+                <div>
+                  <b>30</b>
+                  <span>places</span>
+                </div>
+                <div>
+                  <b>90</b>
+                  <span>days free</span>
+                </div>
+                <div>
+                  <b>0</b>
+                  <span>card needed</span>
+                </div>
               </div>
             </div>
-            <div className="beta-cta" data-reveal="">
-              <BetaRequest />
+            <div className="bt-r">
+              <div className="bt-c plus" data-reveal="">
+                <span className="bt-n">What you&apos;ll receive</span>
+                <ul>
+                  {["90 days of free access", "Every guided journey", "Your private journal", "All available features"].map((t) => (
+                    <li key={t}>
+                      <Check className="ai" size={18} aria-hidden="true" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bt-c" data-reveal="" style={{ ["--d" as string]: 1 }}>
+                <span className="bt-n">What we&apos;ll ask</span>
+                <ul>
+                  {["Explore at your own pace", "Share honest feedback", "Answer a few short surveys"].map((t) => (
+                    <li key={t}>
+                      <Check className="ai" size={18} aria-hidden="true" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>
@@ -817,42 +807,29 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <section className="final" data-reveal="">
+        <section className="final" id="join" data-reveal="">
           <img src={finalPhoto} alt="" loading="lazy" />
-          <span className="over" style={{ color: "#C9D8CB" }}>
-            <PenLine className="ai" size={14} aria-hidden="true" />
-            An invitation to begin
+          <span className="final-mark" aria-label="HumanSoul">
+            <Wordmark size={30} />
           </span>
           <h2 className="h2 serif">Notice yourself, a little at a time.</h2>
           <p className="sub">
             We&apos;re beginning with a small group of 30 people. If HumanSoul feels like something you&apos;d like
             to explore, we&apos;d love to invite you into our first beta.
           </p>
-          <div className="ctas">
-            <a className="btn btn-pri btn-lg" href="#beta">
-              Request beta access
-              <ArrowRight size={18} aria-hidden="true" />
-            </a>
+          <div className="final-req">
+            <BetaRequest />
           </div>
-          <p className="sub" style={{ fontSize: 14, lineHeight: "20px", marginTop: 14, opacity: 0.75 }}>
-            90 days of free access · No card required
-          </p>
+          <footer className="final-foot">
+            <span>© {new Date().getFullYear()} HumanSoul</span>
+            <nav aria-label="Legal">
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <a href="mailto:hello@humansoul.co">Contact</a>
+            </nav>
+          </footer>
         </section>
       </main>
-
-      <footer className="foot">
-        <div className="foot-l">
-          <span style={{ color: "var(--foreground)" }}>
-            <Wordmark size={20} />
-          </span>
-          <span>A quiet place to notice yourself · © {new Date().getFullYear()} HumanSoul</span>
-        </div>
-        <div className="foot-r">
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/sign-in">Sign in</Link>
-        </div>
-      </footer>
     </div>
   );
 }

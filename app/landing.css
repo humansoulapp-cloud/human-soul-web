@@ -192,12 +192,12 @@
 .lp .q-h .ai{color:var(--muted-foreground)}
 .lp .q p{margin:0;padding:0 24px 22px;font:400 16px/26px var(--font-sans);color:color-mix(in srgb,var(--foreground) 80%,transparent)}
 /* final */
-.lp .final{position:relative;margin:140px auto 0;max-width:1120px;padding:88px 32px;border-radius:40px;overflow:hidden;text-align:center}
+.lp .final{position:relative;margin:140px 0 0;width:100%;min-height:100svh;padding:120px 32px 140px;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .lp .final img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .lp .final::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,19,18,.55),rgba(20,19,18,.85))}
 .lp .final > *:not(img){position:relative;z-index:1}
-.lp .final .h2{color:#F8F6F2;font-size:60px;line-height:64px}
-.lp .final .sub{color:#E3DED6}
+.lp .final .h2{margin-top:28px;color:#F8F6F2;font-size:72px;line-height:78px;text-wrap:balance}
+.lp .final .sub{color:#E3DED6;max-width:34em;text-wrap:balance}
 .lp .foot{max-width:1120px;margin:80px auto 0;padding:32px 0 56px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--foreground) 8%,transparent)}
 .lp .foot-l{display:flex;flex-direction:column;gap:6px}
 .lp .foot-l span{font:400 13px/18px var(--font-sans);color:var(--muted-foreground)}
@@ -328,7 +328,7 @@
   .lp .mb-hero{min-height:380px}
   .lp .sec{padding-top:96px}
   .lp .h2{font-size:clamp(34px,6vw,48px) !important;line-height:1.12 !important}
-  .lp .final{margin:96px 16px 0}
+  .lp .final{margin:96px 0 0}
   .lp .foot{padding:32px 20px 48px;grid-template-columns:1fr}
 }
 @media (max-width:640px){
@@ -343,7 +343,8 @@
   .lp .stage{padding:20px;min-height:0}
   .lp .ds{grid-template-columns:1fr}
   .lp .phone{width:270px;height:530px}
-  .lp .final{padding:64px 20px}
+  .lp .final{padding:72px 20px 160px}
+  .lp .final-foot{flex-direction:column;gap:14px;padding:24px 20px 32px}
   .lp .foot-r{flex-wrap:wrap;gap:16px}
 }
 
@@ -370,3 +371,39 @@
 .lp .breq-done svg{flex:none;margin-top:1px;color:var(--primary)}
 .lp .breq-done b{display:block;color:var(--foreground);font-weight:600}
 @media (max-width:560px){.lp .breq-f{flex-direction:column;border-radius:24px}.lp .breq-f input{min-height:48px}}
+
+/* Beta: two columns, numbers on the left, what you get and what we ask on the right */
+.lp .bt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:80px;align-items:center}
+.lp .bt-l .h2{font-size:52px;line-height:58px;text-wrap:balance}
+.lp .bt-lead{margin:24px 0 0;max-width:30em;font:400 19px/30px var(--font-sans);color:var(--foreground);text-wrap:balance}
+.lp .bt-sub{margin:14px 0 0;max-width:30em;font:400 16px/26px var(--font-sans);color:var(--muted-foreground);text-wrap:balance}
+.lp .bt-stats{display:flex;gap:40px;margin-top:40px}
+.lp .bt-stats div{display:flex;flex-direction:column;gap:2px}
+.lp .bt-stats b{font:400 44px/48px var(--font-serif);color:var(--primary)}
+.lp .bt-stats span{font:400 14px/20px var(--font-sans);color:var(--muted-foreground)}
+.lp .bt-r{display:flex;flex-direction:column;gap:16px}
+.lp .bt-c{padding:32px 36px;border-radius:28px;background:var(--card)}
+.lp .bt-c.plus{background:linear-gradient(165deg,color-mix(in srgb,var(--primary) 20%,var(--card)),var(--card) 75%)}
+.lp .bt-n{display:block;font:600 13px/18px var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}
+.lp .bt-c.plus .bt-n{color:var(--primary)}
+.lp .bt-c ul{list-style:none;margin:20px 0 0;padding:0;display:flex;flex-direction:column;gap:14px}
+.lp .bt-c li{display:flex;align-items:center;gap:12px;font:400 17px/24px var(--font-sans)}
+.lp .bt-c li .ai{flex:none;color:var(--primary)}
+@media (max-width:1023px){.lp .bt{grid-template-columns:1fr;gap:40px}}
+@media (max-width:640px){.lp .bt-stats{gap:28px}.lp .bt-c{padding:26px 24px}.lp .bt-l .h2{font-size:clamp(34px,8vw,44px) !important}}
+
+/* Final CTA: full screen, logo on top, the beta request form, legal links at the bottom */
+.lp .final-mark{font-size:30px;line-height:1;color:#F8F6F2}
+.lp .final-req{display:flex;justify-content:center;width:100%;margin-top:36px}
+.lp .final .breq-f{background:rgba(20,19,18,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:none}
+.lp .final .breq-f input{color:#F8F6F2}
+.lp .final .breq-f input::placeholder{color:#B8B2A9}
+.lp .final .breq-n{color:#CFCAC2}
+.lp .final .breq-n a{color:#F8F6F2}
+.lp .final .breq-err{color:#F2B8B0}
+.lp .final .breq-done{background:rgba(20,19,18,.6);backdrop-filter:blur(16px);color:#E3DED6}
+.lp .final .breq-done b{color:#F8F6F2}
+.lp .final-foot{position:absolute !important;left:0;right:0;bottom:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:24px;max-width:1184px;margin:0 auto;padding:28px 32px 36px;font:400 13px/18px var(--font-sans);color:#B8B2A9}
+.lp .final-foot nav{display:flex;gap:24px}
+.lp .final-foot a{font-size:14px;line-height:20px;color:#CFCAC2}
+.lp .final-foot a:hover{color:#F8F6F2}
