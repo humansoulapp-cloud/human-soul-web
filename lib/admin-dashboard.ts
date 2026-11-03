@@ -20,7 +20,11 @@ async function readAll<T>(build: (from: number, to: number) => PromiseLike<{ dat
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await build(from, from + 999);
-    if (error || !data) break;
+    if (error || !data) {
+      /* A failed read used to show as zeros on the dashboard. Say so in the server logs. */
+      if (error) console.error("[admin-dashboard] read failed:", error);
+      break;
+    }
     out.push(...(data as T[]));
     if (data.length < 1000) break;
   }

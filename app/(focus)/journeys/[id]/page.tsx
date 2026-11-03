@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { legacyJourneyId } from "@/lib/journey-redirects";
 import { getJourney, getJourneys } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import { createClient } from "@/lib/supabase/server";
@@ -23,7 +24,21 @@ export default async function JourneyDetailPage({
   const othersPromise = getJourneys().catch(() => []);
   const [journey, { data: auth }] = await Promise.all([getJourney(id), supabase.auth.getClaims()]);
 
-  if (!journey) notFound();
+  if (!journey) {
+    /* An old code (HS-J-001) or a different capitalisation of the address goes to
+       the journey's current address, keeping ?day= and the other parameters. */
+    const lower = decodeURIComponent(id).toLowerCase();
+    const target = legacyJourneyId(id) ?? (lower !== id ? lower : null);
+    if (target && target !== id) {
+      const qs = new URLSearchParams();
+      if (day) qs.set("day", day);
+      if (from) qs.set("from", from);
+      if (r) qs.set("r", r);
+      if (edit) qs.set("edit", edit);
+      permanentRedirect(`/journeys/${target}${qs.size ? `?${qs}` : ""}`);
+    }
+    notFound();
+  }
   const userId = auth?.claims.sub ?? null;
 
   let reflections: ReflectionRow[] = [];

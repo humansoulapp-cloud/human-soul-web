@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Compass, Search, Shield } from "lucide-react";
+import { Compass, Search } from "lucide-react";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import { Button, EmptyState, Input } from "@/components/ds";
@@ -20,7 +20,6 @@ export default function JourneysFilter({
   categories,
   activeJourneyId = null,
   subscribed = false,
-  isAdmin = false,
   inProgress = null,
 }: {
   journeys: JourneyRow[];
@@ -69,9 +68,6 @@ export default function JourneysFilter({
               }}
               className="w-full md:w-[320px]"
             />
-            {isAdmin && (
-              <Button variant="ghost" size="icon" icon={Shield} href="/admin/journeys" aria-label="Admin journeys" />
-            )}
           </div>
         </div>
 
