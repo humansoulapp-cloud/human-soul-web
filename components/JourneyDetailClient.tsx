@@ -574,7 +574,7 @@ export default function JourneyDetailClient({
                   {mark}
                 </span>
                 <span className="jf-gtitle">{d.title}</span>
-                {caption ? <span className="jf-gcap">{caption}</span> : <span className="hs-sr-only">Not open yet</span>}
+                {caption ? <span className="jf-gcap">{caption}</span> : <span className="hs-sr-only">Opens the morning after Day {d.day - 1} is written</span>}
               </>
             );
             const cls = `jf-gday${status === "today" ? " now" : ""}${status === "done" ? " done" : ""}`;
@@ -585,7 +585,11 @@ export default function JourneyDetailClient({
                     {inner}
                   </button>
                 ) : (
-                  <div className={`${cls} later`} aria-disabled="true">
+                  <div
+                    className={`${cls} later`}
+                    aria-disabled="true"
+                    title={status === "tomorrow" ? "Opens tomorrow morning" : `Opens the morning after Day ${d.day - 1} is written`}
+                  >
                     {inner}
                   </div>
                 )}
@@ -1105,7 +1109,7 @@ export default function JourneyDetailClient({
                         ? `Day ${d.day} · Opens tomorrow morning`
                         : status === "plus"
                         ? `Day ${d.day} · Included with Plus`
-                        : `Day ${d.day} · After Day ${d.day - 1}`;
+                        : `Day ${d.day} · Opens the morning after Day ${d.day - 1}`;
                 const step = (
                   <span className={`jf-step${status === "done" ? " jf-step-done" : status === "today" ? " jf-step-now" : ""}`} aria-hidden="true">
                     {status === "done" ? <Check size={14} /> : status === "today" ? d.day : <Lock size={14} />}

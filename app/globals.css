@@ -181,3 +181,14 @@
    last word. :where() keeps specificity at zero so any component can override. */
 :where(h1, h2, h3, h4, .text-h1, .text-h2, .text-h3) { text-wrap: balance; }
 :where(p) { text-wrap: pretty; }
+
+/* The page width never jumps between short pages (no scrollbar) and long ones. */
+html { scrollbar-gutter: stable; }
+
+/* Chip rows that scroll sideways fade at the edge instead of cutting a word in
+   half, and leave room so the last chip can scroll fully into view. */
+.hs-tabs, .jl-chips {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+  padding-right: 48px;
+}

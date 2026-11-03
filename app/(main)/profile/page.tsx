@@ -27,6 +27,7 @@ import { createClient, currentUser } from "@/lib/supabase/client";
 import { deleteOwnAccount } from "@/lib/actions/account";
 import { PLANS } from "@/lib/plans";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
+import { crisisLine } from "@/lib/crisis-lines";
 import { writtenDays, type Journey, type ReflectionRow } from "@/lib/journal";
 import PageLoader from "@/components/PageLoader";
 import "../../account.css";
@@ -236,6 +237,7 @@ export default function ProfilePage() {
   if (loading) return <PageLoader />;
 
   const initial = (profile.alias || name || email || "·").trim().charAt(0).toUpperCase();
+  const help = crisisLine(profile.timezone);
   const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : team ? "Team · full access" : "Free plan";
   const yearPlan = PLANS.find((p) => p.key === "year")!;
   const monthPlan = PLANS.find((p) => p.key === "month")!;
@@ -577,16 +579,20 @@ export default function ProfilePage() {
               <span className="ac-psec-n">HumanSoul is a space to reflect. It is not therapy or medical care.</span>
             </div>
             <div className="ac-acts">
-              <a className="ac-actrow" href="tel:988">
+              <a
+                className="ac-actrow"
+                href={help.href}
+                {...(help.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
                 <span className="ac-row-i">
                   <LifeBuoy size={18} aria-hidden="true" />
                 </span>
                 <span>
                   <span className="ac-row-t" style={{ display: "block" }}>
-                    Call or text 988
+                    {help.title}
                   </span>
                   <span className="ac-row-n" style={{ display: "block" }}>
-                    The 988 Suicide &amp; Crisis Lifeline, free and open 24/7 in the US. Elsewhere, call your local emergency number.
+                    {help.note}
                   </span>
                 </span>
                 <ChevronRight className="end" size={18} aria-hidden="true" />

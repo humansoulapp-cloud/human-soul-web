@@ -165,11 +165,15 @@ export function Navigation() {
         </div>
       </header>
 
-      {/* ── Mobile ── */}
-      <Link href="/journal/new" className="hs-fab hs-focusable">
-        <Icon icon={PenLine} size={20} />
-        Reflect
-      </Link>
+      {/* ── Mobile ──
+          Home has its own "Start writing" card, and the floating button would
+          sit on top of the journey's main button, so Home goes without it. */}
+      {pathname !== "/dashboard" ? (
+        <Link href="/journal/new" className="hs-fab hs-focusable">
+          <Icon icon={PenLine} size={20} />
+          Reflect
+        </Link>
+      ) : null}
       <div className="hs-bottombar">
         <nav className="hs hs-bottomnav" aria-label="Main navigation">
           {TAB_ITEMS.map((item) => (

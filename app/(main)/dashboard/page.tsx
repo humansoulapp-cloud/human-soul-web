@@ -184,7 +184,7 @@ export default function HomePage() {
                 <span className="rc-label">{entryLabels(r, journals)[0]}</span>
                 {r.favorite ? (
                   <span className="rc-fav" aria-label="Favorite">
-                    <Icon icon={Heart} size={14} />
+                    <Heart size={14} fill="currentColor" aria-hidden="true" />
                   </span>
                 ) : null}
               </span>
