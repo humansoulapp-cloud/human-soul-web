@@ -358,9 +358,10 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
    The bleed matches the gap so the next card starts exactly where the view ends. */
 @media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2); } }
 @media (min-width: 1024px) { .cr { --cr-bleed: 24px; gap: 24px; grid-auto-columns: calc((100% - 48px) / 3); } }
-.cr-cards { grid-auto-columns: 72%; }
-@media (min-width: 640px) { .cr-cards { grid-auto-columns: calc((100% - 16px * 2) / 2.4); } }
-@media (min-width: 1024px) { .cr-cards { grid-auto-columns: calc((100% - 24px * 3) / 3.5); } }
+/* Home carousels use the exact cards of the Journeys grid: same columns, same gaps, no card cut in half. */
+.cr-cards { grid-auto-columns: 100%; }
+@media (min-width: 640px) { .cr-cards { gap: 20px; grid-auto-columns: calc((100% - 20px) / 2); } }
+@media (min-width: 1024px) { .cr-cards { gap: 24px; grid-auto-columns: calc((100% - 48px) / 3); } }
 .cr-cards .ct-tag { -webkit-line-clamp: 1; }
 .cr-nav { display: flex; align-items: center; gap: 8px; }
 .cr-nav .hs-more { margin-right: 8px; }
