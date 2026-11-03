@@ -12,7 +12,12 @@ export const PLANS = [
 export const YEARLY_SAVING = Math.round((1 - 49.99 / (6.99 * 12)) * 100);
 
 export const PLUS_PERKS = [
-  "Every journey in the library, including new ones each month",
+  "Every journey in the library, and new ones as they arrive",
   "All seven days of each journey, one each morning",
-  "Your complete journal history, kept and searchable",
 ];
+
+/**
+ * False during the beta: there is no payment provider, so nothing shows a price
+ * or a checkout button inside the app. Flip it when Stripe is connected.
+ */
+export const BILLING_LIVE = false;

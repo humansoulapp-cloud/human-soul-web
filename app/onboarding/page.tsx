@@ -20,7 +20,7 @@ import {
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
-import { PLANS, YEARLY_SAVING } from "@/lib/plans";
+import { BILLING_LIVE, PLANS, YEARLY_SAVING } from "@/lib/plans";
 import { Logo } from "@/components/ds";
 import { sendWelcomeEmail } from "@/lib/actions/emails";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
@@ -100,11 +100,11 @@ export default function OnboardingPage() {
         setUserId(user.id);
         setName((user.user_metadata?.display_name || "").trim().split(/\s+/)[0] || "");
         const [{ data: profile }, betaUntil] = await Promise.all([
-          supabase.from("profiles").select("preferences, plan").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles").select("preferences, plan, role").eq("user_id", user.id).maybeSingle(),
           loadBetaUntil(supabase, user.id),
         ]);
         setPrefs(((profile?.preferences as Record<string, unknown>) ?? {}) || {});
-        setFullAccess(accessFrom(profile?.plan as string | null | undefined, betaUntil).full);
+        setFullAccess(accessFrom(profile?.plan as string | null | undefined, betaUntil, Date.now(), profile?.role as string | null | undefined).full);
       }
       const { data } = await supabase.from("journeys").select("*, journey_days(day)").order("created_at", { ascending: true });
       setJourneys(((data ?? []) as Journey[]).filter(isVisible));
@@ -178,7 +178,9 @@ export default function OnboardingPage() {
   };
 
   const back = () => (done ? setDone(false) : setStep((s) => Math.max(0, s - 1)));
-  const STEPS = fullAccess ? STEPS_ALL - 1 : STEPS_ALL;
+  /* No Plus step while billing isn't live (beta): nothing to choose or pay. */
+  const skipPlus = fullAccess || !BILLING_LIVE;
+  const STEPS = skipPlus ? STEPS_ALL - 1 : STEPS_ALL;
   const shown = done ? STEPS : step + 1;
   const year = PLANS.find((p) => p.key === "year")!;
   const month = PLANS.find((p) => p.key === "month")!;
@@ -368,7 +370,7 @@ export default function OnboardingPage() {
               type="button"
               className="ob-btn ob-pri ob-lg ob-wide"
               disabled={!chosen || saving}
-              onClick={() => (fullAccess ? finishPlan() : setStep(3))}
+              onClick={() => (skipPlus ? finishPlan() : setStep(3))}
             >
               Start with this journey
               <ArrowRight className="ai" size={16} aria-hidden="true" />
@@ -380,7 +382,7 @@ export default function OnboardingPage() {
         </main>
       )}
 
-      {!done && step === 3 && (
+      {!done && step === 3 && !skipPlus && (
         <main className="ob-main wide" key="s3">
           <span className="ob-over">HumanSoul Plus</span>
           <h1 className="ob-h">Every journey, with a free week.</h1>

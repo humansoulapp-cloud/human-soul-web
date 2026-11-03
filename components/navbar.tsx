@@ -57,7 +57,7 @@ export function Navigation() {
       ]);
 
       setIsAdmin(profile?.role === "admin");
-      setSubscribed(accessFrom(profile?.plan, betaUntil).full);
+      setSubscribed(accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full);
     }
     loadUser();
   }, []);

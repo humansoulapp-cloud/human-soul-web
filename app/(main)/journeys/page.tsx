@@ -30,7 +30,7 @@ export default async function JourneysPage() {
     ]);
 
     reflections = (reflectionRows ?? []) as ReflectionRow[];
-    subscribed = accessFrom(profile?.plan, betaUntil).full;
+    subscribed = accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full;
     isAdmin = profile?.role === "admin";
     timeZone = (profile?.timezone as string | null | undefined) ?? null;
   }

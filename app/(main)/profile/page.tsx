@@ -35,6 +35,7 @@ const HOURS = ["07:00", "13:00", "19:00", "21:00"];
 
 type Profile = {
   plan?: string | null;
+  role?: string | null;
   alias?: string | null;
   timezone?: string | null;
   reminder_hour?: string | null;
@@ -115,9 +116,10 @@ export default function ProfilePage() {
     load();
   }, []);
 
-  const access = accessFrom(profile.plan, betaUntil);
+  const access = accessFrom(profile.plan, betaUntil, Date.now(), profile.role);
   const plus = access.kind === "plus";
   const beta = access.kind === "beta";
+  const team = access.kind === "team";
   const betaEnded = access.kind === "free" && Boolean(betaUntil);
   const betaDate = betaUntil
     ? new Date(betaUntil).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -234,7 +236,7 @@ export default function ProfilePage() {
   if (loading) return <PageLoader />;
 
   const initial = (profile.alias || name || email || "·").trim().charAt(0).toUpperCase();
-  const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : "Free plan";
+  const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : team ? "Team · full access" : "Free plan";
   const yearPlan = PLANS.find((p) => p.key === "year")!;
   const monthPlan = PLANS.find((p) => p.key === "month")!;
 
@@ -358,12 +360,14 @@ export default function ProfilePage() {
                     ? `Every day of every journey, for ${yearly ? `${yearPlan.price} a year` : `${monthPlan.price} a month`}.`
                     : beta
                       ? `Thank you for being part of the beta. Every day of every journey is open until ${betaDate} (${access.betaDaysLeft} ${access.betaDaysLeft === 1 ? "day" : "days"} left).`
-                      : betaEnded
-                        ? `Your beta access ended on ${betaDate}. Everything you wrote is still here. The free journeys stay open; Plus opens every journey.`
-                        : `The free journeys are open to everyone. Plus opens every journey, for ${yearPlan.price} a year or ${monthPlan.price} a month.`}
+                      : team
+                        ? "As part of the team, every day of every journey is open so you can review them."
+                        : betaEnded
+                          ? `Your beta access ended on ${betaDate}. Everything you wrote is still here, and the free journeys stay open. Plus opens after the beta.`
+                          : "The free journeys are open to everyone. Plus journeys are open to beta testers, and Plus itself opens after the beta."}
                 </span>
               </div>
-              <Link className={`ac-btn ${plus ? "ac-btn-sec" : "ac-btn-pri"}`} href="/subscription">
+              <Link className={`ac-btn ${plus || team ? "ac-btn-sec" : "ac-btn-pri"}`} href="/subscription">
                 {plus ? "Manage" : "See Plus"}
                 <ChevronRight size={16} aria-hidden="true" />
               </Link>

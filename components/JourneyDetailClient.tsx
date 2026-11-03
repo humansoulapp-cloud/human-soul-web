@@ -25,7 +25,7 @@ import { createClient, currentUser } from "@/lib/supabase/client";
 import { markPageReady, transitionTo } from "@/lib/view-transition";
 import type { JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
-import { PLANS, PLUS_PERKS } from "@/lib/plans";
+import { BILLING_LIVE, PLANS, PLUS_PERKS } from "@/lib/plans";
 import type { ReflectionRow } from "@/lib/journal";
 import { journeyInfo } from "@/lib/reflections";
 import { Button, SegmentProgress } from "@/components/ds";
@@ -58,6 +58,23 @@ function paragraphs(text: string | null | undefined) {
     .split(/\n{2,}|\n/)
     .map((p) => p.trim())
     .filter(Boolean);
+}
+
+/**
+ * Text for reading in the About sheet. Admins often paste one long block, so a
+ * paragraph longer than a few sentences is split into groups of three.
+ */
+function readable(text: string | null | undefined) {
+  const out: string[] = [];
+  for (const p of paragraphs(text)) {
+    const sentences = p.match(/[^.!?]+[.!?]+["\u201d\u2019)]*\s*|[^.!?]+$/g) ?? [p];
+    if (p.length < 420 || sentences.length <= 3) {
+      out.push(p);
+      continue;
+    }
+    for (let i = 0; i < sentences.length; i += 3) out.push(sentences.slice(i, i + 3).join("").trim());
+  }
+  return out.filter(Boolean);
 }
 
 /** The sentence a person is most likely to recognise: the last full one. */
@@ -243,7 +260,14 @@ export default function JourneyDetailClient({
   const day = days[dayIndex];
   const dayEntry = entryFor(dayIndex);
   const dayParas = useMemo(() => paragraphs(day?.prompt), [day]);
-  const aboutParas = useMemo(() => paragraphs(journey.intro), [journey.intro]);
+  /* «Why this journey»: a short headline stays a heading; a long one (pasted
+     text) is read as the first paragraphs instead of a giant serif block. */
+  const aboutHeadline = journey.purpose && journey.purpose.trim().length <= 110 ? journey.purpose.trim() : null;
+  const aboutParas = useMemo(
+    () => readable([aboutHeadline ? "" : journey.purpose ?? "", journey.intro ?? ""].filter(Boolean).join("\n\n")),
+    [aboutHeadline, journey.purpose, journey.intro]
+  );
+  const [aboutMore, setAboutMore] = useState(false);
   const key = day ? draftKey(journey.id, day.day) : "";
 
   /* Load the text for the open day: an unsaved draft first, then what was saved. */
@@ -585,32 +609,40 @@ export default function JourneyDetailClient({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="jf-sheet-head">
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-            <span className="text-overline jf-over">{journey.title}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+            <span className="text-overline jf-over">
+              {[journey.category, `${total} days`].filter(Boolean).join(" · ")}
+            </span>
             <h2 id="jf-sheet-title" className="jf-sheet-title">
-              About this journey
+              {journey.title}
             </h2>
+            {journey.tagline ? <p className="jf-sheet-lede">{journey.tagline}</p> : null}
           </div>
           <Button variant="ghost" size="icon" icon={X} aria-label="Close" onClick={() => setAboutOpen(false)} />
         </div>
         <div className="jf-sheet-body">
-          {journey.purpose || aboutParas.length > 0 ? (
-            <section className="jf-sheet-sec" aria-labelledby={journey.purpose ? "jf-sh-why" : undefined}>
-              {journey.purpose ? (
-                <h3 id="jf-sh-why" className="jf-sheet-h">
-                  {journey.purpose}
-                </h3>
-              ) : null}
-              {aboutParas.map((text, i) => (
+          {aboutHeadline || aboutParas.length > 0 ? (
+            <section className="jf-sheet-sec" aria-labelledby="jf-sh-why">
+              <h3 id="jf-sh-why" className="jf-sheet-label">
+                Why this journey
+              </h3>
+              {aboutHeadline ? <p className="jf-sheet-h">{aboutHeadline}</p> : null}
+              {(aboutMore ? aboutParas : aboutParas.slice(0, 2)).map((text, i) => (
                 <p key={i} className="jf-sheet-p">
                   {text}
                 </p>
               ))}
+              {aboutParas.length > 2 ? (
+                <button type="button" className="jf-link jf-sheet-more" aria-expanded={aboutMore} onClick={() => setAboutMore((v) => !v)}>
+                  {aboutMore ? "Show less" : "Read more"}
+                  <ChevronDown size={14} aria-hidden="true" style={{ transform: aboutMore ? "rotate(180deg)" : undefined }} />
+                </button>
+              ) : null}
             </section>
           ) : null}
           <section className="jf-sheet-sec" aria-labelledby="jf-sh-find">
-            <h3 id="jf-sh-find" className="jf-sheet-h">
-              What you&apos;ll find each day
+            <h3 id="jf-sh-find" className="jf-sheet-label">
+              How it works
             </h3>
             <div className="jf-sheet-feats">
               <div className="jf-sheet-feat">
@@ -1124,10 +1156,12 @@ export default function JourneyDetailClient({
                 HumanSoul Plus
               </span>
               <h2 id="pw-title" className="text-h3" style={{ margin: 0 }}>
-                Every journey, always open
+                {BILLING_LIVE ? "Every journey, always open" : "This journey is part of Plus"}
               </h2>
               <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-                This journey is part of Plus. Plus opens all {total} days, one each morning, and every other journey in the library.
+                {BILLING_LIVE
+                  ? `Plus opens all ${total} days, one each morning, and every other journey in the library.`
+                  : "During the beta, Plus journeys are open to beta testers. Plus itself opens after the beta, and nothing can be charged yet."}
               </p>
             </div>
             <ul role="list" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1138,18 +1172,26 @@ export default function JourneyDetailClient({
                 </li>
               ))}
             </ul>
-            <div style={{ display: "flex", gap: 10 }}>
-              {PLANS.map((p) => (
-                <button key={p.key} type="button" className="jf-plan" aria-pressed={plan === p.key} onClick={() => setPlan(p.key)}>
-                  <span style={{ display: "block", font: "600 11px/16px var(--hs-font-sans)", letterSpacing: ".08em", opacity: 0.75 }}>{p.label}</span>
-                  <span style={{ display: "block", font: "600 22px/28px var(--hs-font-sans)", marginTop: 4 }}>{p.price}</span>
-                  <span style={{ display: "block", font: "400 12px/16px var(--hs-font-sans)", opacity: 0.75 }}>{p.note}</span>
-                </button>
-              ))}
-            </div>
-            <Button full href="/subscription">
-              Start Plus
-            </Button>
+            {BILLING_LIVE ? (
+              <>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {PLANS.map((p) => (
+                    <button key={p.key} type="button" className="jf-plan" aria-pressed={plan === p.key} onClick={() => setPlan(p.key)}>
+                      <span style={{ display: "block", font: "600 11px/16px var(--hs-font-sans)", letterSpacing: ".08em", opacity: 0.75 }}>{p.label}</span>
+                      <span style={{ display: "block", font: "600 22px/28px var(--hs-font-sans)", marginTop: 4 }}>{p.price}</span>
+                      <span style={{ display: "block", font: "400 12px/16px var(--hs-font-sans)", opacity: 0.75 }}>{p.note}</span>
+                    </button>
+                  ))}
+                </div>
+                <Button full href="/subscription">
+                  Start Plus
+                </Button>
+              </>
+            ) : (
+              <Button full href="/journeys">
+                Explore the free journeys
+              </Button>
+            )}
             <Button variant="ghost" full onClick={() => setPaywallOpen(false)}>
               Not now
             </Button>

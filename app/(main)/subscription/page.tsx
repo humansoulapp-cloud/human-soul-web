@@ -70,8 +70,8 @@ export default function SubscriptionPage() {
         supabase.from("journeys").select("*, journey_days(day, title)").order("created_at", { ascending: true }),
         user ? loadBetaUntil(supabase, user.id) : Promise.resolve(null),
       ]);
-      const p = profile as { plan?: string | null; created_at?: string } | null;
-      const access = accessFrom(p?.plan, betaUntil);
+      const p = profile as { plan?: string | null; role?: string | null; created_at?: string } | null;
+      const access = accessFrom(p?.plan, betaUntil, Date.now(), p?.role);
       setPlus(access.kind === "plus");
       setBeta(access.kind === "beta" ? access : null);
       setPlanName(p?.plan ?? null);
