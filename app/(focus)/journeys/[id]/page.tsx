@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { legacyJourneyId } from "@/lib/journey-redirects";
 import { getJourney, getJourneys } from "@/lib/actions/journeys";
@@ -8,6 +10,21 @@ import type { ReflectionRow } from "@/lib/journal";
 import { journeyInfo, type Reflection } from "@/lib/reflections";
 import { EARLIEST_TIME_ZONE, nextDayHasOpened } from "@/lib/journey-days";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
+
+/* One read per request, shared by the metadata and the page. */
+const loadJourney = cache((id: string) => getJourney(id));
+
+/** Each journey gets its own title and description in the tab and in shared links. */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const journey = await loadJourney(id).catch(() => null);
+  if (!journey) return {};
+  return {
+    title: journey.title,
+    description: journey.tagline ?? undefined,
+    alternates: { canonical: `/journeys/${journey.id}` },
+  };
+}
 
 export default async function JourneyDetailPage({
   params,
@@ -22,7 +39,7 @@ export default async function JourneyDetailPage({
   // Everything that doesn't depend on the user loads side by side. The proxy has
   // already checked the session, so the user id comes from its verified token.
   const othersPromise = getJourneys().catch(() => []);
-  const [journey, { data: auth }] = await Promise.all([getJourney(id), supabase.auth.getClaims()]);
+  const [journey, { data: auth }] = await Promise.all([loadJourney(id), supabase.auth.getClaims()]);
 
   if (!journey) {
     /* An old code (HS-J-001) or a different capitalisation of the address goes to
@@ -73,7 +90,7 @@ export default async function JourneyDetailPage({
       if (opened && journeyInfo(opened as Reflection)?.title === journey.title) byId.set(opened.id, opened as ReflectionRow);
     }
     reflections = [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
-    subscribed = accessFrom(profile?.plan, betaUntil).full;
+    subscribed = accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full;
     profileTimeZone = (profile?.timezone as string | null | undefined) ?? null;
   }
 

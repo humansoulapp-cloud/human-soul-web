@@ -1,7 +1,23 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { legacyJourneyId } from './lib/journey-redirects';
 
 export async function proxy(request: NextRequest) {
+  // ─── Journey addresses ────────────────────────────────────────────────────
+  // Old codes (HS-J-001) and other capitalisations go to the readable address
+  // with a real 308 before anything renders, so links and search engines
+  // update. The page keeps its own fallback for addresses changed in Admin.
+  const journeyMatch = request.nextUrl.pathname.match(/^\/(admin\/)?journeys\/([^/]+)$/);
+  if (journeyMatch) {
+    const raw = journeyMatch[2];
+    const target = legacyJourneyId(raw) ?? (raw !== raw.toLowerCase() ? raw.toLowerCase() : null);
+    if (target && target !== raw) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${journeyMatch[1] ?? ''}journeys/${target}`;
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
