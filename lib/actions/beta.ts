@@ -70,15 +70,29 @@ export async function checkSignupAllowed(rawEmail: string): Promise<{ ok: true }
 
   const service = createServiceClient();
   const settings = await readSettings(service);
-  if (!settings || !settings.invite_only) return { ok: true };
+  if (!settings) return { ok: true };
 
   const [{ data: invite }, { count }] = await Promise.all([
-    service.from("beta_invites").select("id").eq("email", email).maybeSingle(),
+    service.from("beta_invites").select("id, joined_at").eq("email", email).maybeSingle(),
     service.from("beta_invites").select("id", { count: "exact", head: true }).not("joined_at", "is", null),
   ]);
-  if (!invite) return { ok: false, reason: "not_invited" };
+  if (settings.invite_only && !invite) return { ok: false, reason: "not_invited" };
   if ((count ?? 0) >= settings.max_users) return { ok: false, reason: "full" };
   return { ok: true };
+}
+
+/** Seats for the public pages: how many beta places are left. Null when the beta isn't set up. */
+export async function getBetaSeats(): Promise<{ total: number; left: number; open: boolean } | null> {
+  try {
+    const service = createServiceClient();
+    const settings = await readSettings(service);
+    if (!settings) return null;
+    const { count } = await service.from("beta_invites").select("id", { count: "exact", head: true }).not("joined_at", "is", null);
+    const used = count ?? 0;
+    return { total: settings.max_users, left: Math.max(0, settings.max_users - used), open: !settings.invite_only };
+  } catch {
+    return null;
+  }
 }
 
 export async function joinWaitlist(rawEmail: string): Promise<{ ok: boolean; error?: string }> {

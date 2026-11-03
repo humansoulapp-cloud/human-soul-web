@@ -27,7 +27,10 @@ import { journeyImage } from "@/lib/journey-images";
 import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
 import BetaRequest from "@/components/landing/BetaRequest";
+import { getBetaSeats } from "@/lib/actions/beta";
 import "./landing.css";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: { absolute: "HumanSoul · A quiet place to notice yourself" },
@@ -64,6 +67,13 @@ export default async function LandingPage() {
   } catch {
     journeys = [];
   }
+  // Open beta: first come, first served, until the seats run out.
+  const seats = await getBetaSeats();
+  const total = seats?.total ?? 30;
+  const open = Boolean(seats?.open && seats.left > 0);
+  const ctaHref = open ? "/sign-up" : "#join";
+  const ctaLabel = open ? "Join the beta" : "Request beta access";
+  const seatsLine = !seats ? `Limited to ${total} people` : seats.left > 0 ? `${seats.left} of ${total} spots left` : "The beta is full";
 
   const byId = (id: string) => journeys.find((j) => j.id === id);
   const featured = byId("becoming-more-human") ?? journeys.find((j) => j.featured) ?? journeys[0];
@@ -104,8 +114,8 @@ export default async function LandingPage() {
             <Link className="signin" href="/sign-in">
               Sign in
             </Link>
-            <a className="btn btn-pri" href="#join">
-              Request beta access
+            <a className="btn btn-pri" href={ctaHref}>
+              {ctaLabel}
             </a>
           </div>
         </div>
@@ -124,14 +134,16 @@ export default async function LandingPage() {
               What you make of it is entirely yours.
             </p>
             <div className="ctas">
-              <a className="btn btn-pri btn-lg" href="#join">
-                Request beta access
+              <a className="btn btn-pri btn-lg" href={ctaHref}>
+                {ctaLabel}
               </a>
               <a className="btn btn-sec btn-lg" href="#how">
                 See how it works
               </a>
             </div>
-            <p className="fine">90-day beta · Completely free · Limited to 30 participants</p>
+            <p className="fine">
+              <b>{seatsLine}</b> · 90 days free · No card needed
+            </p>
           </div>
 
           <div className="shot" aria-hidden="true">
@@ -742,8 +754,8 @@ export default async function LandingPage() {
                 shaped together.
               </h2>
               <p className="bt-lead">
-                We&apos;re inviting 30 people into our first 90-day beta, with full access to everything, free of
-                charge.
+                Our first 90-day beta has {total} spots, first come, first served, with full access to everything,
+                free of charge.
               </p>
               <p className="bt-sub">In return, we&apos;ll ask for your honest feedback on what works and what could be better.</p>
               <div className="bt-stats">
@@ -804,11 +816,23 @@ export default async function LandingPage() {
           </span>
           <h2 className="h2 serif">Notice yourself, a little at a time.</h2>
           <p className="sub">
-            We&apos;re beginning with a small group of 30 people. If HumanSoul feels like something you&apos;d like
-            to explore, we&apos;d love to invite you into our first beta.
+            We&apos;re beginning with {total} people, first come, first served. If HumanSoul feels like something
+            you&apos;d like to explore, there&apos;s a place for you.
           </p>
           <div className="final-req">
-            <BetaRequest />
+            {open ? (
+              <div className="final-open">
+                <Link className="btn btn-pri btn-lg" href="/sign-up">
+                  Join the beta
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <span className="final-seats">
+                  <b>{seatsLine}</b> · 90 days free · No card needed
+                </span>
+              </div>
+            ) : (
+              <BetaRequest />
+            )}
           </div>
           <footer className="final-foot">
             <span>© {new Date().getFullYear()} HumanSoul</span>
