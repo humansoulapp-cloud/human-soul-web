@@ -63,7 +63,7 @@ export function JourneyProgressCard({
             <div className="gl-ess">
               <SegmentProgress total={total} done={done} current={day} width={variant === "wide" ? 200 : 168} label={`Day ${day} of ${total}`} />
               <span className="gl-meta" aria-hidden="true">
-                Day {day} of {total}
+                {waitingForMorning ? `${done} of ${total} days written` : `Day ${day} of ${total}`}
               </span>
             </div>
             <p className="text-body-lg gl-today">
@@ -96,6 +96,7 @@ export function CatalogCard({
   days,
   featured,
   premium,
+  progress,
 }: {
   href: string;
   image: string;
@@ -103,6 +104,8 @@ export function CatalogCard({
   title: string;
   tagline?: string | null;
   days: number;
+  /** Days already written, for a journey in progress. */
+  progress?: number;
   time?: string | null;
   featured?: boolean | null;
   premium?: boolean | null;
@@ -133,7 +136,9 @@ export function CatalogCard({
         </h3>
         {tagline ? <p className="ct-tag">{tagline}</p> : null}
         <div className="ct-foot">
-          <span className="ct-meta">{days ? `${days} days` : ""}</span>
+          <span className="ct-meta">
+            {progress !== undefined ? `${progress} of ${days} days written` : days ? `${days} days` : ""}
+          </span>
           <span className="ct-go" aria-hidden="true">
             <ArrowRight size={18} />
           </span>

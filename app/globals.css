@@ -176,3 +176,8 @@
   .hs-progress-running, .hs-progress-finishing { transition: opacity .2s; }
   .hs-page > *, .hs-focus > * { animation: none; }
 }
+
+/* Balanced line breaks everywhere: headings square up, paragraphs avoid a lone
+   last word. :where() keeps specificity at zero so any component can override. */
+:where(h1, h2, h3, h4, .text-h1, .text-h2, .text-h3) { text-wrap: balance; }
+:where(p) { text-wrap: pretty; }

@@ -202,8 +202,18 @@ const DAY_TAG = /^Day (\d+)$/;
 export function findActiveJourney(
   journeys: Journey[],
   reflections: ReflectionRow[],
-  { timeZone, now = new Date() }: { timeZone?: string | null; now?: Date } = {}
+  options: { timeZone?: string | null; now?: Date } = {}
 ): ActiveJourney | null {
+  return findJourneysInProgress(journeys, reflections, options)[0] ?? null;
+}
+
+/** Every journey started and not finished, the most recently written first. */
+export function findJourneysInProgress(
+  journeys: Journey[],
+  reflections: ReflectionRow[],
+  { timeZone, now = new Date() }: { timeZone?: string | null; now?: Date } = {}
+): ActiveJourney[] {
+  const found: ActiveJourney[] = [];
   const byTitle = new Map(journeys.map((j) => [j.title, j]));
   const seen = new Set<string>();
 
@@ -236,8 +246,8 @@ export function findActiveJourney(
     });
     const waitingForMorning = lastWritten ? !nextDayHasOpened(lastWritten.created_at, timeZone, now) : false;
 
-    return { journey, completedDays, totalDays: days.length, nextDay, waitingForMorning };
+    found.push({ journey, completedDays, totalDays: days.length, nextDay, waitingForMorning });
   }
 
-  return null;
+  return found;
 }

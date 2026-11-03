@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Heart, PenLine, Plus } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
-import { findActiveJourney, type Journey, type UserJournal } from "@/lib/journal";
+import { findJourneysInProgress, type Journey, type UserJournal } from "@/lib/journal";
 import { journeyImage } from "@/lib/journey-images";
 import {
   entryBody,
@@ -70,7 +70,11 @@ export default function HomePage() {
   }, []);
 
   /* Home runs in the browser, so the device's time zone decides when the next day opens. */
-  const active = useMemo(() => findActiveJourney(journeys, reflections), [journeys, reflections]);
+  /* The aim of Home is to finish what was started: the latest journey leads,
+     other unfinished ones follow, and new journeys come last. */
+  const inProgress = useMemo(() => findJourneysInProgress(journeys, reflections), [journeys, reflections]);
+  const active = inProgress[0] ?? null;
+  const alsoInProgress = inProgress.slice(1);
 
   /** Journeys the person has not written in yet; featured ones first. */
   const forYou = useMemo(() => {
@@ -82,6 +86,8 @@ export default function HomePage() {
 
   /** With no journey in progress, the journey card offers the first suggestion. */
   const offer = active ? null : forYou[0] ?? null;
+  /** The carousel never repeats the journey the card above already offers. */
+  const more = offer ? forYou.slice(1) : forYou;
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -187,9 +193,31 @@ export default function HomePage() {
         </CarouselSection>
       )}
 
-      {forYou.length > 0 && (
-        <CarouselSection id="home-journeys" title="Journeys for you" moreHref="/journeys" moreLabel="Browse">
-          {forYou.map((j) => (
+      {alsoInProgress.length > 0 && (
+        <CarouselSection id="home-progress" title="Also in progress" moreHref="/journeys" moreLabel="All journeys">
+          {alsoInProgress.map((a) => (
+            <CatalogCard
+              key={a.journey.id}
+              href={a.waitingForMorning ? `/journeys/${a.journey.id}` : `/journeys/${a.journey.id}?day=${a.nextDay.day}`}
+              image={journeyImage(a.journey)}
+              category={a.journey.category}
+              title={a.journey.title}
+              tagline={a.waitingForMorning ? `Tomorrow: ${a.nextDay.title}` : `Next: ${a.nextDay.title}`}
+              days={a.totalDays}
+              progress={a.completedDays}
+            />
+          ))}
+        </CarouselSection>
+      )}
+
+      {more.length > 0 && (
+        <CarouselSection
+          id="home-journeys"
+          title={active ? "Or start another" : "Journeys for you"}
+          moreHref="/journeys"
+          moreLabel="Browse"
+        >
+          {more.map((j) => (
             <CatalogCard
               key={j.id}
               href={`/journeys/${j.id}`}
