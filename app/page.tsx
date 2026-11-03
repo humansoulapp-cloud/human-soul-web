@@ -120,9 +120,9 @@ export default async function LandingPage() {
             </span>
             <h1 className="h1 serif">Write a little. Notice a lot.</h1>
             <p className="lede">
-              HumanSoul is a library of guided reflective journeys that helps you become more aware of
-              yourself, while leaving the meaning of that awareness, and what you choose to do with it,
-              entirely in your hands.
+              Guided reflective journeys that help you notice yourself.
+              <br />
+              What you make of it is entirely yours.
             </p>
             <div className="ctas">
               <a className="btn btn-pri btn-lg" href="#join">
