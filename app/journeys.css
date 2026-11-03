@@ -54,8 +54,8 @@
 .ct-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @media (min-width: 640px) { .ct-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
 @media (min-width: 1024px) { .ct-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
-.ct-card { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: flex-end; min-height: 400px; border-radius: 24px; overflow: hidden; background: #1C1A19; box-shadow: var(--hs-shadow-md); color: #F8F6F2; transition: transform .2s, box-shadow .2s; }
-@media (min-width: 640px) { .ct-card { min-height: 440px; } }
+.ct-card { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 4 / 5; border-radius: 24px; overflow: hidden; background: #1C1A19; box-shadow: var(--hs-shadow-md); color: #F8F6F2; transition: transform .2s, box-shadow .2s; }
+/* One shape everywhere (4:5): the grid on Journeys and the carousels on Home only change the width. */
 .ct-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
 .ct-card:focus-within { outline: 2px solid #A9C2AD; outline-offset: 3px; }
 .ct-bg { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
@@ -358,7 +358,9 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
    The bleed matches the gap so the next card starts exactly where the view ends. */
 @media (min-width: 640px) { .cr { grid-auto-columns: calc((100% - 16px) / 2); } }
 @media (min-width: 1024px) { .cr { --cr-bleed: 24px; gap: 24px; grid-auto-columns: calc((100% - 48px) / 3); } }
-.cr-cards .ct-card { min-height: 300px; height: 100%; }
+.cr-cards { grid-auto-columns: 72%; }
+@media (min-width: 640px) { .cr-cards { grid-auto-columns: calc((100% - 16px * 2) / 2.4); } }
+@media (min-width: 1024px) { .cr-cards { grid-auto-columns: calc((100% - 24px * 3) / 3.5); } }
 .cr-cards .ct-tag { -webkit-line-clamp: 1; }
 .cr-nav { display: flex; align-items: center; gap: 8px; }
 .cr-nav .hs-more { margin-right: 8px; }
