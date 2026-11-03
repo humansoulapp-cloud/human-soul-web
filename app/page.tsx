@@ -115,7 +115,6 @@ export default async function LandingPage() {
         <section className="hero">
           <div className="hero-in">
             <span className="over">
-              <Sparkles className="ai" size={14} aria-hidden="true" />
               A quiet place to notice yourself
             </span>
             <h1 className="h1 serif">Write a little. Notice a lot.</h1>
@@ -287,7 +286,6 @@ export default async function LandingPage() {
           <div className="w feat">
             <div className="feat-t" data-reveal="">
               <span className="over">
-                <Compass className="ai" size={14} aria-hidden="true" />
                 Guided journeys
               </span>
               <h2 className="h2 serif">
@@ -358,7 +356,6 @@ export default async function LandingPage() {
           <div className="w feat rev">
             <div className="feat-t" data-reveal="">
               <span className="over">
-                <BookOpen className="ai" size={14} aria-hidden="true" />
                 Read &amp; reflect
               </span>
               <h2 className="h2 serif">Your prompt and your journal, together.</h2>
@@ -434,7 +431,6 @@ export default async function LandingPage() {
           <div className="w feat">
             <div className="feat-t" data-reveal="">
               <span className="over">
-                <PenLine className="ai" size={14} aria-hidden="true" />
                 Your Journal
               </span>
               <h2 className="h2 serif">Not every thought needs a prompt</h2>
@@ -509,7 +505,6 @@ export default async function LandingPage() {
           <div className="w">
             <div className="sec-head" data-reveal="">
               <span className="over">
-                <Eye className="ai" size={14} aria-hidden="true" />
                 What reflection offers
               </span>
               <h2 className="h2 serif">Sometimes, noticing is enough.</h2>
@@ -548,7 +543,6 @@ export default async function LandingPage() {
             <div className="w">
               <div className="sec-head" data-reveal="">
                 <span className="over">
-                  <BookOpen className="ai" size={14} aria-hidden="true" />
                   The library
                 </span>
                 <h2 className="h2 serif" style={{ fontSize: 44 }}>
@@ -601,7 +595,6 @@ export default async function LandingPage() {
           <div className="w">
             <div className="sec-head" data-reveal="">
               <span className="over">
-                <Compass className="ai" size={14} aria-hidden="true" />
                 How it works
               </span>
               <h2 className="h2 serif">A simple way to begin</h2>
@@ -626,7 +619,6 @@ export default async function LandingPage() {
           <div className="w priv" data-reveal="">
             <div className="priv-l">
               <span className="over">
-                <Lock className="ai" size={14} aria-hidden="true" />
                 Privacy
               </span>
               <h2 className="h2 serif">Your words stay yours</h2>
@@ -675,7 +667,6 @@ export default async function LandingPage() {
           <div className="w">
             <div className="sec-head" data-reveal="">
               <span className="over">
-                <Sparkles className="ai" size={14} aria-hidden="true" />
                 Membership benefits
               </span>
               <h2 className="h2 serif">Your membership gives you space to keep exploring.</h2>
@@ -743,7 +734,6 @@ export default async function LandingPage() {
           <div className="w bt">
             <div className="bt-l" data-reveal="">
               <span className="over">
-                <Sparkles className="ai" size={14} aria-hidden="true" />
                 The HumanSoul beta
               </span>
               <h2 className="h2 serif">
