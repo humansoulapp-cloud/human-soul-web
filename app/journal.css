@@ -118,7 +118,7 @@
 .fw-page { max-width: 680px; margin: 0 auto; padding: 32px 20px 48px; display: flex; flex-direction: column; gap: 12px; }
 @media (min-width: 768px) { .fw-page { padding: 72px 0 64px; } }
 .fw-date { font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); }
-.fw-title { width: 100%; border: 0; padding: 0; background: transparent; color: var(--foreground); font: 500 32px/40px var(--hs-font-serif); letter-spacing: -.01em; font-variation-settings: "SOFT" 100, "WONK" 0; outline: none; }
+.fw-title { width: 100%; border: 0; padding: 0; background: transparent; color: var(--foreground); font: 500 32px/40px var(--hs-font-serif); letter-spacing: -.01em; font-variation-settings: "SOFT" 100, "WONK" 0; outline: none; resize: none; overflow: hidden; display: block; }
 @media (min-width: 768px) { .fw-title { font-size: 40px; line-height: 48px; } }
 .fw-title::placeholder { color: color-mix(in srgb, var(--foreground) 30%, transparent); }
 .fw-text { width: 100%; min-height: 55dvh; margin-top: 8px; border: 0; padding: 0; resize: none; background: transparent; color: color-mix(in srgb, var(--foreground) 92%, transparent); font: 400 18px/30px var(--hs-font-sans); caret-color: var(--primary); outline: none; }
@@ -170,3 +170,7 @@ html.jx-writing .jl, html.jx-writing .hs-topbar { opacity: 0; transform: transla
 ::view-transition-old(entry-text) { animation-duration: .18s; }
 ::view-transition-new(entry-text) { animation-duration: .4s; animation-delay: .08s; animation-fill-mode: both; }
 .jr-btn:disabled { opacity: .5; cursor: default; }
+/* An unsaved draft shows in the blank sheet, so it never looks lost. */
+.js-draft { font: 500 13px/18px var(--hs-font-sans); color: var(--primary); }
+.js-title.has, .js-text.has { color: var(--foreground); }
+.js-text.has { white-space: pre-line; }

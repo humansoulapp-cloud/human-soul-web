@@ -79,6 +79,8 @@ export default function ReflectionEditor({
   const router = useRouter();
   const isNew = !id;
   const fileInput = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   const [init] = useState(() => {
@@ -169,6 +171,30 @@ export default function ReflectionEditor({
     store(DRAFT_KEY, body);
     store(TITLE_KEY, title);
   }, [body, title, isNew, loading]);
+
+  /* Opened over the Journal page inside a view transition, autoFocus can be lost,
+     so the first keystrokes went nowhere. Focus the field once the editor is on
+     screen, with the caret at the end of any draft. */
+  useEffect(() => {
+    if (loading) return;
+    const el = focusField === "title" ? titleRef.current : textRef.current;
+    if (focusField === "text" && !isNew && !embedded) return;
+    const t = window.setTimeout(() => {
+      if (!el || document.activeElement === el) return;
+      el.focus({ preventScroll: true });
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+    }, 60);
+    return () => window.clearTimeout(t);
+  }, [loading, focusField, isNew, embedded]);
+
+  /* The title wraps onto more lines instead of scrolling sideways. */
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [title, loading]);
 
   useEffect(() => {
     if (!pickerOpen) return;
@@ -412,16 +438,24 @@ export default function ReflectionEditor({
         <label className="hs-sr-only" htmlFor="fw-title">
           Title
         </label>
-        <input
+        <textarea
           id="fw-title"
+          ref={titleRef}
           className="fw-title"
-          type="text"
+          rows={1}
           autoFocus={focusField === "title"}
           placeholder="Title"
           value={title}
           onChange={(e) => {
-            setTitle(e.target.value);
+            setTitle(e.target.value.replace(/\n/g, " "));
             touch();
+          }}
+          onKeyDown={(e) => {
+            /* Enter in the title moves on to the text, as in any notes app. */
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              textRef.current?.focus();
+            }
           }}
         />
         <label className="hs-sr-only" htmlFor="fw-text">
@@ -429,6 +463,7 @@ export default function ReflectionEditor({
         </label>
         <textarea
           id="fw-text"
+          ref={textRef}
           className="fw-text"
           autoFocus={focusField === "text" && (isNew || embedded)}
           placeholder="What's on your mind today?"
@@ -459,7 +494,7 @@ export default function ReflectionEditor({
         <button type="button" className="fw-icon" aria-label={photoUrl ? "Replace photo" : "Add a photo"} onClick={() => fileInput.current?.click()}>
           <Camera size={18} aria-hidden="true" />
         </button>
-        <span className="fw-meta">{words(body)}</span>
+        <span className="fw-meta">{words(`${title} ${body}`)}</span>
       </footer>
     </div>
   );

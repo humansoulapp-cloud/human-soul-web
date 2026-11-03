@@ -91,6 +91,18 @@ function JournalPageInner() {
   const [writing, setWriting] = useState<Writing>(writeParam ? { id: writeParam === "new" ? undefined : writeParam, focus: "text" } : null);
   const [fresh, setFresh] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<JourneyPrompt | null>(null);
+  /* An unsaved new reflection kept on this device (see ReflectionEditor). */
+  const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
+  const readDraft = () => {
+    try {
+      const title = localStorage.getItem("humansoul:reflect-draft-title") ?? "";
+      const text = localStorage.getItem("humansoul:reflect-draft") ?? "";
+      setDraft(title.trim() || text.trim() ? { title, text } : null);
+    } catch {
+      setDraft(null);
+    }
+  };
+  useEffect(readDraft, [writing]);
 
   const filter: Filter = journalParam
     ? { kind: "journal", id: journalParam }
@@ -182,7 +194,8 @@ function JournalPageInner() {
 
   /* The open reflection is the one in the URL; with none, the right pane is a blank sheet. */
   const explicit = selectedParam ? entries.find((e) => e.id === selectedParam) ?? null : null;
-  const selected = explicit;
+  /* While searching, the open reflection only stays when it is still in the results. */
+  const selected = explicit && (!query.trim() || visible.some((e) => e.id === explicit.id)) ? explicit : null;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -621,11 +634,12 @@ function JournalPageInner() {
         ) : (
           <div className="js" aria-label="Start a new reflection">
             <span className="js-date">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
-            <button type="button" className="js-title" onClick={() => startWriting({ focus: "title" })}>
-              Title
+            {draft ? <span className="js-draft">Unsaved draft · tap to keep writing</span> : null}
+            <button type="button" className={`js-title${draft?.title.trim() ? " has" : ""}`} onClick={() => startWriting({ focus: "title" })}>
+              {draft?.title.trim() || "Title"}
             </button>
-            <button type="button" className="js-text" onClick={() => startWriting({ focus: "text" })}>
-              What&apos;s on your mind today?
+            <button type="button" className={`js-text${draft?.text.trim() ? " has" : ""}`} onClick={() => startWriting({ focus: "text" })}>
+              {draft?.text.trim() ? (draft.text.trim().length > 220 ? `${draft.text.trim().slice(0, 217)}…` : draft.text.trim()) : "What’s on your mind today?"}
             </button>
             <button type="button" className="js-rest" aria-hidden="true" tabIndex={-1} onClick={() => startWriting({ focus: "text" })} />
           </div>
