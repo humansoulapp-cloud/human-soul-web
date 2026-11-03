@@ -171,19 +171,19 @@ export function JourneyContinueRow({
   waitingForMorning?: boolean;
 }) {
   return (
-    <article className="cr-row">
+    <article className="jc-row">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="cr-img" src={image} alt="" />
-      <div className="cr-text">
-        <span className="cr-over">Continue</span>
-        <h2 className="cr-title">
+      <img className="jc-img" src={image} alt="" />
+      <div className="jc-text">
+        <span className="jc-over">Continue</span>
+        <h2 className="jc-title">
           <Link href={href}>{title}</Link>
         </h2>
-        <span className="cr-meta">
+        <span className="jc-meta">
           {done} of {total} days written · {waitingForMorning ? "Tomorrow" : "Today"}: {todayTitle}
         </span>
       </div>
-      <Link className="cr-btn" href={waitingForMorning ? href : dayHref}>
+      <Link className="jc-btn" href={waitingForMorning ? href : dayHref}>
         {waitingForMorning ? "See your journey" : `Begin Day ${day}`}
         <ArrowRight size={16} aria-hidden="true" />
       </Link>
