@@ -214,7 +214,7 @@ export default function JourneyDetailClient({
 
   const statusOf = useCallback(
     (index: number): DayStatus => {
-      if (locked && index > 0) return "plus";
+      if (locked) return "plus";
       if (entryFor(index)) return "done";
       if (index !== nextIndex) return "locked";
       const previous = index > 0 ? entryFor(index - 1) : null;
@@ -501,7 +501,7 @@ export default function JourneyDetailClient({
           </Button>
           {locked ? (
             <button type="button" className="jf-link" onClick={() => setPaywallOpen(true)}>
-              Day 1 is free. Plus opens the rest
+              Included with Plus
               <ChevronRight size={14} aria-hidden="true" />
             </button>
           ) : started ? (
@@ -1132,7 +1132,7 @@ export default function JourneyDetailClient({
                 Every journey, always open
               </h2>
               <p className="text-body-sm" style={{ margin: 0, color: "var(--muted-foreground)" }}>
-                Day one is open to everyone. Plus unlocks the remaining {Math.max(total - 1, 0)} days, every other journey and your full journal history.
+                This journey is part of Plus. Plus opens all {total} days, one each morning, and every other journey in the library.
               </p>
             </div>
             <ul role="list" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>

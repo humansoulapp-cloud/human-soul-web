@@ -23,6 +23,7 @@ import type { Journey } from "@/lib/journal";
 import { PLANS, YEARLY_SAVING } from "@/lib/plans";
 import { Logo } from "@/components/ds";
 import { sendWelcomeEmail } from "@/lib/actions/emails";
+import { accessFrom, loadBetaUntil } from "@/lib/access";
 import "./onboarding.css";
 
 /* ── What brings you here ─────────────────────────────────────── */
@@ -45,7 +46,8 @@ type MomentKey = (typeof MOMENTS)[number]["key"];
 
 const MINUTES = [5, 10, 20];
 const HOURS = ["07:00", "13:00", "19:00", "21:00"];
-const STEPS = 4;
+/* Four steps; people with beta or Plus access skip the Plus step (step 3). */
+const STEPS_ALL = 4;
 
 function clock(h: string) {
   const [hh, mm] = h.split(":").map(Number);
@@ -87,6 +89,8 @@ export default function OnboardingPage() {
   const [pickId, setPickId] = useState<string | null>(null);
   const [plan, setPlan] = useState<"year" | "month">("year");
   const [saving, setSaving] = useState(false);
+  /* Beta or Plus: every journey is already open, so there is nothing to sell. */
+  const [fullAccess, setFullAccess] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -95,8 +99,12 @@ export default function OnboardingPage() {
       if (user) {
         setUserId(user.id);
         setName((user.user_metadata?.display_name || "").trim().split(/\s+/)[0] || "");
-        const { data: profile } = await supabase.from("profiles").select("preferences").eq("user_id", user.id).maybeSingle();
+        const [{ data: profile }, betaUntil] = await Promise.all([
+          supabase.from("profiles").select("preferences, plan").eq("user_id", user.id).maybeSingle(),
+          loadBetaUntil(supabase, user.id),
+        ]);
         setPrefs(((profile?.preferences as Record<string, unknown>) ?? {}) || {});
+        setFullAccess(accessFrom(profile?.plan as string | null | undefined, betaUntil).full);
       }
       const { data } = await supabase.from("journeys").select("*, journey_days(day)").order("created_at", { ascending: true });
       setJourneys(((data ?? []) as Journey[]).filter(isVisible));
@@ -170,6 +178,7 @@ export default function OnboardingPage() {
   };
 
   const back = () => (done ? setDone(false) : setStep((s) => Math.max(0, s - 1)));
+  const STEPS = fullAccess ? STEPS_ALL - 1 : STEPS_ALL;
   const shown = done ? STEPS : step + 1;
   const year = PLANS.find((p) => p.key === "year")!;
   const month = PLANS.find((p) => p.key === "month")!;
@@ -331,10 +340,10 @@ export default function OnboardingPage() {
                     <Clock className="ai" size={16} aria-hidden="true" />
                     About 10 min a day
                   </span>
-                  {chosen.premium && (
+                  {chosen.premium && !fullAccess && (
                     <span>
                       <Sparkles className="ai" size={16} aria-hidden="true" />
-                      Day 1 free, the rest with Plus
+                      Included with Plus
                     </span>
                   )}
                 </div>
@@ -359,7 +368,12 @@ export default function OnboardingPage() {
             <p className="ob-note" style={{ marginTop: 40 }}>Loading journeys…</p>
           )}
           <div className="ob-foot">
-            <button type="button" className="ob-btn ob-pri ob-lg ob-wide" disabled={!chosen} onClick={() => setStep(3)}>
+            <button
+              type="button"
+              className="ob-btn ob-pri ob-lg ob-wide"
+              disabled={!chosen || saving}
+              onClick={() => (fullAccess ? finishPlan() : setStep(3))}
+            >
               Start with this journey
               <ArrowRight className="ai" size={16} aria-hidden="true" />
             </button>
@@ -373,9 +387,9 @@ export default function OnboardingPage() {
       {!done && step === 3 && (
         <main className="ob-main wide" key="s3">
           <span className="ob-over">HumanSoul Plus</span>
-          <h1 className="ob-h">Seven days, every journey. Free.</h1>
+          <h1 className="ob-h">Every journey, with a free week.</h1>
           <p className="ob-p">
-            On the free plan, premium journeys open Day 1 only. Plus opens every day of every journey, and starts with a free week.
+            Free journeys are open to everyone. Plus opens every journey in the library, and starts with a free week.
           </p>
           <div className="ob-tr">
             <section className="ob-tl" aria-labelledby="ob-how">
@@ -463,13 +477,15 @@ export default function OnboardingPage() {
           </span>
           <h1 className="ob-h">{name ? `You're all set, ${name}` : "You're all set"}</h1>
           <p className="ob-p">
-            {chosen ? `Day 1 of ${chosen.title} is open. ` : ""}Each new day opens the morning after you write.
+            {chosen && (fullAccess || !chosen.premium) ? `Day 1 of ${chosen.title} is open. ` : ""}Each new day opens the morning after you write.
           </p>
           <div className="ob-rd">
             <div>
               <Compass className="ai" size={22} aria-hidden="true" />
-              <b>{chosen?.premium ? "Day 1 is yours" : `All ${days} days are yours`}</b>
-              <span>{chosen?.premium ? "The rest opens with Plus" : "This journey is on the free plan"}</span>
+              <b>{chosen?.premium && !fullAccess ? "Included with Plus" : `All ${days} days are yours`}</b>
+              <span>
+                {fullAccess ? "Full access during your beta" : chosen?.premium ? "It opens with Plus" : "This journey is on the free plan"}
+              </span>
             </div>
             <div>
               <Bell className="ai" size={22} aria-hidden="true" />

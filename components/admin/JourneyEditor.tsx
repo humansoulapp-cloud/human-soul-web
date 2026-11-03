@@ -585,7 +585,7 @@ export default function JourneyEditor({
             </Field>
             <div className="hsa-switches">
               <Switch checked={form.featured} onChange={(v) => set("featured", v)} title="Featured" note="Sage chip on the catalog card, first in the list." />
-              <Switch checked={form.premium} onChange={(v) => set("premium", v)} title="HumanSoul Plus" note="Day 1 stays free; the rest open with Plus." />
+              <Switch checked={form.premium} onChange={(v) => set("premium", v)} title="HumanSoul Plus" note="Only people with Plus or beta access can open it." />
             </div>
           </section>
 

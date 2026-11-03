@@ -355,3 +355,18 @@
 .lp .q-b a{color:var(--foreground);text-decoration:underline;text-underline-offset:3px}
 .lp .priv-more{display:inline-flex;align-items:center;gap:6px;margin-top:20px;min-height:44px;color:var(--foreground);font:600 15px/20px var(--hs-font-sans);text-decoration:underline;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,var(--foreground) 30%,transparent)}
 .lp .priv-more:hover{text-decoration-color:var(--foreground)}
+
+/* Beta request: one email field, straight onto the waitlist */
+.lp .breq{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:520px}
+.lp .breq-f{display:flex;gap:8px;width:100%;padding:6px;border-radius:9999px;background:var(--card);box-shadow:var(--shadow-sm)}
+.lp .breq-f input{flex:1;min-width:0;border:0;background:transparent;padding:0 18px;font:400 16px/24px var(--font-sans);color:var(--foreground);outline:none}
+.lp .breq-f input::placeholder{color:var(--muted-foreground)}
+.lp .breq-f:focus-within{box-shadow:0 0 0 2px var(--primary)}
+.lp .breq-f .btn[disabled]{opacity:.7}
+.lp .breq-err{margin:0;font:400 14px/20px var(--font-sans);color:var(--destructive,#B4443C)}
+.lp .breq-n{font:400 14px/20px var(--font-sans);color:var(--muted-foreground);text-align:center;text-wrap:balance}
+.lp .breq-n a{color:var(--foreground);text-decoration:underline;text-underline-offset:2px}
+.lp .breq-done{display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm);text-align:left;font:400 15px/22px var(--font-sans);color:var(--muted-foreground)}
+.lp .breq-done svg{flex:none;margin-top:1px;color:var(--primary)}
+.lp .breq-done b{display:block;color:var(--foreground);font-weight:600}
+@media (max-width:560px){.lp .breq-f{flex-direction:column;border-radius:24px}.lp .breq-f input{min-height:48px}}

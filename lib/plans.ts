@@ -13,6 +13,6 @@ export const YEARLY_SAVING = Math.round((1 - 49.99 / (6.99 * 12)) * 100);
 
 export const PLUS_PERKS = [
   "Every journey in the library, including new ones each month",
-  "All seven days of each journey, unlocked as you go",
+  "All seven days of each journey, one each morning",
   "Your complete journal history, kept and searchable",
 ];

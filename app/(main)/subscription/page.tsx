@@ -15,16 +15,16 @@ type Cell = "yes" | "no" | string;
 
 /** Only what the app really does today. */
 const ROWS: [string, string, Cell, Cell][] = [
-  ["Day one of every journey", "Read it, write it and keep it, on any journey.", "yes", "yes"],
-  ["Every day of every journey", "Days open one at a time, after you write the one before.", "no", "yes"],
-  ["New journeys as they arrive", "The library keeps growing.", "Day one", "yes"],
+  ["Free journeys", "Every day of the journeys marked free.", "yes", "yes"],
+  ["Every Plus journey", "All seven days, one each morning.", "no", "yes"],
+  ["New journeys as they arrive", "The library keeps growing.", "Free ones", "yes"],
   ["Your Journal, unlimited", "Write freely, search, favorite and export.", "yes", "yes"],
 ];
 
 const FAQS: [string, string][] = [
   [
     "What do I get for paying?",
-    "Every day of every journey, and the ones still to come. On the free plan you can read and write day one of any journey; the rest open with Plus.",
+    "Every journey in the library, and the ones still to come. On the free plan you can use the free journeys; Plus journeys open with Plus.",
   ],
   ["Can I cancel whenever I want?", "Yes. Plus stays active until the end of the period you already paid for."],
   [
@@ -158,7 +158,7 @@ export default function SubscriptionPage() {
             <div className="ac-side-a">
               <span>
                 When the beta ends
-                <small>Nothing is deleted. Your Journal stays, and Day one of every journey stays free.</small>
+                <small>Nothing is deleted. Your Journal stays, and the free journeys stay open.</small>
               </span>
             </div>
             <Link className="ac-side-a" href="/profile">
@@ -249,7 +249,7 @@ export default function SubscriptionPage() {
             Keep every journey open
           </h1>
           <p className="ac-lede">
-            Day one of every journey is free. Plus opens the days that follow, and every new journey as the library grows.
+            Plus opens every journey in the library, and every new one as the library grows.
           </p>
           <div className="ac-plans" role="radiogroup" aria-label="Plan">
             <button type="button" className="ac-plan" role="radio" aria-checked={plan === "year"} onClick={() => setPlan("year")}>
@@ -300,7 +300,7 @@ export default function SubscriptionPage() {
                 <BookOpen size={18} aria-hidden="true" />
               </span>
               <span>
-                <b>At your own pace</b>No streaks and no deadlines. Each day opens when you finish the one before.
+                <b>At your own pace</b>No streaks and no deadlines. A new day opens each morning.
               </span>
             </li>
             <li>
@@ -325,18 +325,18 @@ export default function SubscriptionPage() {
               </span>
               <h2 className="ac-open-t">{journey.title}</h2>
               <ul className="ac-days">
-                {days.map((d, i) => (
-                  <li key={d.day} className={`ac-day ${i === 0 ? "free" : "plus"}`}>
+                {days.map((d) => (
+                  <li key={d.day} className={`ac-day ${journey.premium ? "plus" : "free"}`}>
                     <span className="ac-day-n">{String(d.day).padStart(2, "0")}</span>
                     <span className="ac-day-t">{(d as { title?: string }).title || `Day ${d.day}`}</span>
                     <span className="ac-day-s">
-                      {i === 0 ? <Check size={14} aria-hidden="true" /> : <Lock size={14} aria-hidden="true" />}
-                      {i === 0 ? "Free" : "With Plus"}
+                      {journey.premium ? <Lock size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
+                      {journey.premium ? "With Plus" : "Free"}
                     </span>
                   </li>
                 ))}
               </ul>
-              <p className="ac-open-foot">Every journey works like this. With Plus, each day opens after you write the one before.</p>
+              <p className="ac-open-foot">With Plus, every journey opens, one day each morning.</p>
             </div>
           </aside>
         )}

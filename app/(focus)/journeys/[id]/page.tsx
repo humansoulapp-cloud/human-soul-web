@@ -70,7 +70,7 @@ export default async function JourneyDetailPage({
 
   /* Days unlock in order, one each morning: the first day without a reflection
      opens once a new morning has come since the day before it was written.
-     Plus journeys open only Day 1 without a subscription. Locked days reach the
+     Plus journeys stay closed without Plus or beta access. Locked days reach the
      browser with their title only, and a ?day= link to a locked day goes back
      to the journey's overview. */
   const premiumLocked = Boolean(journey.premium) && !subscribed;
@@ -89,7 +89,7 @@ export default async function JourneyDetailPage({
   const nextIndex = firstOpen === -1 ? sortedDays.length - 1 : firstOpen;
   const timeZone = profileTimeZone ?? EARLIEST_TIME_ZONE;
   const isOpen = (index: number) => {
-    if (premiumLocked && index > 0) return false;
+    if (premiumLocked) return false;
     if (entryFor(sortedDays[index].day)) return true;
     if (index !== nextIndex) return false;
     if (index === 0) return true;

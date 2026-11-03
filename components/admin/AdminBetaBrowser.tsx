@@ -363,7 +363,7 @@ export default function AdminBetaBrowser({
         )}
       </section>
       <div className="hsa-foot">
-        <span>Access ends quietly: the journal stays, Plus journeys lock after Day 1.</span>
+        <span>Access ends quietly: the journal stays, Plus journeys lock.</span>
       </div>
     </>
   );

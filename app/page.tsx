@@ -26,6 +26,7 @@ import { getJourneys, type JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
 import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
+import BetaRequest from "@/components/landing/BetaRequest";
 import "./landing.css";
 
 export const metadata: Metadata = {
@@ -103,9 +104,9 @@ export default async function LandingPage() {
             <Link className="signin" href="/sign-in">
               Sign in
             </Link>
-            <Link className="btn btn-pri" href="/sign-up">
-              Start free
-            </Link>
+            <a className="btn btn-pri" href="#beta">
+              Request beta access
+            </a>
           </div>
         </div>
       </header>
@@ -552,19 +553,19 @@ export default async function LandingPage() {
                 <h2 className="h2 serif" style={{ fontSize: 44 }}>
                   Journeys for the questions you carry
                 </h2>
-                <p className="sub">New journeys arrive as the library grows. Day one of every journey is free.</p>
+                <p className="sub">New journeys arrive as the library grows. Beta participants can open every one.</p>
               </div>
               <div className="lib">
                 {library.map((j, i) => {
                   const days = daysOf(j);
                   return (
-                    <Link
+                    <a
                       className="lc"
                       key={j.id}
-                      href="/sign-up"
+                      href="#beta"
                       data-reveal=""
                       style={{ ["--d" as string]: i }}
-                      aria-label={`${j.title}, start free`}
+                      aria-label={`${j.title}, request beta access`}
                     >
                       <img src={journeyImage(j)} alt="" loading="lazy" />
                       {i === 0 && (
@@ -581,7 +582,7 @@ export default async function LandingPage() {
                           {j.time_required ? ` · ${j.time_required}` : ""}
                         </span>
                       </div>
-                    </Link>
+                    </a>
                   );
                 })}
               </div>
@@ -802,10 +803,7 @@ export default async function LandingPage() {
               </div>
             </div>
             <div className="beta-cta" data-reveal="">
-              <Link className="btn btn-pri" href="/sign-up">
-                Request beta access
-              </Link>
-              <span>Limited to 30 participants · No payment required</span>
+              <BetaRequest />
             </div>
           </div>
         </section>
@@ -831,10 +829,10 @@ export default async function LandingPage() {
             to explore, we&apos;d love to invite you into our first beta.
           </p>
           <div className="ctas">
-            <Link className="btn btn-pri btn-lg" href="/sign-up">
+            <a className="btn btn-pri btn-lg" href="#beta">
               Request beta access
               <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+            </a>
           </div>
           <p className="sub" style={{ fontSize: 14, lineHeight: "20px", marginTop: 14, opacity: 0.75 }}>
             90 days of free access · No card required

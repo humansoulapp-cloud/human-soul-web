@@ -359,8 +359,8 @@ export default function ProfilePage() {
                     : beta
                       ? `Thank you for being part of the beta. Every day of every journey is open until ${betaDate} (${access.betaDaysLeft} ${access.betaDaysLeft === 1 ? "day" : "days"} left).`
                       : betaEnded
-                        ? `Your beta access ended on ${betaDate}. Everything you wrote is still here. Day one of every journey is free; Plus opens every day.`
-                        : `Day one of every journey is free. Plus opens every day, for ${yearPlan.price} a year or ${monthPlan.price} a month.`}
+                        ? `Your beta access ended on ${betaDate}. Everything you wrote is still here. The free journeys stay open; Plus opens every journey.`
+                        : `The free journeys are open to everyone. Plus opens every journey, for ${yearPlan.price} a year or ${monthPlan.price} a month.`}
                 </span>
               </div>
               <Link className={`ac-btn ${plus ? "ac-btn-sec" : "ac-btn-pri"}`} href="/subscription">
