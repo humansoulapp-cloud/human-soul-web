@@ -47,7 +47,7 @@ export function QuotePanel() {
       <p className="au-q">“Most of life unfolds in ordinary moments that rarely seem important while they are happening.”</p>
       <div className="au-q-src">
         <Compass size={16} className="ai" aria-hidden="true" />
-        Becoming More Human · Day 1
+        From a HumanSoul journey
       </div>
     </>
   );
