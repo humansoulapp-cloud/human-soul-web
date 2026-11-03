@@ -11,8 +11,8 @@ import {
   Eye,
   Heart,
   Layers,
+  Leaf,
   Lock,
-  Minus,
   PenLine,
   Play,
   Repeat,
@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { getJourneys, type JourneyRow } from "@/lib/actions/journeys";
 import { journeyImage } from "@/lib/journey-images";
-import { PLANS } from "@/lib/plans";
 import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
 import "./landing.css";
@@ -57,10 +56,6 @@ function daysOf(j: JourneyRow) {
   return Array.isArray(j.journey_days) ? j.journey_days.length : 0;
 }
 
-function priceNumber(p: string) {
-  return Number(p.replace(/[^0-9.]/g, "")) || 0;
-}
-
 export default async function LandingPage() {
   let journeys: JourneyRow[] = [];
   try {
@@ -88,14 +83,6 @@ export default async function LandingPage() {
   const featuredCategory = featured?.category ?? "Human Soul Foundations";
   const featuredDays = featured ? daysOf(featured) || 7 : 7;
 
-  const month = PLANS.find((p) => p.key === "month");
-  const year = PLANS.find((p) => p.key === "year");
-  const currency = (year?.price ?? "€").replace(/[0-9.,\s]/g, "") || "€";
-  const save =
-    month && year
-      ? Math.round((1 - priceNumber(year.price) / (priceNumber(month.price) * 12)) * 100)
-      : 0;
-
   return (
     <div className="lp dark" data-theme="dark">
       <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
@@ -110,7 +97,7 @@ export default async function LandingPage() {
             <a href="#how">How it works</a>
             <a href="#journeys">Journeys</a>
             <a href="#privacy">Privacy</a>
-            <a href="#pricing">Pricing</a>
+            <a href="#beta">Beta</a>
           </nav>
           <div className="nav-r">
             <Link className="signin" href="/sign-in">
@@ -137,14 +124,14 @@ export default async function LandingPage() {
               entirely in your hands.
             </p>
             <div className="ctas">
-              <Link className="btn btn-pri btn-lg" href="/sign-up">
-                Start writing for free
-              </Link>
+              <a className="btn btn-pri btn-lg" href="#beta">
+                Request beta access
+              </a>
               <a className="btn btn-sec btn-lg" href="#how">
                 See how it works
               </a>
             </div>
-            <p className="fine">No card needed · Private by default</p>
+            <p className="fine">90-day beta · Completely free · Limited to 30 participants</p>
           </div>
 
           <div className="shot" aria-hidden="true">
@@ -683,78 +670,142 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <section className="sec" id="pricing">
+        <section className="sec" id="membership">
           <div className="w">
             <div className="sec-head" data-reveal="">
               <span className="over">
                 <Sparkles className="ai" size={14} aria-hidden="true" />
-                Pricing
+                Membership benefits
+              </span>
+              <h2 className="h2 serif">Your membership gives you space to keep exploring.</h2>
+              <p className="sub">
+                HumanSoul isn&apos;t something you finish in a weekend. It&apos;s a growing collection of
+                opportunities to pause and reflect on different parts of your life.
+              </p>
+            </div>
+            <p className="mb-lead">With membership, you get:</p>
+            <div className="mb">
+              <div className="mb-hero" data-reveal="">
+                <img src="/landing/membership.jpg" alt="" loading="lazy" />
+                <div className="mb-glass">
+                  <span className="mb-i">
+                    <BookOpen className="ai" size={18} aria-hidden="true" />
+                  </span>
+                  <b>Full access to the HumanSoul Library</b>
+                  <span>Explore the collection of guided 7-day journeys. One journey unlocked at a time.</span>
+                </div>
+              </div>
+              <div className="mb-grid">
+                <div className="mb-t" data-reveal="">
+                  <span className="mb-i">
+                    <Compass className="ai" size={18} aria-hidden="true" />
+                  </span>
+                  <b>New perspectives to explore</b>
+                  <span>
+                    Move between different areas of the human experience depending on what you&apos;re curious
+                    about.
+                  </span>
+                </div>
+                <div className="mb-t" data-reveal="" style={{ ["--d" as string]: 1 }}>
+                  <span className="mb-i">
+                    <Lock className="ai" size={18} aria-hidden="true" />
+                  </span>
+                  <b>A private place to write</b>
+                  <span>Keep your reflections in one place as you move through your journeys.</span>
+                </div>
+                <div className="mb-t" data-reveal="">
+                  <span className="mb-i">
+                    <PenLine className="ai" size={18} aria-hidden="true" />
+                  </span>
+                  <b>Create your own journals</b>
+                  <span>
+                    Make room for whatever is on your mind. Write freely, without prompts, prescribed topics, or
+                    a particular direction.
+                  </span>
+                </div>
+                <div className="mb-t" data-reveal="" style={{ ["--d" as string]: 1 }}>
+                  <span className="mb-i">
+                    <Leaf className="ai" size={18} aria-hidden="true" />
+                  </span>
+                  <b>A space that grows with you</b>
+                  <span>
+                    Return whenever you want to explore something new, or revisit something that still feels
+                    relevant.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="sec" id="beta">
+          <div className="w">
+            <div className="sec-head" data-reveal="">
+              <span className="over">
+                <Sparkles className="ai" size={14} aria-hidden="true" />
+                The HumanSoul beta
               </span>
               <h2 className="h2 serif" style={{ fontSize: 50 }}>
-                Start free. Keep going with Plus.
+                A small beginning, shaped together.
               </h2>
+              <p className="beta-lead">
+                We&apos;re inviting 30 people to experience HumanSoul during our first 90-day beta. You&apos;ll
+                receive complete access to everything HumanSoul has to offer, free of charge.
+              </p>
+              <p className="beta-sub">
+                In return, we&apos;ll ask you to share your honest feedback to help us understand what&apos;s
+                working, what could be better, and how the experience feels.
+              </p>
             </div>
             <div className="price">
-              <div className="pc" data-reveal="">
-                <span className="pc-n">Free</span>
-                <span className="pc-p">
-                  <b>{currency}0</b>
-                  <span>forever</span>
-                </span>
-                <span className="pc-note">No card needed</span>
+              <div className="pc plus" data-reveal="">
+                <span className="pc-n">What you&apos;ll receive</span>
                 <ul>
                   <li>
                     <Check className="ai" size={16} />
-                    Your Journal, unlimited
+                    90 days of free access
                   </li>
                   <li>
                     <Check className="ai" size={16} />
-                    Day one of every journey
+                    Every guided reflection journey
                   </li>
                   <li>
                     <Check className="ai" size={16} />
-                    Favorites, search and export
+                    Your own personal journaling space
                   </li>
-                  <li className="off">
-                    <Minus className="ai" size={16} />
-                    The rest of each journey
+                  <li>
+                    <Check className="ai" size={16} />
+                    Access to all available features
                   </li>
                 </ul>
-                <Link className="btn btn-sec" href="/sign-up">
-                  Start free
-                </Link>
               </div>
-              <div className="pc plus" data-reveal="" style={{ ["--d" as string]: 1 }}>
-                <span className="pc-n">
-                  Plus {save > 0 && <span className="save">Save {save}% yearly</span>}
-                </span>
-                <span className="pc-p">
-                  <b>{year?.price}</b>
-                  <span>a year</span>
-                </span>
-                <span className="pc-note">or {month?.price} a month · cancel any time</span>
+              <div className="pc" data-reveal="" style={{ ["--d" as string]: 1 }}>
+                <span className="pc-n">What we&apos;ll ask</span>
                 <ul>
                   <li>
                     <Check className="ai" size={16} />
-                    Everything in Free
+                    Explore HumanSoul at your own pace
                   </li>
                   <li>
                     <Check className="ai" size={16} />
-                    Every day of every journey
+                    Share honest feedback about your experience
                   </li>
                   <li>
                     <Check className="ai" size={16} />
-                    New journeys as they arrive
+                    Complete occasional feedback surveys
                   </li>
                   <li>
                     <Check className="ai" size={16} />
-                    Go deeper questions on every day
+                    Help us understand what feels useful and what could be improved
                   </li>
                 </ul>
-                <Link className="btn btn-pri" href="/sign-up">
-                  Try Plus
-                </Link>
               </div>
+            </div>
+            <div className="beta-cta" data-reveal="">
+              <Link className="btn btn-pri" href="/sign-up">
+                Request beta access
+              </Link>
+              <span>Limited to 30 participants · No payment required</span>
             </div>
           </div>
         </section>
@@ -772,16 +823,22 @@ export default async function LandingPage() {
           <img src={finalPhoto} alt="" loading="lazy" />
           <span className="over" style={{ color: "#C9D8CB" }}>
             <PenLine className="ai" size={14} aria-hidden="true" />
-            Your first page is waiting
+            An invitation to begin
           </span>
-          <h2 className="h2 serif">Notice yourself, a little at a time</h2>
-          <p className="sub">Start free in under a minute. No card, no streaks, no audience.</p>
+          <h2 className="h2 serif">Notice yourself, a little at a time.</h2>
+          <p className="sub">
+            We&apos;re beginning with a small group of 30 people. If HumanSoul feels like something you&apos;d like
+            to explore, we&apos;d love to invite you into our first beta.
+          </p>
           <div className="ctas">
             <Link className="btn btn-pri btn-lg" href="/sign-up">
-              Start writing for free
+              Request beta access
               <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
+          <p className="sub" style={{ fontSize: 14, lineHeight: "20px", marginTop: 14, opacity: 0.75 }}>
+            90 days of free access · No card required
+          </p>
         </section>
       </main>
 
@@ -793,7 +850,6 @@ export default async function LandingPage() {
           <span>A quiet place to notice yourself · © {new Date().getFullYear()} HumanSoul</span>
         </div>
         <div className="foot-r">
-          <a href="#pricing">Pricing</a>
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/sign-in">Sign in</Link>
