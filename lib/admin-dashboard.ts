@@ -15,14 +15,24 @@ const TZ = "Europe/Madrid";
 type Profile = { user_id: string; created_at: string; plan?: string | null; reminder_hour?: number | null };
 type Entry = { user_id: string; created_at: string; tags: string[] | null; content?: string | null; photo?: string | null };
 
-/* PostgREST returns at most 1000 rows per request, so read in pages. */
-async function readAll<T>(build: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>) {
+/* PostgREST returns at most 1000 rows per request, so read in pages. A failed
+   read is collected so the dashboard can say which numbers are missing instead
+   of showing zeros that look real. */
+async function readAll<T>(
+  build: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+  what = "data",
+  errors?: string[]
+) {
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await build(from, from + 999);
     if (error || !data) {
       /* A failed read used to show as zeros on the dashboard. Say so in the server logs. */
-      if (error) console.error("[admin-dashboard] read failed:", error);
+      if (error) {
+        console.error("[admin-dashboard] read failed:", what, error);
+        const msg = (error as { message?: string }).message ?? String(error);
+        errors?.push(`${what}: ${msg}`);
+      }
       break;
     }
     out.push(...(data as T[]));
@@ -52,23 +62,33 @@ export async function getDashboard(period: 7 | 30 | 90) {
   const now = Date.now();
   const since = new Date(now - 130 * DAY).toISOString();
 
+  const errors: string[] = [];
   const [profiles, entries, recent, journeys, performance] = await Promise.all([
-    readAll<Profile>((a, b) => db.from("profiles").select("*").range(a, b)),
-    readAll<Entry>((a, b) => db.from("reflections").select("user_id, created_at, tags").gte("created_at", since).order("created_at").range(a, b)),
-    readAll<Entry>((a, b) =>
-      db
-        .from("reflections")
-        .select("user_id, created_at, tags, content, photo")
-        .gte("created_at", new Date(now - period * DAY).toISOString())
-        .range(a, b)
+    readAll<Profile>((a, b) => db.from("profiles").select("*").range(a, b), "accounts", errors),
+    readAll<Entry>(
+      (a, b) => db.from("reflections").select("user_id, created_at, tags").gte("created_at", since).order("created_at").range(a, b),
+      "entries",
+      errors
+    ),
+    readAll<Entry>(
+      (a, b) =>
+        db
+          .from("reflections")
+          .select("*")
+          .gte("created_at", new Date(now - period * DAY).toISOString())
+          .range(a, b),
+      "recent entries",
+      errors
     ),
     getJourneys({ includeAll: true }),
     getJourneyPerformance(),
   ]);
 
   // First entry ever, per person (not only the last 130 days).
-  const firsts = await readAll<{ user_id: string; created_at: string }>((a, b) =>
-    db.from("reflections").select("user_id, created_at").order("created_at").range(a, b)
+  const firsts = await readAll<{ user_id: string; created_at: string }>(
+    (a, b) => db.from("reflections").select("user_id, created_at").order("created_at").range(a, b),
+    "first entries",
+    errors
   );
   const firstAt = new Map<string, number>();
   for (const r of firsts) if (!firstAt.has(r.user_id)) firstAt.set(r.user_id, Date.parse(r.created_at));
@@ -249,6 +269,7 @@ export async function getDashboard(period: 7 | 30 | 90) {
   const noDays = journeys.filter((j) => j.status !== "archived" && (j.journey_days ?? []).length === 0);
 
   return {
+    errors,
     period,
     waw,
     wawDelta,

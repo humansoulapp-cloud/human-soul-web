@@ -15,6 +15,8 @@ import {
   Users,
 } from "lucide-react";
 import { getDashboard, type Delta } from "@/lib/admin-dashboard";
+import { getBetaOverview } from "@/lib/actions/beta";
+import { BILLING_LIVE } from "@/lib/plans";
 import DashboardHeroChart from "@/components/admin/DashboardHeroChart";
 
 const PERIODS = [7, 30, 90] as const;
@@ -93,7 +95,23 @@ export default async function AdminDashboardPage({
 }) {
   const params = searchParams ? await searchParams : {};
   const period = (PERIODS.find((p) => String(p) === params.period) ?? 7) as 7 | 30 | 90;
-  const d = await getDashboard(period);
+  const [d, betaInfo] = await Promise.all([getDashboard(period), BILLING_LIVE ? null : getBetaOverview().catch(() => null)]);
+  /* During the beta the money section has nothing to show; seats and timing matter instead. */
+  const beta =
+    betaInfo && betaInfo.ready
+      ? (() => {
+          const joined = betaInfo.invites.filter((i) => i.joined_at);
+          const ends = joined.map((i) => i.access_until).filter((v): v is string => Boolean(v)).sort();
+          return {
+            joined: joined.length,
+            max: betaInfo.settings.max_users,
+            invited: betaInfo.invites.length - joined.length,
+            waitlist: betaInfo.waitlist.length,
+            firstEnd: ends[0] ?? null,
+            days: betaInfo.settings.access_days,
+          };
+        })()
+      : null;
   const prevNote = `vs previous ${period} days`;
 
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Madrid" });
@@ -108,7 +126,7 @@ export default async function AdminDashboardPage({
       icon: Radar,
       warn: true,
       title: `${d.quiet} ${d.quiet === 1 ? "writer has" : "writers have"} gone quiet`,
-      meta: "They wrote most weeks, then nothing for 7 days. Totals only — no names or entries.",
+      meta: "They wrote most weeks, then nothing for 7 days. Totals only, no names or entries.",
     },
     d.worstJourney && {
       icon: CircleAlert,
@@ -161,6 +179,17 @@ export default async function AdminDashboardPage({
           ))}
         </nav>
       </div>
+
+      {d.errors.length > 0 ? (
+        <div role="alert" className="hsa-card" style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+          <b>Some numbers couldn&apos;t load, so they show as zero</b>
+          {d.errors.map((e) => (
+            <span key={e} style={{ font: "400 13px/20px var(--hs-font-sans)", color: "var(--muted-foreground)" }}>
+              {e}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <div className="hsa-top2">
         <section className="hsa-card hsa-hero" aria-labelledby="h-waw">
@@ -275,7 +304,7 @@ export default async function AdminDashboardPage({
               <span>0%</span>
               <i />
               <span>100%</span>
-              <span style={{ marginLeft: "auto" }}>— not reached yet</span>
+              <span style={{ marginLeft: "auto" }}>Empty: not reached yet</span>
             </div>
           </div>
         </div>
@@ -422,37 +451,71 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      <section className="hsa-dsec" aria-labelledby="s-r">
-        <div className="hsa-dsec-h">
-          <h2 className="text-h3" id="s-r">Plus</h2>
-          <span className="hsa-src">
-            <CreditCard size={14} aria-hidden="true" />
-            Members from profiles · revenue needs Stripe
-          </span>
-        </div>
-        <div className="hsa-rev">
-          <div className="hsa-card hsa-tile">
-            <span className="hsa-tile-l">Plus members</span>
-            <span className="hsa-tile-v">{num(d.plus)}</span>
-            <span className="hsa-soft">{num(d.totalUsers)} accounts in total</span>
+      {beta ? (
+        <section className="hsa-dsec" aria-labelledby="s-b">
+          <div className="hsa-dsec-h">
+            <h2 className="text-h3" id="s-b">Beta</h2>
+            <Link className="hsa-src" href="/admin/beta">
+              Manage the beta
+            </Link>
           </div>
-          <div className="hsa-card hsa-tile">
-            <span className="hsa-tile-l">Free to Plus</span>
-            <span className="hsa-tile-v">{orDash(d.freeToPlus)}</span>
-            <span className="hsa-soft">Of all accounts</span>
-          </div>
-          {["Monthly revenue", "Cancelled"].map((k) => (
-            <div key={k} className="hsa-nt" style={{ gap: 6 }}>
-              <span className="hsa-nt-tag">
-                <CreditCard size={14} aria-hidden="true" />
-                Needs Stripe
+          <div className="hsa-rev">
+            <div className="hsa-card hsa-tile">
+              <span className="hsa-tile-l">Seats taken</span>
+              <span className="hsa-tile-v">
+                {num(beta.joined)} of {num(beta.max)}
               </span>
-              <span className="hsa-nt-t">{k}</span>
-              <span className="hsa-nt-d">Shows once payments are connected.</span>
+              <span className="hsa-soft">{num(Math.max(0, beta.max - beta.joined))} left</span>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="hsa-card hsa-tile">
+              <span className="hsa-tile-l">Invited, not joined yet</span>
+              <span className="hsa-tile-v">{num(beta.invited)}</span>
+              <span className="hsa-soft">{num(beta.waitlist)} on the waitlist</span>
+            </div>
+            <div className="hsa-card hsa-tile">
+              <span className="hsa-tile-l">First access ends</span>
+              <span className="hsa-tile-v">
+                {beta.firstEnd
+                  ? new Date(beta.firstEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Europe/Madrid" })
+                  : "Not yet"}
+              </span>
+              <span className="hsa-soft">Each tester gets {beta.days} days from joining</span>
+            </div>
+          </div>
+        </section>
+      ) : (
+      <section className="hsa-dsec" aria-labelledby="s-r">
+          <div className="hsa-dsec-h">
+            <h2 className="text-h3" id="s-r">Plus</h2>
+            <span className="hsa-src">
+              <CreditCard size={14} aria-hidden="true" />
+              Members from profiles · revenue needs Stripe
+            </span>
+          </div>
+          <div className="hsa-rev">
+            <div className="hsa-card hsa-tile">
+              <span className="hsa-tile-l">Plus members</span>
+              <span className="hsa-tile-v">{num(d.plus)}</span>
+              <span className="hsa-soft">{num(d.totalUsers)} accounts in total</span>
+            </div>
+            <div className="hsa-card hsa-tile">
+              <span className="hsa-tile-l">Free to Plus</span>
+              <span className="hsa-tile-v">{orDash(d.freeToPlus)}</span>
+              <span className="hsa-soft">Of all accounts</span>
+            </div>
+            {["Monthly revenue", "Cancelled"].map((k) => (
+              <div key={k} className="hsa-nt" style={{ gap: 6 }}>
+                <span className="hsa-nt-tag">
+                  <CreditCard size={14} aria-hidden="true" />
+                  Needs Stripe
+                </span>
+                <span className="hsa-nt-t">{k}</span>
+                <span className="hsa-nt-d">Shows once payments are connected.</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {attention.length ? (
         <section className="hsa-dsec" aria-labelledby="s-a">
@@ -486,12 +549,12 @@ export default async function AdminDashboardPage({
       <section className="hsa-dsec" aria-labelledby="s-t">
         <div className="hsa-dsec-h">
           <h2 className="text-h3" id="s-t">Coming with event tracking</h2>
-          <span className="hsa-dsec-q">Not measured yet — needs a small events table</span>
+          <span className="hsa-dsec-q">Not measured yet. It needs a small events table</span>
         </div>
         <div className="hsa-g3">
           {[
-            ["Opened without writing", "Daily app opens versus entries — shows people who visit but don't write."],
-            ["Closed the blank page", "How often the writer opens and closes without saving — does the blank page intimidate?"],
+            ["Opened without writing", "Daily app opens versus entries, to see people who visit but don't write."],
+            ["Closed the blank page", "How often the writer opens and closes without saving. Does the blank page intimidate?"],
             ["Where sign-ups come from", "Search, social, invites or press, to see which channel brings writers, not just sign-ups."],
           ].map(([t, desc]) => (
             <div key={t} className="hsa-nt">
