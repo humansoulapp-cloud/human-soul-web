@@ -7,7 +7,7 @@ import { createClient, currentUser } from "@/lib/supabase/client";
 import { accessFrom, loadBetaUntil, type Access } from "@/lib/access";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
-import { PLANS, YEARLY_SAVING } from "@/lib/plans";
+import { BILLING_LIVE, PLANS, PLUS_PERKS, YEARLY_SAVING } from "@/lib/plans";
 import PageLoader from "@/components/PageLoader";
 import "../../account.css";
 
@@ -54,6 +54,7 @@ export default function SubscriptionPage() {
   const [plus, setPlus] = useState(false);
   const [planName, setPlanName] = useState<string | null>(null);
   const [beta, setBeta] = useState<Access | null>(null);
+  const [team, setTeam] = useState(false);
   const [since, setSince] = useState<string | null>(null);
   const [plan, setPlan] = useState<"year" | "month">("year");
   const [open, setOpen] = useState(0);
@@ -74,6 +75,7 @@ export default function SubscriptionPage() {
       const access = accessFrom(p?.plan, betaUntil, Date.now(), p?.role);
       setPlus(access.kind === "plus");
       setBeta(access.kind === "beta" ? access : null);
+      setTeam(access.kind === "team");
       setPlanName(p?.plan ?? null);
       setSince(p?.created_at ?? user?.created_at ?? null);
       const list = ((journeys ?? []) as Journey[]).filter((j) => (j.status || "published") === "published");
@@ -233,6 +235,86 @@ export default function SubscriptionPage() {
           </aside>
         </div>
         {faq}
+      </div>
+    );
+  }
+
+  /* The team reviews everything; nothing to sell them. */
+  if (team) {
+    return (
+      <div className="ac">
+        <header className="hs-phead">
+          <div className="hs-phead-t">
+            <h1 className="text-h1">Your access</h1>
+            <p className="hs-phead-sub">As part of the team, every day of every journey is open so you can review them.</p>
+          </div>
+        </header>
+        <section className="ac-card" style={{ marginTop: 24 }} aria-label="Team access">
+          <ul className="ac-list">
+            <li>
+              <Check className="ai" size={16} aria-hidden="true" />
+              Every journey, including Plus and unpublished previews in Admin
+            </li>
+            <li>
+              <Check className="ai" size={16} aria-hidden="true" />
+              Your Journal, unlimited and exportable
+            </li>
+          </ul>
+        </section>
+      </div>
+    );
+  }
+
+  /* Before payments exist (the beta), Plus is something that opens later:
+     no prices, no checkout, only what it will include. */
+  if (!BILLING_LIVE) {
+    return (
+      <div className="ac">
+        <header className="hs-phead">
+          <div className="hs-phead-t">
+            <span className="ac-over">
+              <Sparkles size={14} aria-hidden="true" />
+              HumanSoul Plus
+            </span>
+            <h1 className="text-h1">Plus opens after the beta</h1>
+            <p className="hs-phead-sub">
+              During the beta, Plus journeys are open to beta testers. Nothing can be charged, and the free journeys stay open for everyone.
+            </p>
+          </div>
+        </header>
+        <div className="ac-act" style={{ marginTop: 24 }}>
+          <section className="ac-card" aria-labelledby="sub-what">
+            <h2 id="sub-what" className="ac-h3">
+              What Plus will include
+            </h2>
+            <ul className="ac-list">
+              {PLUS_PERKS.map((t) => (
+                <li key={t}>
+                  <Check className="ai" size={16} aria-hidden="true" />
+                  {t}
+                </li>
+              ))}
+              <li>
+                <Check className="ai" size={16} aria-hidden="true" />
+                Your Journal stays yours on any plan, readable and exportable
+              </li>
+            </ul>
+          </section>
+          <aside className="ac-side" aria-label="Meanwhile">
+            <Link className="ac-side-a" href="/journeys">
+              <span>
+                Explore the free journeys
+                <small>Every day of a free journey is open to you.</small>
+              </span>
+            </Link>
+            <Link className="ac-side-a" href="/journal">
+              <span>
+                Write freely
+                <small>Your Journal has no limits.</small>
+              </span>
+            </Link>
+          </aside>
+        </div>
       </div>
     );
   }

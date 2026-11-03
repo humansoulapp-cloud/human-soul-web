@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Bell,
+  Camera,
   Check,
   ChevronRight,
   Compass,
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { deleteOwnAccount } from "@/lib/actions/account";
-import { PLANS } from "@/lib/plans";
+import { BILLING_LIVE, PLANS } from "@/lib/plans";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
 import { crisisLine } from "@/lib/crisis-lines";
 import { writtenDays, type Journey, type ReflectionRow } from "@/lib/journal";
@@ -38,6 +39,7 @@ type Profile = {
   plan?: string | null;
   role?: string | null;
   alias?: string | null;
+  avatar_url?: string | null;
   timezone?: string | null;
   reminder_hour?: string | null;
   preferences?: Record<string, boolean> | null;
@@ -64,7 +66,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const [nameDraft, setNameDraft] = useState("");
-  const [aliasDraft, setAliasDraft] = useState("");
   const [tzDraft, setTzDraft] = useState("");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -78,6 +79,11 @@ export default function ProfilePage() {
   const [pwDone, setPwDone] = useState(false);
 
   const [betaUntil, setBetaUntil] = useState<string | null>(null);
+
+  const [pwOpen, setPwOpen] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const photoInput = React.useRef<HTMLInputElement>(null);
 
   const [deleteAsked, setDeleteAsked] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -110,7 +116,6 @@ export default function ProfilePage() {
       setReflections((reflectionRows ?? []) as ReflectionRow[]);
       setJourneys((journeyRows ?? []) as unknown as Journey[]);
       setNameDraft(display);
-      setAliasDraft(p.alias ?? "");
       setTzDraft(p.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
       setLoading(false);
     }
@@ -150,7 +155,6 @@ export default function ProfilePage() {
 
   const dirty =
     nameDraft.trim() !== name ||
-    (aliasDraft.trim() || null) !== (profile.alias ?? null) ||
     (tzDraft.trim() || null) !== (profile.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const saveAccount = async () => {
@@ -164,7 +168,7 @@ export default function ProfilePage() {
       setSaving(false);
       return setError(authError.message);
     }
-    const patch = { alias: aliasDraft.trim() || null, timezone: tzDraft.trim() || null };
+    const patch = { timezone: tzDraft.trim() || null };
     const { error: profileError } = await supabase.from("profiles").update(patch).eq("user_id", userId);
     setSaving(false);
     if (profileError) return setError(profileError.message);
@@ -193,6 +197,42 @@ export default function ProfilePage() {
     setPwNew("");
     setPwAgain("");
     setPwDone(true);
+  };
+
+  /* Profile photo: cropped to a square and made small in the browser, then kept
+     in the "avatars" bucket under the person's own folder. */
+  const changePhoto = async (file: File) => {
+    if (!userId) return;
+    setPhotoError("");
+    if (!/^image\//.test(file.type)) return setPhotoError("Choose a photo (JPG, PNG or WebP).");
+    setPhotoBusy(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const side = Math.min(bitmap.width, bitmap.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 512;
+      canvas.getContext("2d")!.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 512, 512);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+      if (!blob) throw new Error("This photo couldn't be read.");
+      const supabase = createClient();
+      const path = `${userId}/avatar-${Date.now()}.jpg`;
+      const { error: upError } = await supabase.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg", upsert: true });
+      if (upError) throw upError;
+      const url = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      const { error: saveError } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", userId);
+      if (saveError) throw saveError;
+      setProfile((p) => ({ ...p, avatar_url: url }));
+    } catch (e) {
+      const msg = (e as { message?: string }).message ?? "";
+      setPhotoError(/bucket|not found|avatar_url|column/i.test(msg) ? "Photos aren't switched on yet. Try again soon." : msg || "The photo couldn't be saved.");
+    }
+    setPhotoBusy(false);
+  };
+
+  const removePhoto = async () => {
+    if (!userId) return;
+    setProfile((p) => ({ ...p, avatar_url: null }));
+    await createClient().from("profiles").update({ avatar_url: null }).eq("user_id", userId);
   };
 
   const savePreference = async (patch: Partial<Profile>) => {
@@ -236,7 +276,7 @@ export default function ProfilePage() {
 
   if (loading) return <PageLoader />;
 
-  const initial = (profile.alias || name || email || "·").trim().charAt(0).toUpperCase();
+  const initial = (name || email || "·").trim().charAt(0).toUpperCase();
   const help = crisisLine(profile.timezone);
   const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : team ? "Team · full access" : "Free plan";
   const yearPlan = PLANS.find((p) => p.key === "year")!;
@@ -251,52 +291,64 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div className="ac-lay">
-        <aside className="ac-me" aria-label="You">
+      {/* Who you are, at a glance: photo, name, plan and a quiet count of what you wrote. */}
+      <section className="ac-id" aria-label="You">
+        <div className="ac-id-av">
           <span className="ac-av" aria-hidden="true">
-            {initial}
+            {profile.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.avatar_url} alt="" />
+            ) : (
+              initial
+            )}
           </span>
-          <div>
-            <div className="ac-me-n">{name}</div>
-            <div className="ac-me-e">{email}</div>
-          </div>
-          <span className="ac-tag" style={{ alignSelf: "flex-start" }}>
-            <Sparkles size={14} aria-hidden="true" />
-            {planLabel}
-          </span>
-          <div className="ac-stats">
-            <div className="ac-stat">
-              <b>{reflections.length}</b>
-              <span>Entries</span>
-            </div>
-            <div className="ac-stat">
-              <b>{daysWritten}</b>
-              <span>Days written</span>
-            </div>
-            <div className="ac-stat">
-              <b>{journeysFinished}</b>
-              <span>Journeys finished</span>
-            </div>
-          </div>
-          {createdAt && (
-            <span className="ac-since">
-              Writing here since {new Date(createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-            </span>
-          )}
-          <button type="button" className="ac-out" onClick={signOut}>
-            <LogOut size={16} aria-hidden="true" />
-            Sign out
+          <button
+            type="button"
+            className="ac-id-cam"
+            aria-label={profile.avatar_url ? "Change photo" : "Add a photo"}
+            title={profile.avatar_url ? "Change photo" : "Add a photo"}
+            disabled={photoBusy}
+            onClick={() => photoInput.current?.click()}
+          >
+            <Camera size={16} aria-hidden="true" />
           </button>
-        </aside>
+          <input
+            ref={photoInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) changePhoto(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <div className="ac-id-t">
+          <span className="ac-id-n">{name}</span>
+          <span className="ac-id-e">{email}</span>
+          <span className="ac-id-s">
+            {reflections.length} {reflections.length === 1 ? "entry" : "entries"} · {daysWritten} {daysWritten === 1 ? "day" : "days"} written ·{" "}
+            {journeysFinished} {journeysFinished === 1 ? "journey" : "journeys"} finished
+          </span>
+          {photoBusy ? <span className="ac-id-note">Saving your photo…</span> : null}
+          {photoError ? <span className="ac-err">{photoError}</span> : null}
+          {profile.avatar_url && !photoBusy ? (
+            <button type="button" className="ac-id-rm" onClick={removePhoto}>
+              Remove photo
+            </button>
+          ) : null}
+        </div>
+      </section>
 
-        <div className="ac-secs">
+      <div className="ac-secs ac-secs-full">
           <section className="ac-psec" aria-labelledby="p-acc">
             <div className="ac-psec-h">
               <div>
                 <h2 id="p-acc" className="ac-h3">
                   Account
                 </h2>
-                <span className="ac-psec-n">How you appear, and the time your days follow.</span>
+                <span className="ac-psec-n">Your name and the time your days follow.</span>
               </div>
               {dirty ? (
                 <button type="button" className="ac-btn ac-btn-pri" onClick={saveAccount} disabled={saving}>
@@ -309,23 +361,14 @@ export default function ProfilePage() {
                 </span>
               ) : null}
             </div>
-            <div className="ac-g2">
+            <div className="ac-g3">
               <div className="ac-f">
                 <label htmlFor="p-n">Name</label>
                 <div className="ac-in">
                   <User className="ai" size={18} aria-hidden="true" />
                   <input id="p-n" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
                 </div>
-              </div>
-              <div className="ac-f">
-                <label htmlFor="p-a">How we greet you</label>
-                <div className="ac-in">
-                  <Sparkles className="ai" size={18} aria-hidden="true" />
-                  <input id="p-a" value={aliasDraft} placeholder={name.split(" ")[0]} onChange={(e) => setAliasDraft(e.target.value)} />
-                </div>
-                <span className="ac-hint">
-                  Used on Home: “Good evening, {aliasDraft.trim() || name.split(" ")[0] || "friend"}”.
-                </span>
+                <span className="ac-hint">Used on Home: “Good evening, {(nameDraft.trim() || name).split(" ")[0] || "friend"}”.</span>
               </div>
               <div className="ac-f">
                 <label htmlFor="p-e">Email</label>
@@ -372,58 +415,80 @@ export default function ProfilePage() {
                 </span>
               </div>
               <Link className={`ac-btn ${plus || team ? "ac-btn-sec" : "ac-btn-pri"}`} href="/subscription">
-                {plus ? "Manage" : "See Plus"}
+                {plus ? "Manage" : BILLING_LIVE ? "See Plus" : "Details"}
                 <ChevronRight size={16} aria-hidden="true" />
               </Link>
             </div>
           </section>
 
           <section className="ac-psec" aria-labelledby="p-pw">
-            <div className="ac-psec-h">
-              <div>
-                <h2 id="p-pw" className="ac-h3">
-                  Password
-                </h2>
-                <span className="ac-psec-n">At least 8 characters. You stay signed in on this device.</span>
-              </div>
-              {pwDone ? (
-                <span className="ac-saved" role="status">
-                  <Check className="ai" size={14} aria-hidden="true" />
-                  Password changed
+            <h2 id="p-pw" className="ac-h3">
+              Sign-in
+            </h2>
+            <div className="ac-acts">
+              <button type="button" className="ac-actrow" aria-expanded={pwOpen} onClick={() => setPwOpen((v) => !v)}>
+                <span className="ac-row-i">
+                  <KeyRound size={18} aria-hidden="true" />
                 </span>
+                <span>
+                  <span className="ac-row-t" style={{ display: "block" }}>
+                    {pwDone ? "Password changed" : "Change password"}
+                  </span>
+                  <span className="ac-row-n" style={{ display: "block" }}>
+                    At least 8 characters. You stay signed in on this device.
+                  </span>
+                </span>
+                <ChevronRight className="end" size={18} aria-hidden="true" style={{ transform: pwOpen ? "rotate(90deg)" : undefined }} />
+              </button>
+              {pwOpen ? (
+                <div className="ac-pwbox">
+                <form className="ac-g2" onSubmit={changePassword}>
+                  <div className="ac-f">
+                    <label htmlFor="p-pw1">New password</label>
+                    <div className="ac-in">
+                      <KeyRound className="ai" size={18} aria-hidden="true" />
+                      <input
+                        id="p-pw1"
+                        type="password"
+                        autoComplete="new-password"
+                        value={pwNew}
+                        onChange={(e) => {
+                          setPwNew(e.target.value);
+                          setPwDone(false);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="ac-f">
+                    <label htmlFor="p-pw2">Repeat it</label>
+                    <div className="ac-in">
+                      <KeyRound className="ai" size={18} aria-hidden="true" />
+                      <input id="p-pw2" type="password" autoComplete="new-password" value={pwAgain} onChange={(e) => setPwAgain(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="ac-f" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "center", gap: 16 }}>
+                    <button type="submit" className="ac-btn ac-btn-sec" disabled={pwSaving || !pwNew || !pwAgain}>
+                      {pwSaving ? "Changing…" : "Change password"}
+                    </button>
+                    {pwError ? <p className="ac-err">{pwError}</p> : null}
+                  </div>
+                </form>
+                </div>
               ) : null}
+              <button type="button" className="ac-actrow" onClick={signOut}>
+                <span className="ac-row-i">
+                  <LogOut size={18} aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="ac-row-t" style={{ display: "block" }}>
+                    Sign out
+                  </span>
+                  <span className="ac-row-n" style={{ display: "block" }}>
+                    {email}
+                  </span>
+                </span>
+              </button>
             </div>
-            <form className="ac-g2" onSubmit={changePassword}>
-              <div className="ac-f">
-                <label htmlFor="p-pw1">New password</label>
-                <div className="ac-in">
-                  <KeyRound className="ai" size={18} aria-hidden="true" />
-                  <input
-                    id="p-pw1"
-                    type="password"
-                    autoComplete="new-password"
-                    value={pwNew}
-                    onChange={(e) => {
-                      setPwNew(e.target.value);
-                      setPwDone(false);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="ac-f">
-                <label htmlFor="p-pw2">Repeat it</label>
-                <div className="ac-in">
-                  <KeyRound className="ai" size={18} aria-hidden="true" />
-                  <input id="p-pw2" type="password" autoComplete="new-password" value={pwAgain} onChange={(e) => setPwAgain(e.target.value)} />
-                </div>
-              </div>
-              <div className="ac-f" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "center", gap: 16 }}>
-                <button type="submit" className="ac-btn ac-btn-sec" disabled={pwSaving || !pwNew || !pwAgain}>
-                  {pwSaving ? "Changing…" : "Change password"}
-                </button>
-                {pwError ? <p className="ac-err">{pwError}</p> : null}
-              </div>
-            </form>
           </section>
 
           <section className="ac-psec" id="reminders" aria-labelledby="p-rem" style={{ scrollMarginTop: 96 }}>
@@ -637,7 +702,6 @@ export default function ProfilePage() {
               </div>
             )}
           </section>
-        </div>
       </div>
     </div>
   );

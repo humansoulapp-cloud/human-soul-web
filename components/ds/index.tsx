@@ -39,11 +39,12 @@ export function Logo({ size = 24 }: { size?: number }) {
 }
 
 /* ── Avatar ───────────────────────────────────────────────────── */
-export function Avatar({ name, small = true }: { name?: string; small?: boolean }) {
+export function Avatar({ name, small = true, src }: { name?: string; small?: boolean; src?: string | null }) {
   const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
   return (
-    <span className={cx("hs hs-avatar", small && "hs-avatar-sm")} role="img" aria-label={name || "Profile"}>
-      {initial}
+    <span className={cx("hs hs-avatar", small && "hs-avatar-sm")} role="img" aria-label={name || "Profile"} style={src ? { overflow: "hidden", padding: 0 } : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : initial}
     </span>
   );
 }

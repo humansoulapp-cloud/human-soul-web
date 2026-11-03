@@ -38,6 +38,7 @@ export function Navigation() {
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(true);
   const [name, setName] = React.useState("");
+  const [avatar, setAvatar] = React.useState<string | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -57,6 +58,7 @@ export function Navigation() {
       ]);
 
       setIsAdmin(profile?.role === "admin");
+      setAvatar((profile?.avatar_url as string | null | undefined) ?? null);
       setSubscribed(accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full);
     }
     loadUser();
@@ -123,7 +125,7 @@ export function Navigation() {
                 aria-label="Account menu"
                 onClick={() => setMenuOpen((v) => !v)}
               >
-                <Avatar name={name || "Profile"} />
+                <Avatar name={name || "Profile"} src={avatar} />
               </button>
 
               {menuOpen && (

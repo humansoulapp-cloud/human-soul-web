@@ -235,3 +235,29 @@
 .ac-ra-next:hover { background: var(--fill); color: var(--foreground); }
 .ac > .hs-phead { padding: 8px 0; }
 .ac > .hs-phead + .ac-grid { margin-top: 24px; }
+
+/* Profile, identity card: photo, name and a quiet line of what you wrote. */
+.ac-id { margin-top: 24px; display: flex; align-items: center; gap: 24px; padding: 28px; border-radius: 28px; background: var(--card); box-shadow: var(--shadow-sm); }
+.ac-id-av { position: relative; flex: none; }
+.ac-id .ac-av { width: 96px; height: 96px; overflow: hidden; }
+.ac-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ac-id-cam { position: absolute; right: -2px; bottom: -2px; width: 36px; height: 36px; border: 0; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); box-shadow: 0 4px 12px rgba(0,0,0,.25); cursor: pointer; }
+.ac-id-cam:hover { background: color-mix(in srgb, var(--primary) 86%, var(--foreground)); }
+.ac-id-cam:disabled { opacity: .6; cursor: progress; }
+.ac-id-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ac-id-n { font: 500 30px/36px var(--ac-serif); font-variation-settings: "SOFT" 100, "WONK" 0; overflow-wrap: anywhere; }
+.ac-id-e { font: 400 15px/22px var(--ac-sans); color: var(--muted-foreground); overflow-wrap: anywhere; }
+.ac-id-s { margin-top: 6px; font: 400 14px/20px var(--ac-sans); color: color-mix(in srgb, var(--foreground) 70%, transparent); }
+.ac-id-note { font: 400 13px/18px var(--ac-sans); color: var(--muted-foreground); }
+.ac-id-rm { align-self: flex-start; margin-top: 4px; padding: 0; border: 0; background: none; color: var(--muted-foreground); font: 500 13px/18px var(--ac-sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.ac-id-rm:hover { color: var(--foreground); }
+.ac-secs-full { margin-top: 16px; }
+.ac-g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ac-pwbox { padding: 4px 4px 12px 60px; }
+@media (max-width: 899px) { .ac-g3 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 639px) {
+  .ac-id { flex-direction: column; align-items: flex-start; gap: 16px; padding: 22px; }
+  .ac-id .ac-av { width: 80px; height: 80px; }
+  .ac-pwbox { padding: 4px 0 12px; }
+  .ac-pwbox .ac-g2 { grid-template-columns: minmax(0, 1fr); }
+}
