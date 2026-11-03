@@ -6,6 +6,7 @@ import { BookOpen, Heart, PenLine, Plus } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { findJourneysInProgress, type Journey, type UserJournal } from "@/lib/journal";
 import { journeyImage } from "@/lib/journey-images";
+import { accessFrom, loadBetaUntil } from "@/lib/access";
 import {
   entryBody,
   entryLabels,
@@ -42,6 +43,8 @@ export default function HomePage() {
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [journals, setJournals] = useState<UserJournal[]>([]);
   const [loading, setLoading] = useState(true);
+  /* With full access (Plus, beta or team) the Plus lock means nothing. */
+  const [fullAccess, setFullAccess] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -56,10 +59,14 @@ export default function HomePage() {
 
       if (user) {
         setName(user.user_metadata?.display_name || "");
-        const [{ data: rows }, { data: journalRows }] = await Promise.all([
+        const [{ data: rows }, { data: journalRows }, { data: profile }, betaUntil] = await Promise.all([
           supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+          supabase.from("profiles").select("plan, role").eq("user_id", user.id).maybeSingle(),
+          loadBetaUntil(supabase, user.id),
         ]);
+        const p = profile as { plan?: string | null; role?: string | null } | null;
+        setFullAccess(accessFrom(p?.plan, betaUntil, Date.now(), p?.role).full);
         const list = (rows ?? []) as Reflection[];
         setReflections(list);
         setJournals((journalRows ?? []) as UserJournal[]);
@@ -227,7 +234,7 @@ export default function HomePage() {
               tagline={j.tagline}
               days={(j.journey_days ?? []).length}
               featured={j.featured}
-              premium={j.premium}
+              premium={j.premium && !fullAccess}
             />
           ))}
         </CarouselSection>
