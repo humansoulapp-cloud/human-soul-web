@@ -40,7 +40,7 @@
 .ob-ch { list-style: none; margin: 40px 0 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; text-align: left; }
 .ob-ch button { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 76px; padding: 16px 20px; border: 0; border-radius: 20px; background: var(--card); box-shadow: var(--shadow-sm); color: var(--foreground); font: 500 16px/22px var(--hs-font-sans); text-align: left; cursor: pointer; transition: background-color .15s; }
 .ob-ch button small { display: block; margin-top: 2px; font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); }
-.ob-ck { margin-left: auto; width: 28px; height: 28px; flex: none; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: var(--fill); color: transparent; transition: background-color .15s, color .15s; }
+.ob-ck { margin-left: auto; width: 26px; height: 26px; flex: none; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: var(--fill); color: transparent; transition: background-color .15s, color .15s; }
 .ob-ch button[aria-pressed="true"] { background: color-mix(in srgb, var(--primary) 16%, var(--card)); }
 .ob-ch button[aria-pressed="true"] .ob-ck { background: var(--primary); color: var(--primary-foreground); }
 

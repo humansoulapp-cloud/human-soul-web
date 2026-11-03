@@ -105,3 +105,14 @@
   .au-in input { min-height: 48px; }
   .au-btn { min-height: 48px; }
 }
+
+/* Centred form: logo, overline, heading and intro line up on one axis; the
+   fields keep their labels on the left so they stay easy to scan. */
+.au-form { align-items: stretch; text-align: center; }
+.au-form .au-logo { align-self: center; justify-content: center; min-height: 0; margin-bottom: 40px; }
+.au-form > .au-over { align-self: center; justify-content: center; }
+.au-form > .au-h, .au-form > .au-p { margin-left: auto; margin-right: auto; max-width: 380px; }
+.au-form form, .au-form .au-fields, .au-form .au-err, .au-form .au-box { text-align: left; }
+.au-form > .au-back { align-self: center; }
+@media (min-width: 1024px) and (max-height: 860px) { .au-form .au-logo { margin-bottom: 28px; } }
+@media (max-width: 1023px) { .au-form { padding-top: 40px; } .au-form .au-logo { margin-bottom: 32px; } }

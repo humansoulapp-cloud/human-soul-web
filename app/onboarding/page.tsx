@@ -9,8 +9,6 @@ import {
   Bell,
   CalendarDays,
   Check,
-  Clock,
-  Compass,
   Mail,
   Moon,
   Sparkles,
@@ -28,7 +26,7 @@ import "./onboarding.css";
 
 /* ── What brings you here ─────────────────────────────────────── */
 const INTENTS = [
-  { key: "slow", title: "Slow down", sub: "A few quiet minutes in a busy day", chip: "Slow down", words: ["calm", "presence", "present", "slow", "rest", "still", "awareness", "attention", "foundations"] },
+  { key: "slow", title: "Slow down", sub: "A quiet pause in a busy day", chip: "Slow down", words: ["calm", "presence", "present", "slow", "rest", "still", "awareness", "attention", "foundations"] },
   { key: "self", title: "Understand myself better", sub: "Notice patterns in how I think and feel", chip: "Understand myself", words: ["identity", "self", "pattern", "inner", "discovery", "awareness", "emotion", "foundations"] },
   { key: "grateful", title: "Feel more grateful", sub: "Keep track of the good things", chip: "Feel more grateful", words: ["gratitude", "grateful", "kindness", "joy", "appreciation", "wonder"] },
   { key: "hard", title: "Get through a hard time", sub: "Put what I'm carrying into words", chip: "A hard time", words: ["uncertainty", "grief", "loneliness", "loss", "fear", "courage", "heavy", "pain", "emotion"] },
@@ -44,8 +42,6 @@ const MOMENTS = [
 ] as const;
 type MomentKey = (typeof MOMENTS)[number]["key"];
 
-const MINUTES = [5, 10, 20];
-const HOURS = ["07:00", "13:00", "19:00", "21:00"];
 /* Four steps; people with beta or Plus access skip the Plus step (step 3). */
 const STEPS_ALL = 4;
 
@@ -83,7 +79,6 @@ export default function OnboardingPage() {
 
   const [intents, setIntents] = useState<IntentKey[]>([]);
   const [moment, setMoment] = useState<MomentKey>("evening");
-  const [minutes, setMinutes] = useState(10);
   const [remind, setRemind] = useState(true);
   const [hour, setHour] = useState("21:00");
   const [pickId, setPickId] = useState<string | null>(null);
@@ -151,7 +146,7 @@ export default function OnboardingPage() {
         preferences: {
           ...prefs,
           onboarded: true,
-          onboarding: { intents, moment, minutes, journey: chosen?.id ?? null, plan_interest: plan },
+          onboarding: { intents, moment: remind ? moment : null, journey: chosen?.id ?? null, plan_interest: plan },
         },
       })
       .eq("user_id", userId);
@@ -245,7 +240,7 @@ export default function OnboardingPage() {
               <ArrowRight className="ai" size={16} aria-hidden="true" />
             </button>
             <span className="ob-note" aria-live="polite">
-              {intents.length ? `${intents.length} selected` : "You can also skip this"}
+              {intents.length ? `${intents.length} selected` : ""}
             </span>
           </div>
         </main>
@@ -254,52 +249,28 @@ export default function OnboardingPage() {
       {!done && step === 1 && (
         <main className="ob-main" key="s1">
           <span className="ob-over">Your rhythm</span>
-          <h1 className="ob-h">When would you like to write?</h1>
-          <p className="ob-p">Most people keep going when writing has its own moment in the day. You can change this any time in Profile.</p>
+          <h1 className="ob-h">Would you like a reminder?</h1>
+          <p className="ob-p">One quiet email a day, at the moment you choose. You can change it any time in Profile.</p>
           <div className="ob-rh">
-            <div>
-              <span className="ob-rl" id="ob-when">Best moment</span>
-              <div className="ob-tiles" role="radiogroup" aria-labelledby="ob-when">
-                {MOMENTS.map((m) => (
-                  <button key={m.key} type="button" className="ob-tile" role="radio" aria-checked={moment === m.key} onClick={() => pickMoment(m.key)}>
-                    <m.icon className="ai" size={22} aria-hidden="true" />
-                    <span>{m.label}</span>
-                    <small>{m.sub}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="ob-rl" id="ob-long">
-                How long, most days
-              </span>
-              <div className="ob-seg" role="radiogroup" aria-labelledby="ob-long">
-                {MINUTES.map((m) => (
-                  <button key={m} type="button" role="radio" aria-checked={minutes === m} onClick={() => setMinutes(m)}>
-                    {m} min
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className="ob-rem">
               <Bell className="ai" size={22} aria-hidden="true" />
               <span className="ob-rem-t">
                 Remind me to write
-                <small>One gentle email when your day opens. Never more than one.</small>
+                <small>Never more than one a day.</small>
               </span>
-              <label className="ob-time" data-off={!remind}>
-                <Clock className="ai" size={16} aria-hidden="true" />
-                {clock(hour)}
-                <select aria-label="Reminder time" value={hour} disabled={!remind} onChange={(e) => setHour(e.target.value)}>
-                  {HOURS.map((h) => (
-                    <option key={h} value={h}>
-                      {clock(h)}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <button type="button" className="ob-sw" role="switch" aria-checked={remind} aria-label="Email reminder" onClick={() => setRemind((v) => !v)} />
             </div>
+            {remind ? (
+              <div className="ob-tiles" role="radiogroup" aria-label="When">
+                {MOMENTS.map((m) => (
+                  <button key={m.key} type="button" className="ob-tile" role="radio" aria-checked={moment === m.key} onClick={() => pickMoment(m.key)}>
+                    <m.icon className="ai" size={22} aria-hidden="true" />
+                    <span>{m.label}</span>
+                    <small>{clock(m.hour)}</small>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="ob-foot">
             <button type="button" className="ob-btn ob-pri ob-lg ob-wide" onClick={() => setStep(2)}>
@@ -476,33 +447,15 @@ export default function OnboardingPage() {
           <h1 className="ob-h">{name ? `You're all set, ${name}` : "You're all set"}</h1>
           <p className="ob-p">
             {chosen && (fullAccess || !chosen.premium) ? `Day 1 of ${chosen.title} is open. ` : ""}Each new day opens the morning after you write.
+            {remind ? ` We'll remind you at ${clock(hour)}.` : ""}
           </p>
-          <div className="ob-rd">
-            <div>
-              <Compass className="ai" size={22} aria-hidden="true" />
-              <b>{chosen?.premium && !fullAccess ? "Included with Plus" : `All ${days} days are yours`}</b>
-              <span>
-                {fullAccess ? "Full access during your beta" : chosen?.premium ? "It opens with Plus" : "This journey is on the free plan"}
-              </span>
-            </div>
-            <div>
-              <Bell className="ai" size={22} aria-hidden="true" />
-              <b>{remind ? `Reminder at ${clock(hour)}` : "No reminders"}</b>
-              <span>{remind ? "One email, when your day opens" : "Turn them on any time in Profile"}</span>
-            </div>
-            <div>
-              <Clock className="ai" size={22} aria-hidden="true" />
-              <b>{MOMENTS.find((m) => m.key === moment)!.label}, {minutes} min</b>
-              <span>Your moment to write</span>
-            </div>
-          </div>
           <div className="ob-foot">
-            <Link className="ob-btn ob-pri ob-lg ob-wide" href="/dashboard?tour=1">
-              Show me around
+            <Link className="ob-btn ob-pri ob-lg ob-wide" href={dayHref}>
+              Begin Day 1
               <ArrowRight className="ai" size={16} aria-hidden="true" />
             </Link>
-            <Link className="ob-btn ob-ghost" href={dayHref}>
-              Skip and begin Day 1
+            <Link className="ob-btn ob-ghost" href="/dashboard?tour=1">
+              Show me around first
             </Link>
           </div>
         </main>

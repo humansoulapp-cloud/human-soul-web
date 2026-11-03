@@ -10,8 +10,8 @@ export const QUOTE_IMAGE = "/landing/final.jpg";
 export const SIGN_UP_IMAGE = "/auth/sign-up.jpg";
 
 /**
- * Auth layout (Design System v2): the form on the left and a photo panel on the
- * right. Below 1024px only the form shows.
+ * Auth layout (Design System v2): a centred form on the left and a photo panel
+ * on the right. Below 1024px only the form shows.
  */
 export function AuthShell({
   children,
@@ -24,11 +24,14 @@ export function AuthShell({
 }) {
   return (
     <main className="au">
+      {/* One centred column: the logo sits with the form it belongs to. */}
       <div className="au-side">
-        <Link href="/" className="au-logo" aria-label="HumanSoul home">
-          <Logo size={24} />
-        </Link>
-        <div className="au-form">{children}</div>
+        <div className="au-form">
+          <Link href="/" className="au-logo" aria-label="HumanSoul home">
+            <Logo size={28} />
+          </Link>
+          {children}
+        </div>
       </div>
       <aside className="au-ph" aria-hidden="true">
         <img src={image} alt="" />
