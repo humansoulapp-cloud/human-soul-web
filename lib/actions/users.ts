@@ -62,6 +62,8 @@ export async function getUsers(): Promise<UserRow[]> {
         email: u.email ?? "—",
         name: (u.user_metadata?.display_name as string) || u.email?.split("@")[0] || "—",
         lastSignIn: u.last_sign_in_at ?? null,
+        /* When they really signed up. A profile row can be newer (created later by a migration). */
+        createdAt: u.created_at ?? null,
       },
     ])
   );
@@ -94,7 +96,7 @@ export async function getUsers(): Promise<UserRow[]> {
         entries: dates.length,
         streak,
         lastActive: lastWritten ?? auth?.lastSignIn ?? null,
-        created_at: p.created_at,
+        created_at: auth?.createdAt ?? p.created_at,
         entriesWeek,
       };
     }

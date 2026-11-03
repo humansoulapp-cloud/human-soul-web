@@ -99,6 +99,15 @@ export async function getDashboard(period: 7 | 30 | 90) {
     for (const e of times) if (e.t >= from && e.t < to) s.add(e.u);
     return s;
   };
+  /* Sign-up date from the auth account: a profile row can be newer than the person
+     (some were created later by a migration), which would count them as new. */
+  const { data: authList, error: authError } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (authError) errors.push(`sign-up dates: ${authError.message}`);
+  const authCreated = new Map((authList?.users ?? []).map((u) => [u.id, Date.parse(u.created_at)]));
+  for (const p of profiles) {
+    const t = authCreated.get(p.user_id);
+    if (t) p.created_at = new Date(t).toISOString();
+  }
   const signup = new Map(profiles.map((p) => [p.user_id, Date.parse(p.created_at)]));
 
   /* ── Weekly active writers, 12 weeks ── */
