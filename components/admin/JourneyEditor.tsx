@@ -8,7 +8,6 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
-  BookOpen,
   CalendarDays,
   Check,
   CircleAlert,
@@ -18,8 +17,6 @@ import {
   Image as ImageIcon,
   PenLine,
   Plus,
-  ShieldCheck,
-  Sparkles,
   Trash2,
   TriangleAlert,
   Upload,
@@ -63,6 +60,9 @@ function toLocalInput(iso?: string | null) {
   const d = new Date(iso);
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
+
+/* Matches the About sheet: a longer headline is shown as paragraphs instead. */
+const HEADLINE_MAX = 110;
 
 function slugify(s: string) {
   return s
@@ -131,7 +131,7 @@ function Field({
 }: {
   label: string;
   where?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   htmlFor: string;
   children: React.ReactNode;
 }) {
@@ -178,6 +178,7 @@ export default function JourneyEditor({
   const [form, setForm] = useState<Form>(initial);
   const [saved, setSaved] = useState<Form>(initial);
   const [openDay, setOpenDay] = useState<number | null>(null);
+  const [imgLinkOpen, setImgLinkOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -453,7 +454,6 @@ export default function JourneyEditor({
           <a className="hsa-out" href="#pub"><span>Publishing</span></a>
           <a className="hsa-out" href="#ov"><span>Cover &amp; basics</span></a>
           <a className="hsa-out" href="#why"><span>Why this journey</span></a>
-          <a className="hsa-out" href="#find"><span>What you&apos;ll find</span></a>
           <a className="hsa-out" href="#days">
             <span>The {form.days.length} {form.days.length === 1 ? "day" : "days"}</span>
             {daysWithIssues ? (
@@ -561,13 +561,21 @@ export default function JourneyEditor({
                 <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
               </div>
             </div>
-            <Field label="Image address" htmlFor="f-img" hint="Or paste a link to an image.">
-              <input id="f-img" className="hs-control" value={form.image_url} placeholder="https://…" onChange={(e) => set("image_url", e.target.value)} />
-            </Field>
+            {/* Uploading is the normal way; the raw link stays one click away. */}
+            {imgLinkOpen || !form.image_url ? (
+              <Field label="Image link" htmlFor="f-img" hint="Paste a link to an image, or upload one above.">
+                <input id="f-img" className="hs-control" value={form.image_url} placeholder="https://…" onChange={(e) => set("image_url", e.target.value)} />
+              </Field>
+            ) : (
+              <button type="button" className="hs-link-btn" onClick={() => setImgLinkOpen(true)} style={{ alignSelf: "flex-start", border: 0, background: "none", padding: 0, color: "var(--muted-foreground)", font: "500 13px/18px var(--hs-font-sans)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                Use an image link instead
+              </button>
+            )}
             <Field label="Title" where="Overview, cards, day header" htmlFor="f-title">
               <input id="f-title" className="hs-control" value={form.title} onChange={(e) => set("title", e.target.value)} />
             </Field>
-            <div className="hsa-grid2">
+            {/* No "time per day": the length comes from the days, and the app makes no time promises. */}
+            <div>
               <Field label="Category" where="Overline, cards" htmlFor="f-cat">
                 <input id="f-cat" className="hs-control" list="f-cats" value={form.category} onChange={(e) => set("category", e.target.value)} />
                 <datalist id="f-cats">
@@ -575,9 +583,6 @@ export default function JourneyEditor({
                     <option key={c} value={c} />
                   ))}
                 </datalist>
-              </Field>
-              <Field label="Time per day" where="At a glance" htmlFor="f-time">
-                <input id="f-time" className="hs-control" value={form.time_required} onChange={(e) => set("time_required", e.target.value)} />
               </Field>
             </div>
             <Field label="Tagline" where="Under the title, cards" htmlFor="f-tag">
@@ -598,39 +603,21 @@ export default function JourneyEditor({
                 <span className="hs-hint">The reason to start, in the journey&apos;s own words. Shown in “More about this journey”.</span>
               </div>
             </div>
-            <Field label="Headline" where="About this journey · title" htmlFor="f-purpose">
+            <Field
+              label="Headline"
+              where="About this journey · title"
+              htmlFor="f-purpose"
+              hint={
+                <span style={{ color: form.purpose.length > HEADLINE_MAX ? "var(--warning)" : undefined }}>
+                  One sentence, up to {HEADLINE_MAX} characters ({form.purpose.length} now). Longer text belongs in the Introduction, or it shows as paragraphs instead of a title.
+                </span>
+              }
+            >
               <input id="f-purpose" className="hs-control" value={form.purpose} onChange={(e) => set("purpose", e.target.value)} />
             </Field>
-            <Field label="Introduction" htmlFor="f-intro" hint="Leave a blank line between paragraphs.">
+            <Field label="Introduction" htmlFor="f-intro" hint="Each new line starts a new paragraph.">
               <textarea id="f-intro" className="hs-control hs-textarea" rows={7} value={form.intro} onChange={(e) => set("intro", e.target.value)} />
             </Field>
-          </section>
-
-          {/* What you'll find */}
-          <section className="hsa-sec" id="find" aria-labelledby="find-t">
-            <div className="hsa-sec-head">
-              <div className="hsa-sec-text">
-                <span className="text-overline hsa-over">Overview</span>
-                <h2 id="find-t" className="text-h3" style={{ margin: 0 }}>What you&apos;ll find</h2>
-                <span className="hs-hint">The same four cards for every journey.</span>
-              </div>
-            </div>
-            <div className="hsa-feats">
-              {[
-                [BookOpen, "A short daily reading", "A few calm paragraphs that frame the day's theme."],
-                [PenLine, "One question to write about", "A single reflection, saved privately in the journal."],
-                [Sparkles, "Go deeper, if you want", "An extra question for the days you want to stay longer."],
-                [ShieldCheck, "Private, at your pace", "Only you can read it. A new day opens each morning."],
-              ].map(([Icon, t, d]) => {
-                const I = Icon as typeof BookOpen;
-                return (
-                  <div className="hsa-feat" key={t as string}>
-                    <span className="hsa-feat-ico"><I size={20} aria-hidden="true" /></span>
-                    <span><b>{t as string}</b><span>{d as string}</span></span>
-                  </div>
-                );
-              })}
-            </div>
           </section>
 
           {/* Days */}
@@ -669,7 +656,7 @@ export default function JourneyEditor({
                       <Field label="Day title" where="Day header, index" htmlFor={`d-t-${i}`}>
                         <input id={`d-t-${i}`} className="hs-control" value={d.title} onChange={(e) => setDay(i, "title", e.target.value)} />
                       </Field>
-                      <Field label="Reading" where="Day · reading" htmlFor={`d-r-${i}`} hint="Leave a blank line between paragraphs. About two minutes to read.">
+                      <Field label="Reading" where="Day · reading" htmlFor={`d-r-${i}`} hint="Each new line starts a new paragraph. A few short paragraphs read best.">
                         <textarea id={`d-r-${i}`} className="hs-control hs-textarea" rows={8} value={d.prompt} onChange={(e) => setDay(i, "prompt", e.target.value)} />
                       </Field>
                       <Field label="Today's intention" where="Day · under the reading" htmlFor={`d-p-${i}`}>
@@ -714,7 +701,7 @@ export default function JourneyEditor({
                 <span className="hs-hint">What people read after the last day.</span>
               </div>
             </div>
-            <Field label="Closing message" where="Journey complete" htmlFor="f-close" hint="Leave a blank line between paragraphs.">
+            <Field label="Closing message" where="Journey complete" htmlFor="f-close" hint="Each new line starts a new paragraph.">
               <textarea id="f-close" className="hs-control hs-textarea" rows={6} value={form.completion_message} onChange={(e) => set("completion_message", e.target.value)} />
             </Field>
             <div className="hsa-field">
