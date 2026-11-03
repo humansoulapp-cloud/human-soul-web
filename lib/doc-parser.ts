@@ -403,7 +403,7 @@ export function parseRawTextToJourney(rawInput: string): ParsedJourneyResult {
   let realm = "Human Soul Foundations";
   let purpose = "";
   let intro = "";
-  let timeRequired = "About 7 minutes a day";
+  let timeRequired = "";
   let imageUrl = "";
   let premium = false;
   let featured = false;

@@ -83,7 +83,7 @@ function fromRow(j?: JourneyRow): Form {
     tagline: j?.tagline ?? "",
     purpose: j?.purpose ?? "",
     intro: j?.intro ?? "",
-    time_required: j?.time_required ?? "About 7 minutes",
+    time_required: j?.time_required ?? "",
     image_url: j?.image_url ?? "",
     premium: j?.premium ?? false,
     featured: j?.featured ?? false,

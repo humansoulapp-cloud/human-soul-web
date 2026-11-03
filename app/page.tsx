@@ -239,9 +239,6 @@ export default async function LandingPage() {
                   <div className="ph-img">
                     <img src={heroPhoto} alt="" />
                     <div className="ph-top">
-                      <span>
-                        <Clock size={11} />7 min
-                      </span>
                       <span>Day 3 of {featuredDays}</span>
                     </div>
                   </div>
@@ -267,7 +264,7 @@ export default async function LandingPage() {
         <div className="w strip">
           {[
             [Lock, "Private by default", "Only you can read it"],
-            [Clock, "About 7 minutes", "Read, then write"],
+            [PenLine, "Read, then write", "At your own pace"],
             [Repeat, "No streaks, no scores", "Nothing to keep up with"],
             [Smartphone, "Phone and desktop", "Your journal, everywhere"],
           ].map(([Icon, t, s], i) => {
@@ -522,7 +519,7 @@ export default async function LandingPage() {
               {[
                 [Sun, "Notice the everyday", "A conversation, a passing thought, or a small moment you might otherwise overlook."],
                 [Repeat, "Recognize familiar patterns", "An opportunity to notice habits, reactions, and ways of thinking without needing to change them."],
-                [Clock, "Find your own rhythm", "A few minutes whenever it suits you. No schedule to keep or progress to measure."],
+                [Clock, "Find your own rhythm", "Whenever it suits you. No schedule to keep or progress to measure."],
                 [Layers, "Make room for mixed feelings", "Not everything you experience needs to make sense or fit into a simple explanation."],
                 [Eye, "Consider another perspective", "An opportunity to look at familiar situations, beliefs, or experiences from a different angle."],
                 [Compass, "Explore what matters to you", "Space to reflect on your values, relationships, and choices, without being told what they should mean."],
@@ -579,7 +576,6 @@ export default async function LandingPage() {
                         <span className="lc-t">{j.title}</span>
                         <span className="lc-m">
                           {days ? `${days} days` : "A few days"}
-                          {j.time_required ? ` · ${j.time_required}` : ""}
                         </span>
                       </div>
                     </a>
@@ -766,8 +762,8 @@ export default async function LandingPage() {
                   <span>days per journey</span>
                 </div>
                 <div>
-                  <b>7</b>
-                  <span>minutes a day</span>
+                  <b>1</b>
+                  <span>new day at a time</span>
                 </div>
               </div>
             </div>

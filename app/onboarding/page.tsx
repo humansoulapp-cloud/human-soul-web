@@ -269,7 +269,7 @@ export default function OnboardingPage() {
             </div>
             <div>
               <span className="ob-rl" id="ob-long">
-                How long, most days <span>· a journey day takes about 10 minutes</span>
+                How long, most days
               </span>
               <div className="ob-seg" role="radiogroup" aria-labelledby="ob-long">
                 {MINUTES.map((m) => (
@@ -335,10 +335,6 @@ export default function OnboardingPage() {
                   <span>
                     <CalendarDays className="ai" size={16} aria-hidden="true" />
                     {days} days
-                  </span>
-                  <span>
-                    <Clock className="ai" size={16} aria-hidden="true" />
-                    About 10 min a day
                   </span>
                   {chosen.premium && !fullAccess && (
                     <span>

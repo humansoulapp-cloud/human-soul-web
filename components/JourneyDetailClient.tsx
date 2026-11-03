@@ -136,7 +136,6 @@ export default function JourneyDetailClient({
   const days = useMemo(() => [...(journey.journey_days ?? [])].sort((a, b) => a.day - b.day), [journey.journey_days]);
   const total = days.length;
   const image = journeyImage(journey);
-  const timeText = journey.time_required || "About 7 minutes";
 
   const [entries, setEntries] = useState<ReflectionRow[]>(reflections);
   const [dayIndex, setDayIndex] = useState(() => {
@@ -487,10 +486,6 @@ export default function JourneyDetailClient({
             {total} days
           </li>
           <li>
-            <Clock size={16} aria-hidden="true" />
-            {timeText} a day
-          </li>
-          <li>
             <BookOpen size={16} aria-hidden="true" />
             Saved privately in your journal
           </li>
@@ -662,7 +657,7 @@ export default function JourneyDetailClient({
             <span className="jf-bar-text">
               <b>{allDone ? "Journey complete" : started ? "Your place is kept" : "Ready when you are"}</b>
               <span>
-                Day {startDay.day} · {startDay.title} · {timeText.toLowerCase()}
+                Day {startDay.day} · {startDay.title}
               </span>
             </span>
             <Button
@@ -691,8 +686,8 @@ export default function JourneyDetailClient({
             {day.title}
           </h1>
           <span className="jf-meta">
-            <Clock size={16} aria-hidden="true" />
-            {timeText} · read, then write
+            <PenLine size={16} aria-hidden="true" />
+            Read, then write
           </span>
         </div>
 

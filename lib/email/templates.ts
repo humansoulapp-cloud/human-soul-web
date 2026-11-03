@@ -96,7 +96,7 @@ export function welcomeEmail({ name, journey }: { name: string; journey: { id: s
   const body =
     over("Welcome") +
     h1("A quiet place is ready for you") +
-    p(`${greet} for being here. HumanSoul is a place to slow down and notice yourself, a few minutes at a time.`) +
+    p(`${greet} for being here. HumanSoul is a place to slow down and notice yourself, a little at a time.`) +
     (journey ? journeyRow(journey.image, journey.title, "Your first journey · Day 1 is open") : "") +
     `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px">${step(1, "Read, then write", "Each day has a short reading and one question.")}${step(2, "One day at a time", "The next day opens the morning after you write.")}${step(3, "Write freely too", "Your Journal is always there, for whatever comes to mind.")}</table>` +
     button(begin, journey ? "Begin Day 1" : "Open HumanSoul");
@@ -125,13 +125,13 @@ export function reminderEmail({
 }): Email {
   const href = `${SITE_URL}/journeys/${journey.id}?day=${day}`;
   const quote = question
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;background:${C.soft};border-radius:18px"><tr><td style="padding:20px 22px;font:400 18px/28px ${SERIF};color:${C.ink}">“${esc(question)}”<div style="margin-top:8px;font:500 13px/18px ${SANS};color:${C.muted}">Today's question · about 10 minutes</div></td></tr></table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;background:${C.soft};border-radius:18px"><tr><td style="padding:20px 22px;font:400 18px/28px ${SERIF};color:${C.ink}">“${esc(question)}”<div style="margin-top:8px;font:500 13px/18px ${SANS};color:${C.muted}">Today's question</div></td></tr></table>`
     : "";
   const body = over(`${journey.title} · Day ${day} of ${total}`) + h1(title || `Day ${day}`) + quote + button(href, `Open Day ${day}`);
   return {
     subject: `Day ${day} is open`,
     html: layout({
-      preheader: `${journey.title} · about 10 minutes.`,
+      preheader: `${journey.title} · Day ${day} of ${total}.`,
       hero: journey.image,
       body,
       footer: productFooter(
