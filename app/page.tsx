@@ -290,7 +290,11 @@ export default async function LandingPage() {
                 <Compass className="ai" size={14} aria-hidden="true" />
                 Guided journeys
               </span>
-              <h2 className="h2 serif">A closer look, one day at a time.</h2>
+              <h2 className="h2 serif">
+                A closer look,
+                <br />
+                one day at a time.
+              </h2>
               <p className="sub">
                 Each journey offers a few days to explore an idea, experience, or question more closely. Across
                 HumanSoul, you&apos;ll find a wide range of topics, with one day opening at a time to give you space
