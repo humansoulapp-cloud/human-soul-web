@@ -88,7 +88,6 @@ export default async function LandingPage() {
     j ? journeyImage(j) : journeys[fallbackIndex] ? journeyImage(journeys[fallbackIndex]) : journeyImage({ id: "" });
 
   const heroPhoto = img(featured);
-  const entryPhoto = img(library[2], 1);
   const finalPhoto = "/landing/final.jpg";
   const featuredTitle = featured?.title ?? "Becoming More Human";
   const featuredCategory = featured?.category ?? "Human Soul Foundations";
@@ -98,6 +97,9 @@ export default async function LandingPage() {
     <div className="lp dark" data-theme="dark">
       <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
       <LandingMotion />
+      <div className="hero-bg" aria-hidden="true">
+        <img src={finalPhoto} alt="" />
+      </div>
 
       <header className="nav">
         <div className="nav-in">
@@ -237,9 +239,6 @@ export default async function LandingPage() {
                         The phone on the sofa, the second cup of tea, the show I don&apos;t even like. None of them
                         are bad, but none of them are mine either.
                       </p>
-                      <div className="jr-ph">
-                        <img src={entryPhoto} alt="" loading="lazy" />
-                      </div>
                     </div>
                   </div>
                 </div>

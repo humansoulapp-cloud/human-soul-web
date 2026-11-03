@@ -10,7 +10,7 @@
 .lp .over{display:inline-flex;align-items:center;gap:8px;font:600 12px/16px var(--font-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--primary)}
 .lp .serif{font-family:var(--font-serif);font-variation-settings:"SOFT" 100,"WONK" 0;font-weight:500}
 /* nav */
-.lp .nav{position:sticky;top:0;z-index:50;padding:20px 32px;background:linear-gradient(to bottom,var(--background) 70%,transparent)}
+.lp .nav{position:sticky;top:0;z-index:50;padding:20px 32px;background:transparent}
 .lp .nav-in{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px}
 .lp .logo{justify-self:start;display:inline-flex;font-size:22px;line-height:1;min-height:44px;align-items:center}
 .lp .links{display:flex;gap:2px;padding:4px;border-radius:9999px;background:var(--card);box-shadow:var(--shadow-sm)}
@@ -219,7 +219,7 @@
 /* Nav: turns to glass once the page scrolls */
 .lp .nav{transition:padding .3s,background-color .3s,transform .5s cubic-bezier(.2,.7,.2,1),opacity .4s}
 .lp.lp-end .nav{transform:translateY(-110%);opacity:0;pointer-events:none}
-.lp .nav::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;background:color-mix(in srgb,var(--background) 72%,transparent);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);box-shadow:0 1px 0 color-mix(in srgb,var(--foreground) 6%,transparent);transition:opacity .3s}
+.lp .nav::before{content:"";position:absolute;inset:0 0 -40px;z-index:-1;opacity:0;background:linear-gradient(to bottom,color-mix(in srgb,var(--background) 82%,transparent) 0%,color-mix(in srgb,var(--background) 62%,transparent) 55%,transparent 100%);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);-webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);pointer-events:none;transition:opacity .4s}
 .lp.lp-scrolled .nav{padding-top:12px;padding-bottom:12px;background:transparent}
 .lp.lp-scrolled .nav::before{opacity:1}
 
@@ -434,3 +434,19 @@
 .lp .final-open{display:flex;flex-direction:column;align-items:center;gap:16px}
 .lp .final-seats{font:400 14px/20px var(--font-sans);color:#CFCAC2}
 .lp .final-seats b{font-weight:600;color:#F8F6F2}
+
+/* Hero over a photo, like the final invitation: it fades into the page below the headline */
+.lp{position:relative}
+.lp .hero-bg{position:absolute;left:0;right:0;top:0;height:860px;overflow:hidden;z-index:0;pointer-events:none}
+.lp .hero-bg img{width:100%;height:100%;object-fit:cover;display:block}
+.lp .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,19,18,.55) 0%,rgba(20,19,18,.35) 40%,rgba(20,19,18,.7) 75%,var(--background) 100%)}
+.lp > main{position:relative;z-index:1}
+.lp .hero::before{display:none}
+.lp .hero .h1{color:#F8F6F2}
+.lp .hero .lede{color:#E9E5DE}
+.lp .hero .over{color:#C9D8CB}
+.lp .hero .fine{color:#CFCAC2}
+.lp .hero .fine b{color:#F8F6F2}
+.lp .hero .btn-sec{background:rgba(20,19,18,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.lp .hero .btn-sec:hover{background:rgba(20,19,18,.6)}
+@media (max-width:640px){.lp .hero-bg{height:640px}}
