@@ -1,39 +1,16 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Bell,
-  CalendarDays,
-  Check,
-  Mail,
-  Moon,
-  Sparkles,
-  Sun,
-  Sunset,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, Mail, Moon, Sparkles, Sun, Sunset } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
-import { journeyImage } from "@/lib/journey-images";
-import type { Journey } from "@/lib/journal";
 import { BILLING_LIVE, PLANS, YEARLY_SAVING } from "@/lib/plans";
 import { Logo } from "@/components/ds";
 import { sendWelcomeEmail } from "@/lib/actions/emails";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
+import { INTENTS, type IntentKey } from "@/lib/intents";
 import "./onboarding.css";
-
-/* ── What brings you here ─────────────────────────────────────── */
-const INTENTS = [
-  { key: "slow", title: "Slow down", sub: "A quiet pause in a busy day", chip: "Slow down", words: ["calm", "presence", "present", "slow", "rest", "still", "awareness", "attention", "foundations"] },
-  { key: "self", title: "Understand myself better", sub: "Notice patterns in how I think and feel", chip: "Understand myself", words: ["identity", "self", "pattern", "inner", "discovery", "awareness", "emotion", "foundations"] },
-  { key: "grateful", title: "Feel more grateful", sub: "Keep track of the good things", chip: "Feel more grateful", words: ["gratitude", "grateful", "kindness", "joy", "appreciation", "wonder"] },
-  { key: "hard", title: "Get through a hard time", sub: "Put what I'm carrying into words", chip: "A hard time", words: ["uncertainty", "grief", "loneliness", "loss", "fear", "courage", "heavy", "pain", "emotion"] },
-  { key: "habit", title: "Build a writing habit", sub: "Write a little, most days", chip: "A writing habit", words: ["foundations", "practice", "daily", "habit", "beginning"] },
-  { key: "curious", title: "Just curious", sub: "Show me what this is", chip: "", words: [] },
-] as const;
-type IntentKey = (typeof INTENTS)[number]["key"];
 
 const MOMENTS = [
   { key: "morning", label: "Morning", sub: "Before the day starts", icon: Sun, hour: "07:00" },
@@ -42,46 +19,27 @@ const MOMENTS = [
 ] as const;
 type MomentKey = (typeof MOMENTS)[number]["key"];
 
-/* Four steps; people with beta or Plus access skip the Plus step (step 3). */
-const STEPS_ALL = 4;
+/* Two steps (what brings you here, reminder), plus the Plus step only when
+   billing is live and the person has no full access. The first journey is
+   chosen in the Home tour, which every new person sees right after this. */
+const STEPS_ALL = 3;
 
 function clock(h: string) {
   const [hh, mm] = h.split(":").map(Number);
   return new Date(2000, 0, 1, hh, mm).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function inDays(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
-}
-
-function isVisible(j: Journey) {
-  const status = j.status || "published";
-  if (status === "published") return true;
-  return status === "scheduled" && !!j.scheduled_publish_at && new Date(j.scheduled_publish_at) <= new Date();
-}
-
-/** Which of the chosen intents a journey speaks to, from its category, title and tagline. */
-function fits(j: Journey, intents: IntentKey[]) {
-  const text = `${j.category ?? ""} ${j.title} ${j.tagline ?? ""}`.toLowerCase();
-  return INTENTS.filter((i) => intents.includes(i.key) && i.words.some((w) => text.includes(w)));
-}
-
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [done, setDone] = useState(false);
   const [name, setName] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<Record<string, unknown>>({});
-  const [journeys, setJourneys] = useState<Journey[]>([]);
 
   const [intents, setIntents] = useState<IntentKey[]>([]);
   const [moment, setMoment] = useState<MomentKey>("evening");
   const [remind, setRemind] = useState(true);
   const [hour, setHour] = useState("21:00");
-  const [pickId, setPickId] = useState<string | null>(null);
   const [plan, setPlan] = useState<"year" | "month">("year");
   const [saving, setSaving] = useState(false);
   /* Beta or Plus: every journey is already open, so there is nothing to sell. */
@@ -101,32 +59,13 @@ export default function OnboardingPage() {
         setPrefs(((profile?.preferences as Record<string, unknown>) ?? {}) || {});
         setFullAccess(accessFrom(profile?.plan as string | null | undefined, betaUntil, Date.now(), profile?.role as string | null | undefined).full);
       }
-      const { data } = await supabase.from("journeys").select("*, journey_days(day)").order("created_at", { ascending: true });
-      setJourneys(((data ?? []) as Journey[]).filter(isVisible));
     }
     load();
   }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
-  }, [step, done]);
-
-  /* Ranked by how well they fit; free journeys and featured ones first, since every day of a free journey is open. */
-  const ranked = useMemo(() => {
-    return journeys
-      .map((j, i) => ({
-        j,
-        score: fits(j, intents).length * 2 + (j.premium ? 0 : 1.5) + (j.featured ? 0.5 : 0) - i * 0.001,
-      }))
-      .sort((a, b) => b.score - a.score)
-      .map((x) => x.j);
-  }, [journeys, intents]);
-
-  const recommended = ranked[0];
-  const chosen = journeys.find((j) => j.id === pickId) ?? recommended;
-  const others = ranked.filter((j) => j.id !== chosen?.id).slice(0, 2);
-  const chosenFits = chosen ? fits(chosen, intents).filter((i) => i.chip) : [];
-  const days = chosen ? (chosen.journey_days ?? []).length || 7 : 7;
+  }, [step]);
 
   const toggleIntent = (k: IntentKey) =>
     setIntents((list) => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]));
@@ -146,40 +85,30 @@ export default function OnboardingPage() {
         preferences: {
           ...prefs,
           onboarded: true,
-          onboarding: { intents, moment: remind ? moment : null, journey: chosen?.id ?? null, plan_interest: plan },
+          onboarding: { ...((prefs.onboarding as Record<string, unknown>) ?? {}), intents, moment: remind ? moment : null, plan_interest: plan },
         },
       })
       .eq("user_id", userId);
   };
 
-  const finishPlan = async () => {
+  /* Finishing or skipping both lead to Home, where the tour helps choose the first journey. */
+  const finish = async () => {
     setSaving(true);
     await save();
     try {
       localStorage.setItem("onboarding_done", "true");
     } catch {}
     sendWelcomeEmail().catch(() => null);
-    setSaving(false);
-    setDone(true);
-  };
-
-  const skipAll = async () => {
-    await save();
-    try {
-      localStorage.setItem("onboarding_done", "true");
-    } catch {}
-    await sendWelcomeEmail().catch(() => null);
     router.push("/dashboard");
   };
 
-  const back = () => (done ? setDone(false) : setStep((s) => Math.max(0, s - 1)));
+  const back = () => setStep((s) => Math.max(0, s - 1));
   /* No Plus step while billing isn't live (beta): nothing to choose or pay. */
   const skipPlus = fullAccess || !BILLING_LIVE;
   const STEPS = skipPlus ? STEPS_ALL - 1 : STEPS_ALL;
-  const shown = done ? STEPS : step + 1;
+  const shown = step + 1;
   const year = PLANS.find((p) => p.key === "year")!;
   const month = PLANS.find((p) => p.key === "month")!;
-  const dayHref = chosen ? `/journeys/${chosen.id}?day=1` : "/journeys";
 
   return (
     <div className="ob">
@@ -189,7 +118,7 @@ export default function OnboardingPage() {
             <Logo size={22} />
           </Link>
           <div className="ob-step">
-            <span>{done ? "All set" : `Step ${shown} of ${STEPS}`}</span>
+            <span>{`Step ${shown} of ${STEPS}`}</span>
             <div className="ob-prog" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={STEPS} aria-valuenow={shown}>
               {Array.from({ length: STEPS }, (_, i) => (
                 <span key={i} className={i < shown ? "on" : ""} />
@@ -197,8 +126,8 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="ob-right">
-            {done ? null : step === 0 ? (
-              <button type="button" className="ob-btn ob-ghost" onClick={skipAll}>
+            {step === 0 ? (
+              <button type="button" className="ob-btn ob-ghost" onClick={finish} disabled={saving}>
                 Skip
               </button>
             ) : (
@@ -211,7 +140,7 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {!done && step === 0 && (
+      {step === 0 && (
         <main className="ob-main" key="s0">
           <span className="ob-over">{name ? `Welcome, ${name}` : "Welcome"}</span>
           <h1 className="ob-h">What brings you to HumanSoul?</h1>
@@ -246,7 +175,7 @@ export default function OnboardingPage() {
         </main>
       )}
 
-      {!done && step === 1 && (
+      {step === 1 && (
         <main className="ob-main" key="s1">
           <span className="ob-over">Your rhythm</span>
           <h1 className="ob-h">Would you like a reminder?</h1>
@@ -273,88 +202,16 @@ export default function OnboardingPage() {
             ) : null}
           </div>
           <div className="ob-foot">
-            <button type="button" className="ob-btn ob-pri ob-lg ob-wide" onClick={() => setStep(2)}>
-              Continue
-              <ArrowRight className="ai" size={16} aria-hidden="true" />
+            <button type="button" className="ob-btn ob-pri ob-lg ob-wide" disabled={saving} onClick={() => (skipPlus ? finish() : setStep(2))}>
+              {saving ? "Saving…" : "Continue"}
+              {!saving && <ArrowRight className="ai" size={16} aria-hidden="true" />}
             </button>
           </div>
         </main>
       )}
 
-      {!done && step === 2 && (
+      {step === 2 && !skipPlus && (
         <main className="ob-main wide" key="s2">
-          <span className="ob-over">Your first journey</span>
-          <h1 className="ob-h">{chosen && chosen.id !== recommended?.id ? "A good place to begin" : "We'd start here"}</h1>
-          <p className="ob-p">
-            {days} short days, one at a time. Each new day opens the morning after you write the one before.
-          </p>
-          {chosen ? (
-            <div className="ob-pick">
-              <article className="ob-jc ob-jc-main">
-                <img src={journeyImage(chosen)} alt="" />
-                <span className="ob-jc-sel" aria-hidden="true">
-                  <Check size={16} strokeWidth={2.5} />
-                </span>
-                {chosenFits.length > 0 && (
-                  <span className="ob-jc-why">
-                    <Sparkles className="ai" size={14} aria-hidden="true" />
-                    Fits {chosenFits.slice(0, 2).map((i) => `“${i.chip}”`).join(" and ")}
-                  </span>
-                )}
-                <span className="ob-jc-cat">{chosen.category}</span>
-                <h2 className="ob-jc-t">{chosen.title}</h2>
-                {chosen.tagline && <p className="ob-jc-p">{chosen.tagline}</p>}
-                <div className="ob-jc-meta">
-                  <span>
-                    <CalendarDays className="ai" size={16} aria-hidden="true" />
-                    {days} days
-                  </span>
-                  {chosen.premium && !fullAccess && (
-                    <span>
-                      <Sparkles className="ai" size={16} aria-hidden="true" />
-                      Included with Plus
-                    </span>
-                  )}
-                </div>
-                <button type="button" className="ob-jc-btn" aria-pressed="true" aria-label={`${chosen.title}, selected`} />
-              </article>
-              {others.length > 0 && (
-                <div className="ob-alts">
-                  <span className="ob-alts-h">Or choose another</span>
-                  {others.map((j) => (
-                    <article key={j.id} className="ob-jc ob-jc-alt">
-                      <img src={journeyImage(j)} alt="" loading="lazy" />
-                      <span className="ob-jc-cat">{j.category}</span>
-                      <h2 className="ob-jc-t">{j.title}</h2>
-                      {j.tagline && <p className="ob-jc-p">{j.tagline}</p>}
-                      <button type="button" className="ob-jc-btn" aria-pressed="false" aria-label={`Choose ${j.title}`} onClick={() => setPickId(j.id)} />
-                    </article>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="ob-note" style={{ marginTop: 40 }}>Loading journeys…</p>
-          )}
-          <div className="ob-foot">
-            <button
-              type="button"
-              className="ob-btn ob-pri ob-lg ob-wide"
-              disabled={!chosen || saving}
-              onClick={() => (skipPlus ? finishPlan() : setStep(3))}
-            >
-              Start with this journey
-              <ArrowRight className="ai" size={16} aria-hidden="true" />
-            </button>
-            <Link className="ob-note" href="/journeys" onClick={() => save()}>
-              See all journeys
-            </Link>
-          </div>
-        </main>
-      )}
-
-      {!done && step === 3 && !skipPlus && (
-        <main className="ob-main wide" key="s3">
           <span className="ob-over">HumanSoul Plus</span>
           <h1 className="ob-h">Every journey, with a free week.</h1>
           <p className="ob-p">
@@ -431,7 +288,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="ob-foot">
-            <button type="button" className="ob-btn ob-pri ob-lg ob-wide" disabled={saving} onClick={finishPlan}>
+            <button type="button" className="ob-btn ob-pri ob-lg ob-wide" disabled={saving} onClick={finish}>
               {saving ? "Saving…" : "Continue with the free plan"}
               {!saving && <ArrowRight className="ai" size={16} aria-hidden="true" />}
             </button>
@@ -439,27 +296,6 @@ export default function OnboardingPage() {
         </main>
       )}
 
-      {done && (
-        <main className="ob-main" key="done">
-          <span className="ob-done">
-            <Check size={32} strokeWidth={2.2} aria-hidden="true" />
-          </span>
-          <h1 className="ob-h">{name ? `You're all set, ${name}` : "You're all set"}</h1>
-          <p className="ob-p">
-            {chosen && (fullAccess || !chosen.premium) ? `Day 1 of ${chosen.title} is open. ` : ""}Each new day opens the morning after you write.
-            {remind ? ` We'll remind you at ${clock(hour)}.` : ""}
-          </p>
-          <div className="ob-foot">
-            <Link className="ob-btn ob-pri ob-lg ob-wide" href={dayHref}>
-              Begin Day 1
-              <ArrowRight className="ai" size={16} aria-hidden="true" />
-            </Link>
-            <Link className="ob-btn ob-ghost" href="/dashboard?tour=1">
-              Show me around first
-            </Link>
-          </div>
-        </main>
-      )}
     </div>
   );
 }

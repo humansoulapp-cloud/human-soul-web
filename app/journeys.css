@@ -415,3 +415,24 @@ button.jf-gday:hover { background: color-mix(in srgb, var(--foreground) 6%, tran
 /* Overview while the next day waits for the morning. */
 .jf-wait { display: flex; align-items: center; gap: 12px; padding: 14px 18px 14px 14px; border-radius: 18px; background: color-mix(in srgb, var(--foreground) 8%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); max-width: 440px; }
 .jf-wait-ico { width: 40px; height: 40px; flex: none; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
+
+/* Tour, step 1 without a journey: choose the first one */
+.ht-card.ht-pick { inset: 0; margin: auto; width: min(560px, calc(100vw - 32px)); height: fit-content; max-height: calc(100dvh - 48px); overflow-y: auto; }
+.ht-opts { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+.ht-opt { display: grid; grid-template-columns: 64px minmax(0, 1fr) 24px; gap: 14px; align-items: center; width: 100%; padding: 10px 14px 10px 10px; border: 0; border-radius: 18px; background: var(--fill); color: var(--foreground); text-align: left; cursor: pointer; transition: background-color .15s, box-shadow .15s; }
+.ht-opt:hover { background: var(--fill-strong); }
+.ht-opt[aria-checked="true"] { background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: inset 0 0 0 2px var(--primary); }
+.ht-opt img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; display: block; }
+.ht-opt-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ht-opt-t small { font: 600 11px/16px var(--hs-font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.ht-opt-t b { font: 600 16px/22px var(--hs-font-sans); }
+.ht-opt-t span { font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ht-opt-ck { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 9999px; background: var(--card); color: var(--primary-foreground); }
+.ht-opt[aria-checked="true"] .ht-opt-ck { background: var(--primary); }
+.ht-btn:disabled { opacity: .55; cursor: not-allowed; }
+a.ht-btn { text-decoration: none; }
+@media (max-width: 639px) {
+  .ht-card.ht-pick { top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); margin: 0 auto; max-height: calc(100dvh - 32px); }
+  .ht-opt { grid-template-columns: 56px minmax(0, 1fr) 24px; }
+  .ht-opt img { width: 56px; height: 56px; }
+}
