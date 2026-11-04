@@ -53,3 +53,32 @@ export async function loadBetaUntil(supabase: SupabaseClient, userId: string): P
   if (error || !data) return null;
   return (data.access_until as string | null) ?? null;
 }
+
+/** The person's beta window: the day it started (account created) and when it ends. */
+export type BetaWindow = { joinedAt: string | null; until: string | null };
+
+export async function loadBeta(supabase: SupabaseClient, userId: string): Promise<BetaWindow> {
+  const { data, error } = await supabase
+    .from("beta_invites")
+    .select("joined_at, access_until")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return { joinedAt: null, until: null };
+  return { joinedAt: (data.joined_at as string | null) ?? null, until: (data.access_until as string | null) ?? null };
+}
+
+/** "January 22, 2027" */
+export function longDay(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+/** Which day of the beta today is (1 on the day the account was created), and how many there are. */
+export function betaProgress(joinedAt: string | null, until: string | null, now: number = Date.now()) {
+  if (!until) return null;
+  const end = new Date(until).getTime();
+  const start = joinedAt ? new Date(joinedAt).getTime() : end - 90 * DAY;
+  const total = Math.max(1, Math.round((end - start) / DAY));
+  const day = Math.min(total, Math.max(1, Math.floor((now - start) / DAY) + 1));
+  return { day, total };
+}
+

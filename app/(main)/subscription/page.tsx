@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Check, ChevronDown, Compass, Download, Lock, Shield, Sparkles } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
-import { accessFrom, loadBetaUntil, type Access } from "@/lib/access";
+import { accessFrom, betaProgress, loadBeta, longDay, type Access } from "@/lib/access";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
 import { BILLING_LIVE, PLANS, PLUS_PERKS, YEARLY_SAVING } from "@/lib/plans";
@@ -54,6 +54,8 @@ export default function SubscriptionPage() {
   const [plus, setPlus] = useState(false);
   const [planName, setPlanName] = useState<string | null>(null);
   const [beta, setBeta] = useState<Access | null>(null);
+  /* The day the beta started for this person: the day the account was created. */
+  const [betaStart, setBetaStart] = useState<string | null>(null);
   const [team, setTeam] = useState(false);
   const [since, setSince] = useState<string | null>(null);
   const [plan, setPlan] = useState<"year" | "month">("year");
@@ -64,17 +66,19 @@ export default function SubscriptionPage() {
     async function load() {
       const supabase = createClient();
       const user = await currentUser(supabase);
-      const [{ data: profile }, { data: journeys }, betaUntil] = await Promise.all([
+      const [{ data: profile }, { data: journeys }, betaWindow] = await Promise.all([
         user
           ? supabase.from("profiles").select("*").eq("user_id", user.id).single()
           : Promise.resolve({ data: null }),
         supabase.from("journeys").select("*, journey_days(day, title)").order("created_at", { ascending: true }),
-        user ? loadBetaUntil(supabase, user.id) : Promise.resolve(null),
+        user ? loadBeta(supabase, user.id) : Promise.resolve({ joinedAt: null, until: null }),
       ]);
+      const betaUntil = betaWindow.until;
       const p = profile as { plan?: string | null; role?: string | null; created_at?: string } | null;
       const access = accessFrom(p?.plan, betaUntil, Date.now(), p?.role);
       setPlus(access.kind === "plus");
       setBeta(access.kind === "beta" ? access : null);
+      setBetaStart(betaWindow.joinedAt ?? user?.created_at ?? null);
       setTeam(access.kind === "team");
       setPlanName(p?.plan ?? null);
       setSince(p?.created_at ?? user?.created_at ?? null);
@@ -114,7 +118,8 @@ export default function SubscriptionPage() {
   );
 
   if (beta) {
-    const until = new Date(beta.betaUntil!).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    const until = longDay(beta.betaUntil!);
+    const progress = betaProgress(betaStart, beta.betaUntil);
     return (
       <div className="ac">
         <div className="ac-head">
@@ -135,14 +140,28 @@ export default function SubscriptionPage() {
                 Active
               </span>
             </div>
-            <div className="ac-kv">
+            <p className="ac-beta-lede">
+              Your beta access ends on <b>{until}</b>.
+            </p>
+            {progress ? (
+              <div className="ac-beta-bar" role="progressbar" aria-label="Beta days used" aria-valuemin={1} aria-valuemax={progress.total} aria-valuenow={progress.day}>
+                <i style={{ width: `${Math.round((progress.day / progress.total) * 100)}%` }} />
+              </div>
+            ) : null}
+            <div className="ac-kv ac-kv3">
               <div>
-                <span>Open until</span>
+                <span>First day</span>
+                <b>{betaStart ? longDay(betaStart) : "Not set"}</b>
+              </div>
+              <div>
+                <span>Last day</span>
                 <b>{until}</b>
               </div>
               <div>
-                <span>Days left</span>
-                <b>{beta.betaDaysLeft}</b>
+                <span>{progress ? `Day ${progress.day} of ${progress.total}` : "Days left"}</span>
+                <b>
+                  {beta.betaDaysLeft} {beta.betaDaysLeft === 1 ? "day" : "days"} left
+                </b>
               </div>
             </div>
             <ul className="ac-list">

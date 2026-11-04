@@ -37,6 +37,7 @@ export function Navigation() {
   const [mounted, setMounted] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [subscribed, setSubscribed] = React.useState(true);
+  const [inBeta, setInBeta] = React.useState(false);
   const [name, setName] = React.useState("");
   const [avatar, setAvatar] = React.useState<string | null>(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -59,7 +60,9 @@ export function Navigation() {
 
       setIsAdmin(profile?.role === "admin");
       setAvatar((profile?.avatar_url as string | null | undefined) ?? null);
-      setSubscribed(accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full);
+      const access = accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role);
+      setSubscribed(access.full);
+      setInBeta(access.kind === "beta");
     }
     loadUser();
   }, []);
@@ -138,12 +141,17 @@ export function Navigation() {
                     <Icon icon={MessageCircle} size={18} />
                     Send feedback
                   </Link>
-                  {!subscribed && (
+                  {inBeta ? (
+                    <Link href="/subscription" className="hs-menu-item" role="menuitem">
+                      <Icon icon={Sparkles} size={18} />
+                      Your beta
+                    </Link>
+                  ) : !subscribed ? (
                     <Link href="/subscription" className="hs-menu-item" role="menuitem">
                       <Icon icon={Sparkles} size={18} />
                       HumanSoul Plus
                     </Link>
-                  )}
+                  ) : null}
                   {isAdmin && (
                     <Link href="/admin" className="hs-menu-item" role="menuitem">
                       <Icon icon={Shield} size={18} />

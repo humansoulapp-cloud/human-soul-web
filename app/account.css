@@ -279,3 +279,11 @@
 .fb-done b { display: block; font: 600 17px/24px var(--ac-sans); }
 .fb-done span { display: block; margin-top: 2px; font: 400 15px/22px var(--ac-sans); color: var(--muted-foreground); }
 .fb-done .ac-btn { grid-column: 2; justify-self: start; margin-top: 16px; }
+
+/* Plus page during the beta: the end date first, then first day, last day and days left */
+.ac-beta-lede { margin: 18px 0 0; font: 400 17px/26px var(--ac-sans); color: var(--muted-foreground); text-wrap: balance; }
+.ac-beta-lede b { font-weight: 600; color: var(--foreground); }
+.ac-beta-bar { height: 6px; margin-top: 14px; border-radius: 9999px; background: var(--fill); overflow: hidden; }
+.ac-beta-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.ac-kv.ac-kv3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 640px) { .ac-kv.ac-kv3 { grid-template-columns: 1fr; } }
