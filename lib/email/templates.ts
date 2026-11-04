@@ -2,8 +2,9 @@
  * HumanSoul emails, as plain HTML strings with inline styles so they render the
  * same in every mail client. Designs live in the canvas, page "Emails".
  *
- * Fonts: Hedvig Letters Serif and Instrument Sans load where the client allows it; others
- * fall back to Georgia and the system sans.
+ * Fonts: Hedvig Letters Serif and Instrument Sans load where the client allows it (Apple
+ * Mail, iOS Mail); Gmail and Outlook never load web fonts and fall back to Georgia and
+ * the system sans. The wordmark is an image (public/email/logo.png) so it is exact everywhere.
  */
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://humansoul.co").replace(/\/$/, "");
@@ -74,7 +75,7 @@ function layout({ preheader, hero, body, footer }: { preheader: string; hero?: s
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 16px 48px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border-radius:24px;overflow:hidden">
-<tr><td style="padding:32px 40px 0;font-size:22px;line-height:1;color:${C.ink};white-space:nowrap"><span style="font-family:${SANS};font-weight:500;letter-spacing:-.04em">Human</span><span style="font-family:'Hedvig Letters Serif',Georgia,'Times New Roman',serif;font-weight:400;font-size:22.6px;letter-spacing:-.03em;margin-left:1px;color:#617D65">Soul</span></td></tr>
+<tr><td style="padding:32px 40px 0;line-height:1"><img src="${SITE_URL}/email/logo.png" width="136" height="22" alt="HumanSoul" style="display:block;width:136px;height:22px;border:0"></td></tr>
 ${heroImg}
 <tr><td style="padding:32px 40px 40px">${body}</td></tr>
 <tr><td style="padding:24px 40px 32px;background:${C.soft};font:400 13px/20px ${SANS};color:${C.muted}">${footer}</td></tr>
@@ -190,7 +191,12 @@ export function placeReadyEmail({ email }: { email: string }): Email {
 }
 
 // ─── 1 to 3 · Account emails, pasted into Supabase (Authentication, Emails) ──
-// Supabase fills {{ .ConfirmationURL }}, {{ .Email }} and {{ .NewEmail }}.
+// Supabase fills {{ .SiteURL }}, {{ .TokenHash }}, {{ .Email }} and {{ .NewEmail }}.
+// The buttons link to /auth/callback with a token hash instead of {{ .ConfirmationURL }}:
+// that works on any device, not only in the browser where the person signed up.
+// Supabase → Authentication → URL Configuration → Site URL must be https://humansoul.co.
+const authLink = (type: "email" | "recovery" | "email_change", next: string) =>
+  `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=${type}&next=${next}`;
 const accountFooter = `You got this email because someone used this address on HumanSoul.<div style="margin-top:8px">HumanSoul · <a href="${SITE_URL}" style="color:${C.mid}">humansoul.co</a> · <a href="${SITE_URL}/privacy" style="color:${C.mid}">Privacy</a></div>`;
 
 export const SUPABASE_TEMPLATES = {
@@ -202,7 +208,7 @@ export const SUPABASE_TEMPLATES = {
         over("Welcome") +
         h1("Confirm your email") +
         p("One tap and your HumanSoul account is ready. Then we'll help you choose where to begin.") +
-        button("{{ .ConfirmationURL }}", "Confirm my email") +
+        button(authLink("email", "/onboarding"), "Confirm my email") +
         small("This link works for 24 hours. If you didn't create an account, you can ignore this email."),
       footer: accountFooter,
     }),
@@ -215,7 +221,7 @@ export const SUPABASE_TEMPLATES = {
         over("Password reset") +
         h1("Choose a new password") +
         p(`Someone asked to reset the password for <strong style="color:${C.ink};font-weight:600">{{ .Email }}</strong>. If it was you, choose a new one below.`) +
-        button("{{ .ConfirmationURL }}", "Choose a new password") +
+        button(authLink("recovery", "/reset-password"), "Choose a new password") +
         small("The link works for one hour. If you didn't ask for this, ignore this email. Your password stays the same and nothing you wrote is affected."),
       footer: accountFooter,
     }),
@@ -228,7 +234,7 @@ export const SUPABASE_TEMPLATES = {
         over("Account") +
         h1("Confirm your new email") +
         p(`You asked to change the email on your HumanSoul account from <strong style="color:${C.ink};font-weight:600">{{ .Email }}</strong> to <strong style="color:${C.ink};font-weight:600">{{ .NewEmail }}</strong>.`) +
-        button("{{ .ConfirmationURL }}", "Confirm the change") +
+        button(authLink("email_change", "/profile"), "Confirm the change") +
         small(`Until you confirm, you keep signing in with your current email. If you didn't ask for this, ignore this email and ${link("mailto:hello@humansoul.co", "let us know")}.`),
       footer: accountFooter,
     }),
