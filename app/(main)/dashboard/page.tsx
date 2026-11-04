@@ -19,6 +19,7 @@ import { CarouselSection } from "@/components/carousel";
 import { CatalogCard, JourneyProgressCard } from "@/components/journeys/glass-cards";
 import PageLoader from "@/components/PageLoader";
 import HomeTour from "@/components/home-tour";
+import { rankForFirstPick } from "@/lib/intents";
 
 function greeting() {
   const h = new Date().getHours();
@@ -45,6 +46,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   /* With full access (Plus, beta or team) the Plus lock means nothing. */
   const [fullAccess, setFullAccess] = useState(false);
+  /* The tour shows until it's finished or skipped (profiles.preferences.toured). */
+  const [toured, setToured] = useState(true);
+  const [intents, setIntents] = useState<string[]>([]);
+  /* The first journey chosen in the tour (profiles.preferences.onboarding.journey). */
+  const [pickedId, setPickedId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -62,11 +68,15 @@ export default function HomePage() {
         const [{ data: rows }, { data: journalRows }, { data: profile }, betaUntil] = await Promise.all([
           supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
-          supabase.from("profiles").select("plan, role").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles").select("plan, role, preferences").eq("user_id", user.id).maybeSingle(),
           loadBetaUntil(supabase, user.id),
         ]);
-        const p = profile as { plan?: string | null; role?: string | null } | null;
+        const p = profile as { plan?: string | null; role?: string | null; preferences?: Record<string, unknown> | null } | null;
         setFullAccess(accessFrom(p?.plan, betaUntil, Date.now(), p?.role).full);
+        const prefs = (p?.preferences ?? {}) as { toured?: boolean; onboarding?: { intents?: string[]; journey?: string | null } };
+        setToured(prefs.toured === true);
+        setIntents(Array.isArray(prefs.onboarding?.intents) ? prefs.onboarding!.intents! : []);
+        setPickedId(prefs.onboarding?.journey ?? null);
         const list = (rows ?? []) as Reflection[];
         setReflections(list);
         setJournals((journalRows ?? []) as UserJournal[]);
@@ -84,17 +94,23 @@ export default function HomePage() {
   const alsoInProgress = inProgress.slice(1);
 
   /** Journeys the person has not written in yet; featured ones first. */
-  const forYou = useMemo(() => {
+  const notStarted = useMemo(() => {
     const started = new Set<string>();
     for (const r of reflections) for (const t of r.tags ?? []) started.add(t);
     const pool = journeys.filter((j) => !started.has(j.title) && j.id !== active?.journey.id);
-    return [...pool.filter((j) => j.featured), ...pool.filter((j) => !j.featured)].slice(0, 8);
+    return [...pool.filter((j) => j.featured), ...pool.filter((j) => !j.featured)];
   }, [journeys, reflections, active]);
 
-  /** With no journey in progress, the journey card offers the first suggestion. */
-  const offer = active ? null : forYou[0] ?? null;
+  /** With no journey in progress, the journey card offers the one chosen in the tour, else the first suggestion. */
+  const offer = active ? null : notStarted.find((j) => j.id === pickedId) ?? notStarted[0] ?? null;
   /** The carousel never repeats the journey the card above already offers. */
-  const more = offer ? forYou.slice(1) : forYou;
+  const more = notStarted.filter((j) => j.id !== offer?.id).slice(0, offer ? 7 : 8);
+  /** Three first journeys for the tour to suggest, from the onboarding answers. */
+  const candidates = useMemo(() => {
+    const ranked = rankForFirstPick(notStarted, intents, fullAccess);
+    const picked = ranked.find((j) => j.id === pickedId);
+    return (picked ? [picked, ...ranked.filter((j) => j.id !== picked.id)] : ranked).slice(0, 3);
+  }, [notStarted, intents, fullAccess, pickedId]);
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -241,6 +257,11 @@ export default function HomePage() {
       )}
 
       <HomeTour
+        show={!toured}
+        hasJourney={Boolean(active)}
+        candidates={candidates}
+        pickedId={pickedId}
+        onPick={setPickedId}
         journeyTitle={(active?.journey ?? offer)?.title}
         dayHref={active ? (active.waitingForMorning ? `/journeys/${active.journey.id}` : `/journeys/${active.journey.id}?day=${active.nextDay.day}`) : offer ? `/journeys/${offer.id}?day=1` : "/journeys"}
       />
