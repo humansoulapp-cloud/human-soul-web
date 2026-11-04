@@ -688,9 +688,9 @@ export default async function LandingPage() {
           </span>
           <h2 className="h2 serif">Notice yourself, a little at a time.</h2>
           <p className="sub" style={{ maxWidth: "none" }}>
-            {`We're beginning with ${total} people, first come, first served.`}
+            {`We're beginning with a small group of ${total} people.`}
             <br />
-            If HumanSoul feels like something you&apos;d like to explore, there&apos;s a place for you.
+            If HumanSoul feels like something you&apos;d like to explore, we&apos;d love to invite you into our first beta.
           </p>
           <div className="final-req">
             {open ? (
