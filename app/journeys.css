@@ -447,3 +447,11 @@ a.ht-btn { text-decoration: none; }
   .ht-opt { grid-template-columns: 56px minmax(0, 1fr) 24px; }
   .ht-opt img { width: 56px; height: 56px; }
 }
+
+/* Home: the beta end date, quietly under the greeting */
+.hc-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: -12px; }
+.hc-head .hc-hello { margin: 0; }
+.hc-beta { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font: 400 14px/20px var(--hs-font-sans); color: var(--muted-foreground); text-decoration: none; }
+.hc-beta .hs-icon { color: var(--primary); }
+.hc-beta b { font-weight: 500; color: var(--foreground); }
+.hc-beta:hover span { text-decoration: underline; text-underline-offset: 3px; }

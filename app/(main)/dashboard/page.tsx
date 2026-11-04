@@ -2,11 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Heart, PenLine, Plus } from "lucide-react";
+import { BookOpen, Heart, PenLine, Plus, Sparkles } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { findJourneysInProgress, type Journey, type UserJournal } from "@/lib/journal";
 import { journeyImage } from "@/lib/journey-images";
-import { accessFrom, loadBetaUntil } from "@/lib/access";
+import { accessFrom, loadBeta, longDay } from "@/lib/access";
 import {
   entryBody,
   entryLabels,
@@ -46,6 +46,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   /* With full access (Plus, beta or team) the Plus lock means nothing. */
   const [fullAccess, setFullAccess] = useState(false);
+  /* When the person's beta access ends, shown quietly under the greeting. */
+  const [betaUntil, setBetaUntil] = useState<string | null>(null);
   /* The tour shows until it's finished or skipped (profiles.preferences.toured). */
   const [toured, setToured] = useState(true);
   const [intents, setIntents] = useState<string[]>([]);
@@ -65,14 +67,16 @@ export default function HomePage() {
 
       if (user) {
         setName(user.user_metadata?.display_name || "");
-        const [{ data: rows }, { data: journalRows }, { data: profile }, betaUntil] = await Promise.all([
+        const [{ data: rows }, { data: journalRows }, { data: profile }, beta] = await Promise.all([
           supabase.from("reflections").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
           supabase.from("journals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
           supabase.from("profiles").select("plan, role, preferences").eq("user_id", user.id).maybeSingle(),
-          loadBetaUntil(supabase, user.id),
+          loadBeta(supabase, user.id),
         ]);
         const p = profile as { plan?: string | null; role?: string | null; preferences?: Record<string, unknown> | null } | null;
-        setFullAccess(accessFrom(p?.plan, betaUntil, Date.now(), p?.role).full);
+        const access = accessFrom(p?.plan, beta.until, Date.now(), p?.role);
+        setFullAccess(access.full);
+        setBetaUntil(access.kind === "beta" ? beta.until : null);
         const prefs = (p?.preferences ?? {}) as { toured?: boolean; onboarding?: { intents?: string[]; journey?: string | null } };
         setToured(prefs.toured === true);
         setIntents(Array.isArray(prefs.onboarding?.intents) ? prefs.onboarding!.intents! : []);
@@ -126,10 +130,20 @@ export default function HomePage() {
 
   return (
     <div className="hc">
-      <h1 className="text-h1 hc-hello">
-        {greeting()}
-        {name ? `, ${name}` : ""}
-      </h1>
+      <div className="hc-head">
+        <h1 className="text-h1 hc-hello">
+          {greeting()}
+          {name ? `, ${name}` : ""}
+        </h1>
+        {betaUntil ? (
+          <Link className="hc-beta" href="/subscription">
+            <Icon icon={Sparkles} size={14} />
+            <span>
+              Beta access until <b>{longDay(betaUntil)}</b>
+            </span>
+          </Link>
+        ) : null}
+      </div>
 
       <div className="hc-top">
         {active ? (
