@@ -1,7 +1,7 @@
 import React from "react";
 import { getJourneys } from "@/lib/actions/journeys";
 import { getJourneyPerformance } from "@/lib/actions/users";
-import { JOURNEY_IMAGES } from "@/lib/journey-images";
+import { JOURNEY_IMAGES, journeyImage } from "@/lib/journey-images";
 import AdminJourneysBrowser, { type AdminJourneyItem, type StatusKey } from "@/components/admin/AdminJourneysBrowser";
 
 const DAY = 86_400_000;
@@ -83,7 +83,7 @@ export default async function AdminJourneysPage({
       days: days.length,
       status,
       note,
-      image: j.image_url || JOURNEY_IMAGES[j.id] || null,
+      image: journeyImage(j),
       featured: Boolean(j.featured),
       premium: Boolean(j.premium),
       started,

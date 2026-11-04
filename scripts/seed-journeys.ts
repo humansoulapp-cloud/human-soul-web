@@ -26,7 +26,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 // Image URLs that were previously hardcoded in journeys/page.tsx
 const JOURNEY_IMAGES: Record<string, string> = {
   "becoming-more-human":
-    "https://images.unsplash.com/photo-1446071103084-c257b5f70672?auto=format&fit=crop&w=1200&q=80",
+    "/landing/membership.jpg",
   "art-of-paying-attention":
     "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=1200&q=80",
   "meeting-yourself":
