@@ -17,6 +17,7 @@ import {
   Strength,
   TextInput,
 } from "@/components/auth-shell";
+import { track } from "@/lib/analytics";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -66,6 +67,7 @@ export default function SignUpPage() {
       return setError(signUpError.message);
     }
 
+    track("signed_up", { confirmed_now: Boolean(data.session) });
     if (data.session) {
       router.push("/onboarding");
       router.refresh();

@@ -31,6 +31,7 @@ import type { ReflectionRow } from "@/lib/journal";
 import { journeyInfo } from "@/lib/reflections";
 import { Button, SegmentProgress } from "@/components/ds";
 import { nextDayHasOpened } from "@/lib/journey-days";
+import { track } from "@/lib/analytics";
 
 /**
  * The journey flow in focus mode, as designed on the canvas
@@ -350,11 +351,12 @@ export default function JourneyDetailClient({
       if (status === "locked" || status === "tomorrow") return;
       setDayIndex(index);
       setStage("day");
+      track("day_opened", { journey: journey.id, day: days[index].day, first_time: status !== "done" });
       const url = new URL(window.location.href);
       url.searchParams.set("day", String(days[index].day));
       window.history.replaceState(null, "", url);
     },
-    [statusOf, days]
+    [statusOf, days, journey.id]
   );
 
   const toOverview = useCallback(() => {
@@ -399,6 +401,12 @@ export default function JourneyDetailClient({
     setSavedEntry(row);
     setToast(true);
     const finished = days.every((d, i) => i === dayIndex || Boolean(entryFor(i)));
+    if (!dayEntry) {
+      const written = days.filter((d, i) => i === dayIndex || Boolean(entryFor(i))).length;
+      if (written === 1) track("journey_started", { journey: journey.id });
+      track("day_completed", { journey: journey.id, day: day.day, days_written: written, days_total: days.length });
+      if (finished) track("journey_completed", { journey: journey.id, days_total: days.length });
+    }
     // Editing a written day from Journal: stay on the day, back in reading mode.
     if (returnTo && dayEntry) setEditing(false);
     else setStage(finished ? "complete" : "done");
@@ -425,12 +433,13 @@ export default function JourneyDetailClient({
       .select();
     setClosingSaving(false);
     if (data?.[0]) {
+      track("closing_reflection_written", { journey: journey.id });
       setEntries((prev) => [data[0] as ReflectionRow, ...prev]);
       setClosing("");
       setToast(true);
       router.refresh();
     }
-  }, [closing, questions, question, journey.title, router]);
+  }, [closing, questions, question, journey.title, journey.id, router]);
 
   const progressBar = (
     <SegmentProgress

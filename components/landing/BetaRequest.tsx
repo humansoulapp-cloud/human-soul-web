@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CircleCheck } from "lucide-react";
 import { joinWaitlist } from "@/lib/actions/beta";
+import { track } from "@/lib/analytics";
 
 /**
  * "Request beta access" on the landing: just an email, straight onto the
@@ -22,6 +23,7 @@ export default function BetaRequest() {
     setSending(true);
     setError("");
     const res = await joinWaitlist(value).catch(() => ({ ok: false, error: "Couldn't send it right now. Try again in a moment." }));
+    if (res.ok) track("waitlist_joined");
     setSending(false);
     if (!res.ok) return setError(res.error ?? "Couldn't send it right now.");
     setSent(true);

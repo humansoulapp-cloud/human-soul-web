@@ -17,6 +17,7 @@ import {
 } from "@/lib/reflections";
 import { Button, EmptyState } from "@/components/ds";
 import PageLoader from "@/components/PageLoader";
+import { track } from "@/lib/analytics";
 
 const DRAFT_KEY = "humansoul:reflect-draft";
 const TITLE_KEY = "humansoul:reflect-draft-title";
@@ -291,6 +292,7 @@ export default function ReflectionEditor({
           .select("*");
         if (err || !data?.[0]) throw new Error(err?.message ?? "Could not save your reflection.");
         saved = data[0] as Reflection;
+        track("journal_entry_created", { has_photo: Boolean(photo ?? photoUrl), has_title: Boolean(title.trim()), in_journal: Boolean(journal), from_journey: Boolean(journey) });
         store(DRAFT_KEY, "");
         store(TITLE_KEY, "");
       } else {

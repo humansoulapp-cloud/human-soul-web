@@ -8,6 +8,7 @@ import { Check, X } from "lucide-react";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
+import { track } from "@/lib/analytics";
 
 type Spot = { kind: "spot"; target: string[]; title: string; body: string };
 type Pick = { kind: "pick" };
@@ -165,6 +166,7 @@ export default function HomeTour({
   /* Finished or skipped: never shown again on its own. */
   const close = useCallback(async () => {
     setOpen(false);
+    track("tour_closed");
     try {
       localStorage.setItem("hs_tour_done", "true");
     } catch {}
@@ -174,6 +176,7 @@ export default function HomeTour({
   /* The chosen journey becomes the one Home offers, and the tour moves on to it. */
   const confirmPick = useCallback(() => {
     if (!selected) return;
+    track("first_journey_picked", { journey: selected });
     onPick(selected);
     setI((v) => v + 1);
     savePrefs((p) => ({ ...p, onboarding: { ...((p.onboarding as Record<string, unknown>) ?? {}), journey: selected } })).catch(() => null);
