@@ -80,10 +80,11 @@ Este documento es la **fuente única de verdad y progreso** del proyecto. Cualqu
 - [x] Script de migración SQL en `scripts/migration-add-scheduling.sql`.
 - [x] Importador inteligente de documentos para Viajes (Word `.docx`, Google Docs mediante enlace o exportación, Markdown y texto con análisis estructural automático de días, títulos, reflexiones y preguntas).
 
-### Fase 7: Beta abierta y analítica `[EN CURSO]`
+### Fase 7: Lanzamiento y analítica `[EN CURSO]`
+- [ ] **Pivote (nov 2026):** en lugar de la beta, lanzamiento de la app por 29,99 $. Adaptar landing, registro y Stripe.
 - [x] PostHog instalado (snippet oficial vía `/ingest`, texto e inputs enmascarados, usuarios identificados solo por id). Variables en Vercel: `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_REGION`.
 - [ ] Ejecutar `scripts/migration-2026-11-open-beta.sql` en Supabase (si no se ha hecho).
-- [ ] Eventos propios en PostHog (registro, tour, journey empezado, día escrito, entrada de diario) para embudos y retención.
+- [x] Eventos propios en PostHog (`lib/analytics.ts`): signed_up, tour_closed, first_journey_picked, day_opened, journey_started, day_completed, journey_completed, closing_reflection_written, journal_entry_created, waitlist_joined. Nunca se envía texto escrito.
 
 #### Pendientes legales
 - [ ] **UE / España (RGPD + LSSI):** aviso de cookies con consentimiento previo para la analítica. PostHog no debe guardar cookies hasta que la persona acepte (antes, modo sin cookies o desactivado). Botones "Aceptar" y "Rechazar" igual de visibles, y forma de cambiar la elección después.
