@@ -1,0 +1,24 @@
+# Checks every push to main and every pull request: types must pass.
+# Lint runs too and reports its findings, but doesn't block yet (older code
+# still has warnings to clean up). Vercel does the production build.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
