@@ -430,9 +430,10 @@
 }
 
 /* Open beta: one button straight to sign-up, and the seats that are left */
+.lp .fine{line-height:22px}
 .lp .fine b{font-weight:600;color:var(--foreground)}
 .lp .final-open{display:flex;flex-direction:column;align-items:center;gap:16px}
-.lp .final-seats{font:400 14px/20px var(--font-sans);color:#CFCAC2}
+.lp .final-seats{font:400 14px/22px var(--font-sans);color:#CFCAC2;text-align:center}
 .lp .final-seats b{font-weight:600;color:#F8F6F2}
 
 /* Hero over a photo, like the final invitation: it fades into the page below the headline */

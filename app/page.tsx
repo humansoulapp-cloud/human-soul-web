@@ -144,7 +144,9 @@ export default async function LandingPage() {
               </a>
             </div>
             <p className="fine">
-              <b>{seatsLine}</b> · 90 days free · No card needed
+              <b>{seatsLine}</b>
+              <br />
+              90 days free · No card needed
             </p>
           </div>
 
@@ -826,7 +828,9 @@ export default async function LandingPage() {
                   <ArrowRight size={18} aria-hidden="true" />
                 </Link>
                 <span className="final-seats">
-                  <b>{seatsLine}</b> · 90 days free · No card needed
+                  <b>{seatsLine}</b>
+              <br />
+              90 days free · No card needed
                 </span>
               </div>
             ) : (
