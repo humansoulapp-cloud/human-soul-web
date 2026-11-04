@@ -166,8 +166,8 @@
 /* privacy */
 .lp .priv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center;padding:64px;border-radius:36px;background:var(--card)}
 .lp .priv-l .h2{font-size:44px;line-height:50px}
-.lp .priv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.lp .priv-list li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding:18px;border-radius:18px;background:var(--secondary)}
+.lp .priv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:24px}
+.lp .priv-list li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px}
 .lp .priv-list i{display:inline-flex;width:40px;height:40px;border-radius:12px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary)}
 .lp .priv-list b{display:block;font:600 15px/20px var(--font-sans)}
 .lp .priv-list span{font:400 14px/21px var(--font-sans);color:var(--muted-foreground)}
@@ -341,7 +341,8 @@
   .lp .ctas{flex-direction:column;align-items:stretch;padding:0 8px}
   .lp .sec{padding:80px 16px 0}
   .lp .ben,.lp .steps,.lp .lib,.lp .price,.lp .strip,.lp .mb-grid{grid-template-columns:1fr}
-  .lp .stage{padding:20px;min-height:0}
+  .lp .stage{padding:20px;min-height:0;flex-direction:column;gap:16px}
+  .lp .fl-lock{position:static;align-self:flex-start}
   .lp .ds{grid-template-columns:1fr}
   .lp .phone{width:270px;height:530px}
   .lp .final{padding:72px 20px 160px}

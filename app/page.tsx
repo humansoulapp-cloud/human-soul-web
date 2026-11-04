@@ -513,7 +513,7 @@ export default async function LandingPage() {
                 <Heart className="ai" size={16} fill="currentColor" />
                 Kept in Favorites
               </div>
-              <div className="fl" style={{ left: 36, bottom: 56 }}>
+              <div className="fl fl-lock" style={{ left: 36, bottom: 56 }}>
                 <Lock className="ai" size={16} />
                 Only you can read this
               </div>
