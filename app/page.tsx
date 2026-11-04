@@ -87,6 +87,22 @@ export default async function LandingPage() {
   const featuredTitle = featured?.title ?? "Becoming More Human";
   const featuredCategory = featured?.category ?? "Human Soul Foundations";
   const featuredDays = featured ? daysOf(featured) || 7 : 7;
+  // The phone mock-up shows a real day from "What makes a life meaningful" when it's in the library.
+  const phoneJourney = journeys.find((j) => /meaningful/i.test(j.title)) ?? featured;
+  const phoneDays = phoneJourney ? [...(phoneJourney.journey_days ?? [])].sort((a, b) => a.day - b.day) : [];
+  const phoneDay = phoneDays.find((d) => d.day === 3) ?? phoneDays[0];
+  const firstSentences = (text?: string) => {
+    const t = (text ?? "").replace(/\s+/g, " ").trim();
+    const parts = t.match(/[^.!?]+[.!?]+/g) ?? (t ? [t] : []);
+    return parts.slice(0, 2).join(" ").trim();
+  };
+  const phoneTitle = phoneJourney?.title ?? featuredTitle;
+  const phonePhoto = phoneJourney ? img(phoneJourney) : heroPhoto;
+  const phoneTotal = phoneJourney ? daysOf(phoneJourney) || 7 : featuredDays;
+  const phoneDayTitle = phoneDay?.title ?? "Among Other People";
+  const phonePrompt =
+    firstSentences(phoneDay?.prompt) ||
+    "Think about one interaction that stayed with you recently. It does not need to have been dramatic.";
 
   return (
     <div className="lp dark" data-theme="dark">
@@ -243,19 +259,18 @@ export default async function LandingPage() {
               <div className="phone">
                 <div className="ph-in">
                   <div className="ph-img">
-                    <img src={heroPhoto} alt="" />
+                    <img src={phonePhoto} alt="" />
                     <div className="ph-top">
-                      <span>Day 3 of {featuredDays}</span>
+                      <span>
+                        Day {phoneDay?.day ?? 3} of {phoneTotal}
+                      </span>
                     </div>
                   </div>
                   <div className="ph-b">
-                    <span className="ph-o">{featuredTitle}</span>
-                    <span className="ph-t serif">Among Other People</span>
-                    <span className="ph-p">
-                      Think about one interaction that stayed with you recently. It does not need to have been
-                      dramatic.
-                    </span>
-                    <div className="ph-box" data-type="At lunch Ana said she'd noticed I was quieter lately.">
+                    <span className="ph-o">{phoneTitle}</span>
+                    <span className="ph-t serif">{phoneDayTitle}</span>
+                    <span className="ph-p">{phonePrompt}</span>
+                    <div className="ph-box" data-type="Lately I've noticed the small, ordinary moments matter most to me.">
                       <span data-type-text="">Start with the moment that comes to mind</span>
                       <span className="caret" />
                     </div>
