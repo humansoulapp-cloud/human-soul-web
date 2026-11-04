@@ -42,10 +42,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF8F4" },
-    { media: "(prefers-color-scheme: dark)", color: "#141312" },
-  ],
+  /* Dark is the default look everywhere, so the browser and phone chrome match it. */
+  themeColor: "#141312",
 };
 
 export default function RootLayout({
@@ -60,7 +58,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col selection:bg-[var(--ds-accent)]/20 selection:text-[var(--ds-text)]">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
           <DialogHost />
           <TopProgress />
