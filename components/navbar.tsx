@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Compass, Heart, Home, LogOut, Moon, PenLine, Shield, Sparkles, Sun, User } from "lucide-react";
+import { BookOpen, Compass, Heart, Home, LogOut, MessageCircle, Moon, PenLine, Shield, Sparkles, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { createClient, currentUser } from "@/lib/supabase/client";
 import { accessFrom, loadBetaUntil } from "@/lib/access";
@@ -133,6 +133,10 @@ export function Navigation() {
                   <Link href="/profile" className="hs-menu-item" role="menuitem">
                     <Icon icon={User} size={18} />
                     Profile
+                  </Link>
+                  <Link href="/feedback" className="hs-menu-item" role="menuitem">
+                    <Icon icon={MessageCircle} size={18} />
+                    Send feedback
                   </Link>
                   {!subscribed && (
                     <Link href="/subscription" className="hs-menu-item" role="menuitem">
