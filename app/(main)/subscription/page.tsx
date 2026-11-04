@@ -9,6 +9,7 @@ import { journeyImage } from "@/lib/journey-images";
 import type { Journey } from "@/lib/journal";
 import { BILLING_LIVE, PLANS, PLUS_PERKS, YEARLY_SAVING } from "@/lib/plans";
 import PageLoader from "@/components/PageLoader";
+import { openBillingPortal } from "@/lib/actions/billing";
 import "../../account.css";
 
 type Cell = "yes" | "no" | string;
@@ -61,6 +62,8 @@ export default function SubscriptionPage() {
   const [plan, setPlan] = useState<"year" | "month">("year");
   const [open, setOpen] = useState(0);
   const [journey, setJourney] = useState<Journey | null>(null);
+  const [sub, setSub] = useState<{ price_cents: number | null; tier: number | null; current_period_end: string | null; cancel_at_period_end: boolean } | null>(null);
+  const [billingError, setBillingError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -73,6 +76,10 @@ export default function SubscriptionPage() {
         supabase.from("journeys").select("*, journey_days(day, title)").order("created_at", { ascending: true }),
         user ? loadBeta(supabase, user.id) : Promise.resolve({ joinedAt: null, until: null }),
       ]);
+      if (user) {
+        const { data: s } = await supabase.from("subscriptions").select("price_cents, tier, current_period_end, cancel_at_period_end").eq("user_id", user.id).maybeSingle();
+        setSub((s as typeof sub) ?? null);
+      }
       const betaUntil = betaWindow.until;
       const p = profile as { plan?: string | null; role?: string | null; created_at?: string } | null;
       const access = accessFrom(p?.plan, betaUntil, Date.now(), p?.role);
@@ -210,7 +217,7 @@ export default function SubscriptionPage() {
           <section className="ac-card" aria-labelledby="sub-plan">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
               <h2 id="sub-plan" className="ac-h3">
-                Plus · {yearly ? "Yearly" : "Monthly"}
+                {sub ? (sub.tier === 1 ? "Founding member" : "Early member") : `Plus · ${yearly ? "Yearly" : "Monthly"}`}
               </h2>
               <span className="ac-status">
                 <Check size={14} aria-hidden="true" />
@@ -220,8 +227,14 @@ export default function SubscriptionPage() {
             <div className="ac-kv">
               <div>
                 <span>Price</span>
-                <b>{yearly ? `${year.price} a year` : `${month.price} a month`}</b>
+                <b>{sub?.price_cents ? `$${(sub.price_cents / 100).toFixed(2)} a year` : yearly ? `${year.price} a year` : `${month.price} a month`}</b>
               </div>
+              {sub?.current_period_end && (
+                <div>
+                  <span>{sub.cancel_at_period_end ? "Access ends on" : "Renews on"}</span>
+                  <b>{longDay(sub.current_period_end)}</b>
+                </div>
+              )}
               <div>
                 <span>Member since</span>
                 <b>{since ? new Date(since).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "·"}</b>
@@ -239,12 +252,20 @@ export default function SubscriptionPage() {
             </ul>
           </section>
           <aside className="ac-side" aria-label="Manage">
-            <div className="ac-side-a">
+            <button
+              type="button"
+              className="ac-side-a"
+              onClick={async () => {
+                setBillingError("");
+                const res = await openBillingPortal();
+                if (res && "error" in res) setBillingError(res.error);
+              }}
+            >
               <span>
                 Billing and invoices
-                <small>Managed with Stripe once payments are connected.</small>
+                <small>{billingError || "Update your card, see invoices or cancel."}</small>
               </span>
-            </div>
+            </button>
             <Link className="ac-side-a" href="/profile">
               <span>
                 Download your writing

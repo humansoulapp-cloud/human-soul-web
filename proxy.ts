@@ -61,7 +61,7 @@ export async function proxy(request: NextRequest) {
   // Supabase sends confirmation links to the Site URL ("/") when no redirect is
   // given or allowed. Hand them to /auth/callback so they sign the person in.
   // The callback and the cron job must work without a session.
-  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/api/cron/')) {
+  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/api/cron/') || pathname.startsWith('/api/stripe/')) {
     return supabaseResponse;
   }
   const params = request.nextUrl.searchParams;

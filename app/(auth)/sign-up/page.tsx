@@ -18,6 +18,7 @@ import {
   TextInput,
 } from "@/components/auth-shell";
 import { track } from "@/lib/analytics";
+import { PAYWALL } from "@/lib/plans";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -42,7 +43,8 @@ export default function SignUpPage() {
     setLoading(true);
     setError("");
 
-    const gate = await checkSignupAllowed(email).catch(() => ({ ok: true as const }));
+    // Paid launch: anyone can create an account; access opens after payment (/join).
+    const gate = PAYWALL ? ({ ok: true } as const) : await checkSignupAllowed(email).catch(() => ({ ok: true as const }));
     if (!gate.ok) {
       setLoading(false);
       return setClosed(gate.reason);

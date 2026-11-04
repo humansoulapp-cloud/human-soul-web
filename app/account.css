@@ -287,3 +287,4 @@
 .ac-beta-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
 .ac-kv.ac-kv3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 640px) { .ac-kv.ac-kv3 { grid-template-columns: 1fr; } }
+button.ac-side-a { width: 100%; border: 0; text-align: left; color: inherit; cursor: pointer; }

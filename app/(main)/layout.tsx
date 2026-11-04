@@ -1,12 +1,14 @@
 import React from "react";
 import { Navigation } from "@/components/navbar";
+import { requireAccess } from "@/lib/paywall";
 
 /**
  * Design System v2 shell: one 1120px content column for every page,
  * aligned with the top navigation. On mobile the navigation moves to a
  * bottom bar (see components/navbar.tsx); pages leave room for it.
  */
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  await requireAccess();
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
       <Navigation />

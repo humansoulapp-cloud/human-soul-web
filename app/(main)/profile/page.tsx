@@ -124,6 +124,7 @@ export default function ProfilePage() {
 
   const access = accessFrom(profile.plan, betaUntil, Date.now(), profile.role);
   const plus = access.kind === "plus";
+  const founding = profile.plan === "founding";
   const beta = access.kind === "beta";
   const team = access.kind === "team";
   const betaEnded = access.kind === "free" && Boolean(betaUntil);
@@ -278,7 +279,7 @@ export default function ProfilePage() {
 
   const initial = (name || email || "·").trim().charAt(0).toUpperCase();
   const help = crisisLine(profile.timezone);
-  const planLabel = plus ? `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}` : beta ? "Beta · full access" : team ? "Team · full access" : "Free plan";
+  const planLabel = plus ? (founding ? "HumanSoul · Yearly" : `HumanSoul Plus · ${yearly ? "Yearly" : "Monthly"}`) : beta ? "Beta · full access" : team ? "Team · full access" : "Free plan";
   const yearPlan = PLANS.find((p) => p.key === "year")!;
   const monthPlan = PLANS.find((p) => p.key === "month")!;
 
@@ -403,7 +404,9 @@ export default function ProfilePage() {
               <div>
                 <b>{planLabel}</b>
                 <span>
-                  {plus
+                  {plus && founding
+                    ? "Every journey and your journal. Manage billing from your plan."
+                    : plus
                     ? `Every day of every journey, for ${yearly ? `${yearPlan.price} a year` : `${monthPlan.price} a month`}.`
                     : beta
                       ? `Thank you for being part of the beta. Every day of every journey is open until ${betaDate} (${access.betaDaysLeft} ${access.betaDaysLeft === 1 ? "day" : "days"} left).`
