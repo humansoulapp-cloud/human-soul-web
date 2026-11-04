@@ -11,30 +11,34 @@
 --   (first 100 at $29.99, next 100 at $39.99; see lib/plans.ts).
 
 -- ═══════════════ PART A ═══════════════
+-- Works whether or not an older "subscriptions" table already exists: it only adds what's missing.
 begin;
 
--- 1. Subscriptions (written only by the server with the service key).
-create table if not exists public.subscriptions (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  stripe_customer_id text,
-  stripe_subscription_id text unique,
-  status text not null default 'incomplete',
-  price_cents int,
-  tier int,
-  current_period_end timestamptz,
-  cancel_at_period_end boolean not null default false,
-  first_paid_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+create table if not exists public.subscriptions (user_id uuid primary key references auth.users(id) on delete cascade);
+
+alter table public.subscriptions add column if not exists user_id uuid;
+alter table public.subscriptions add column if not exists stripe_customer_id text;
+alter table public.subscriptions add column if not exists stripe_subscription_id text;
+alter table public.subscriptions add column if not exists status text not null default 'incomplete';
+alter table public.subscriptions add column if not exists price_cents int;
+alter table public.subscriptions add column if not exists tier int;
+alter table public.subscriptions add column if not exists current_period_end timestamptz;
+alter table public.subscriptions add column if not exists cancel_at_period_end boolean not null default false;
+alter table public.subscriptions add column if not exists first_paid_at timestamptz;
+alter table public.subscriptions add column if not exists created_at timestamptz not null default now();
+alter table public.subscriptions add column if not exists updated_at timestamptz not null default now();
+
+-- One row per person, so the server can upsert by user_id.
+create unique index if not exists subscriptions_user_id_key on public.subscriptions (user_id);
+create unique index if not exists subscriptions_stripe_subscription_id_key on public.subscriptions (stripe_subscription_id);
 
 alter table public.subscriptions enable row level security;
 
 drop policy if exists subscriptions_own_read on public.subscriptions;
 create policy subscriptions_own_read on public.subscriptions
-  for select using (auth.uid() = user_id);
+  for select using (auth.uid()::text = user_id::text);
 
--- 2. How many people have paid so far (prices the next buyer). Safe to call from the landing.
+-- How many people have paid so far (prices the next buyer). Safe to call from the landing.
 create or replace function public.founding_sales()
 returns int
 language sql
