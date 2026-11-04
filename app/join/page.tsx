@@ -8,7 +8,7 @@ import JoinForm from "./JoinForm";
 export const metadata: Metadata = { title: "Join HumanSoul", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default async function JoinPage({ searchParams }: { searchParams: Promise<{ canceled?: string }> }) {
+export default async function JoinPage({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,8 +20,10 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
     loadBetaUntil(supabase, user.id),
     getLaunchOffer(),
   ]);
-  if (accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full) redirect("/dashboard");
+  // The team can look at the page with ?preview=1 even though they already have access.
+  const { preview } = await searchParams;
+  const teamPreview = preview === "1" && profile?.role === "admin";
+  if (!teamPreview && accessFrom(profile?.plan, betaUntil, Date.now(), profile?.role).full) redirect("/dashboard");
 
-  await searchParams;
   return <JoinForm price={offer.price} left={offer.left} nextPrice={offer.nextPrice} />;
 }
