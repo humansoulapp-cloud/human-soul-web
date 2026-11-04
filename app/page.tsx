@@ -755,8 +755,7 @@ export default async function LandingPage() {
                 shaped together.
               </h2>
               <p className="bt-lead">
-                Our first 90-day beta has {total} spots, first come, first served, with full access to everything,
-                free of charge.
+                {`Our first 90-day beta has ${total} spots, first come, first served, with full access to everything, free of charge.`}
               </p>
               <p className="bt-sub">In return, we&apos;ll ask for your honest feedback on what works and what could be better.</p>
               <div className="bt-stats">
@@ -817,7 +816,7 @@ export default async function LandingPage() {
           </span>
           <h2 className="h2 serif">Notice yourself, a little at a time.</h2>
           <p className="sub" style={{ maxWidth: "none" }}>
-            We&apos;re beginning with {total} people, first come, first served.
+            {`We’re beginning with ${total} people, first come, first served.`}
             <br />
             If HumanSoul feels like something you&apos;d like to explore, there&apos;s a place for you.
           </p>
