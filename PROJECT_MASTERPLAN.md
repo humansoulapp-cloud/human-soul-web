@@ -80,6 +80,22 @@ Este documento es la **fuente única de verdad y progreso** del proyecto. Cualqu
 - [x] Script de migración SQL en `scripts/migration-add-scheduling.sql`.
 - [x] Importador inteligente de documentos para Viajes (Word `.docx`, Google Docs mediante enlace o exportación, Markdown y texto con análisis estructural automático de días, títulos, reflexiones y preguntas).
 
+### Fase 7: Beta abierta y analítica `[EN CURSO]`
+- [x] PostHog instalado (snippet oficial vía `/ingest`, texto e inputs enmascarados, usuarios identificados solo por id). Variables en Vercel: `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_REGION`.
+- [ ] Ejecutar `scripts/migration-2026-11-open-beta.sql` en Supabase (si no se ha hecho).
+- [ ] Eventos propios en PostHog (registro, tour, journey empezado, día escrito, entrada de diario) para embudos y retención.
+
+#### Pendientes legales
+- [ ] **UE / España (RGPD + LSSI):** aviso de cookies con consentimiento previo para la analítica. PostHog no debe guardar cookies hasta que la persona acepte (antes, modo sin cookies o desactivado). Botones "Aceptar" y "Rechazar" igual de visibles, y forma de cambiar la elección después.
+- [ ] **Política de privacidad:** nombrar PostHog (encargado del tratamiento, servidores en la UE), qué se mide, que el texto del diario nunca se envía, base legal (consentimiento), plazo de conservación y cómo darse de baja.
+- [ ] **EE. UU.:** la política de privacidad debe cumplir CalOPPA (California exige política visible a cualquier web que recoja datos personales de sus residentes, y explicar cómo responde a "Do Not Track"). Respetar la señal Global Privacy Control (GPC) desactivando la analítica cuando el navegador la envíe. Declarar que no se venden ni comparten datos para publicidad. Edad mínima en los Términos (13+ por COPPA; 16+ si se quiere alinear con la UE). La CCPA/CPRA completa solo obliga por encima de sus umbrales (p. ej. 25 M$ de facturación o 100.000 personas), no en la beta.
+- [ ] Revisar Términos y Privacidad con un abogado antes de cobrar (Stripe).
+
+#### Otros pendientes
+- [ ] Planes de pago y Stripe (prueba de 7 días).
+- [ ] Icono de la app.
+- [ ] Enlace para darse de baja de los emails.
+
 ---
 
 ## 📝 Registro de Sesiones e Historial de Cambios
