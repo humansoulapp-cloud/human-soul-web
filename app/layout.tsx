@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DialogHost } from "@/components/dialog";
 import TopProgress from "@/components/TopProgress";
+import PostHogAnalytics from "@/components/analytics/PostHog";
 import { SITE_URL } from "@/lib/email/templates";
 
 /* Design System v2: Hedvig Letters Serif (headings) + Instrument Sans (text).
@@ -62,6 +63,7 @@ export default function RootLayout({
           {children}
           <DialogHost />
           <TopProgress />
+          <PostHogAnalytics />
         </ThemeProvider>
       </body>
     </html>
