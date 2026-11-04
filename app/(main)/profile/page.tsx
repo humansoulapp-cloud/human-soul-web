@@ -561,9 +561,9 @@ export default function ProfilePage() {
             <div className="ac-themes" role="radiogroup" aria-label="Theme">
               {(
                 [
-                  ["system", "Same as device", Monitor],
-                  ["light", "Light", Sun],
                   ["dark", "Dark", Moon],
+                  ["light", "Light", Sun],
+                  ["system", "Same as device", Monitor],
                 ] as const
               ).map(([key, label, Ic]) => (
                 <button
@@ -571,7 +571,7 @@ export default function ProfilePage() {
                   type="button"
                   className="ac-opt"
                   role="radio"
-                  aria-checked={mounted && (theme ?? "system") === key}
+                  aria-checked={mounted && (theme ?? "dark") === key}
                   onClick={() => setTheme(key)}
                 >
                   <span className={`ac-opt-p${key === "system" ? "" : " one"}`} aria-hidden="true">

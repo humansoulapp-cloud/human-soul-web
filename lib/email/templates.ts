@@ -4,22 +4,25 @@
  *
  * Fonts: Hedvig Letters Serif and Instrument Sans load where the client allows it (Apple
  * Mail, iOS Mail); Gmail and Outlook never load web fonts and fall back to Georgia and
- * the system sans. The wordmark is an image (public/email/logo.png) so it is exact everywhere.
+ * the system sans. The wordmark is an image (public/email/logo-dark.png, the dark
+ * version from the logo canvas) so it is exact everywhere.
  */
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://humansoul.co").replace(/\/$/, "");
 
+/* Dark is HumanSoul's default look, in the app and in every email. */
 const C = {
-  page: "#E9E4DB",
-  card: "#FFFFFF",
-  soft: "#F4F1EB",
-  ink: "#1E1C19",
-  body: "#4A453F",
-  muted: "#8A847A",
-  mid: "#6A645B",
-  green: "#4F6E55",
-  greenSoft: "#E8EFE7",
-  greenInk: "#3B5641",
+  page: "#0E0D0C",
+  card: "#1C1A19",
+  soft: "#262423",
+  ink: "#F8F6F2",
+  body: "#D6D0C6",
+  muted: "#8F887E",
+  mid: "#ABA59C",
+  green: "#8BA58F",
+  onGreen: "#141312",
+  greenSoft: "#26302A",
+  greenInk: "#C9DACB",
 };
 const SERIF = `'Hedvig Letters Serif', Georgia, 'Times New Roman', serif`;
 const SANS = `'Instrument Sans', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif`;
@@ -47,7 +50,7 @@ function button(href: string, label: string, secondary?: { href: string; label: 
     ? `<td style="padding-left:16px"><a href="${esc(secondary.href)}" style="font:600 15px/20px ${SANS};color:${C.green};text-decoration:none">${esc(secondary.label)}</a></td>`
     : "";
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px"><tr>
-<td style="border-radius:9999px;background:${C.green}"><a href="${esc(href)}" style="display:inline-block;padding:15px 28px;font:600 16px/20px ${SANS};color:#FFFFFF;text-decoration:none;border-radius:9999px">${esc(label)}</a></td>${second}
+<td style="border-radius:9999px;background:${C.green}"><a href="${esc(href)}" style="display:inline-block;padding:15px 28px;font:600 16px/20px ${SANS};color:${C.onGreen};text-decoration:none;border-radius:9999px">${esc(label)}</a></td>${second}
 </tr></table>`;
 }
 
@@ -68,14 +71,14 @@ function layout({ preheader, hero, body, footer }: { preheader: string; hero?: s
     : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">
+<meta name="color-scheme" content="dark only"><meta name="supported-color-schemes" content="dark">
 <link href="https://fonts.googleapis.com/css2?family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
 <title>HumanSoul</title></head>
 <body style="margin:0;padding:0;background:${C.page}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page}"><tr><td align="center" style="padding:32px 16px 48px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.card};border-radius:24px;overflow:hidden">
-<tr><td style="padding:32px 40px 0;line-height:1"><img src="${SITE_URL}/email/logo.png" width="136" height="22" alt="HumanSoul" style="display:block;width:136px;height:22px;border:0"></td></tr>
+<tr><td style="padding:32px 40px 0;line-height:1"><img src="${SITE_URL}/email/logo-dark.png" width="136" height="22" alt="HumanSoul" style="display:block;width:136px;height:22px;border:0"></td></tr>
 ${heroImg}
 <tr><td style="padding:32px 40px 40px">${body}</td></tr>
 <tr><td style="padding:24px 40px 32px;background:${C.soft};font:400 13px/20px ${SANS};color:${C.muted}">${footer}</td></tr>
