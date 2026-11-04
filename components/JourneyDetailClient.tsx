@@ -61,6 +61,11 @@ function paragraphs(text: string | null | undefined) {
     .filter(Boolean);
 }
 
+/** Journey text from the editors: separator lines ("---", "***") are layout notes, not words to read. */
+function contentParagraphs(text: string | null | undefined) {
+  return paragraphs(text).filter((p) => !/^[-–—*_=\s]{3,}$/.test(p));
+}
+
 /**
  * Text for reading in the About sheet. Admins often paste one long block, so a
  * paragraph longer than a few sentences is split into groups of three.
@@ -260,7 +265,7 @@ export default function JourneyDetailClient({
 
   const day = days[dayIndex];
   const dayEntry = entryFor(dayIndex);
-  const dayParas = useMemo(() => paragraphs(day?.prompt), [day]);
+  const dayParas = useMemo(() => contentParagraphs(day?.prompt), [day]);
   /* «Why this journey»: a short headline stays a heading; a long one (pasted
      text) is read as the first paragraphs instead of a giant serif block. */
   const aboutHeadline = journey.purpose && journey.purpose.trim().length <= 110 ? journey.purpose.trim() : null;
@@ -872,7 +877,7 @@ export default function JourneyDetailClient({
     .map((d, i) => ({ d, entry: entryFor(i) }))
     .filter((x): x is { d: (typeof days)[number]; entry: ReflectionRow } => Boolean(x.entry));
   const dates = written.map((x) => x.entry.created_at).sort();
-  const closingParas = paragraphs(journey.completion_message);
+  const closingParas = contentParagraphs(journey.completion_message);
   const completeView = (
     <main className="jf-main" style={{ gap: 48 }}>
       <div className="jf-stack">

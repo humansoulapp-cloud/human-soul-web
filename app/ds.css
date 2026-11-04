@@ -422,7 +422,8 @@ a.hs-day:hover { background: var(--secondary); }
 /* ═══ App shell & page patterns (HumanSoul app) ═══ */
 .hs-icon { display: inline-block; flex: none; }
 .hs-container { width: 100%; max-width: var(--hs-container); margin: 0 auto; box-sizing: border-box; }
-.hs-page { padding: 32px 16px 120px; display: flex; flex-direction: column; gap: 32px; }
+/* Phone: room at the end for the bottom bar and the Reflect button, so neither covers the last item. */
+.hs-page { padding: 32px 16px calc(160px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 32px; }
 @media (min-width: 768px) { .hs-page { padding: 32px 32px 64px; gap: 40px; } }
 @media (min-width: 1184px) { .hs-page { padding-left: 0; padding-right: 0; } }
 
