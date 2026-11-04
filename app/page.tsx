@@ -17,7 +17,8 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react";
-import { getJourneys, type JourneyRow } from "@/lib/actions/journeys";
+import type { JourneyRow } from "@/lib/actions/journeys";
+import { createPublicClient } from "@/lib/supabase/public";
 import { journeyImage } from "@/lib/journey-images";
 import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
@@ -58,8 +59,18 @@ function daysOf(j: JourneyRow) {
 
 export default async function LandingPage() {
   let journeys: JourneyRow[] = [];
+  // No cookies here: reading them inside try/catch made the static render throw and fall back to an empty library.
   try {
-    journeys = await getJourneys();
+    const { data } = await createPublicClient()
+      .from("journeys")
+      .select("*, journey_days(*)")
+      .order("created_at", { ascending: true });
+    const now = Date.now();
+    journeys = ((data ?? []) as JourneyRow[]).filter((j) => {
+      const status = j.status || "published";
+      if (status === "published") return true;
+      return status === "scheduled" && Boolean(j.scheduled_publish_at) && new Date(j.scheduled_publish_at!).getTime() <= now;
+    });
   } catch {
     journeys = [];
   }
