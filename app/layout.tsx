@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DialogHost } from "@/components/dialog";
 import TopProgress from "@/components/TopProgress";
+import { SITE_URL } from "@/lib/email/templates";
 
 /* Design System v2: Hedvig Letters Serif (headings) + Instrument Sans (text).
    The wordmark uses Instrument Sans + Hedvig Letters Serif (see ds.css).
@@ -28,6 +29,7 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "HumanSoul", template: "%s · HumanSoul" },
   description: "A quiet place to notice yourself, record your journal, and explore guided journeys of personal growth.",
   applicationName: "HumanSoul",

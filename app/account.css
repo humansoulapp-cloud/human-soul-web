@@ -261,3 +261,18 @@
   .ac-pwbox { padding: 4px 0 12px; }
   .ac-pwbox .ac-g2 { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Feedback: one card with the form */
+.fb-lay { margin-top: 24px; }
+.fb-form { display: flex; flex-direction: column; gap: 16px; }
+.fb-kinds { align-self: flex-start; flex-wrap: wrap; background: var(--fill); box-shadow: none; }
+.fb-kinds button[aria-checked="true"] { background: var(--card); color: var(--foreground); box-shadow: var(--shadow-sm); }
+.fb-msg { width: 100%; min-height: 168px; padding: 14px 16px; border: 0; border-radius: 16px; background: var(--fill); color: var(--foreground); font: 400 16px/24px var(--ac-sans); resize: vertical; }
+.fb-msg::placeholder { color: var(--muted-foreground); }
+.fb-msg:focus { outline: 2px solid var(--primary); outline-offset: 0; }
+.fb-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.fb-done { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 14px; align-items: start; }
+.fb-done > svg { color: var(--primary); margin-top: 2px; }
+.fb-done b { display: block; font: 600 17px/24px var(--ac-sans); }
+.fb-done span { display: block; margin-top: 2px; font: 400 15px/22px var(--ac-sans); color: var(--muted-foreground); }
+.fb-done .ac-btn { grid-column: 2; justify-self: start; margin-top: 16px; }

@@ -8,12 +8,15 @@ export async function sendEmail({
   html,
   text,
   tag,
+  replyTo,
 }: {
   to: string;
   subject: string;
   html: string;
   text: string;
   tag?: string;
+  /** Where replies go, e.g. the person who sent feedback. */
+  replyTo?: string;
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY is not set" };
@@ -28,6 +31,7 @@ export async function sendEmail({
       html,
       text,
       ...(tag ? { tags: [{ name: "type", value: tag }] } : {}),
+      ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   });
 
