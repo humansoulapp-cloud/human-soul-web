@@ -31,7 +31,7 @@ export async function stripe<T = Record<string, unknown>>(method: "GET" | "POST"
   const url = method === "GET" && body ? `${API}${path}?${body}` : `${API}${path}`;
   const res = await fetch(url, {
     method,
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Stripe-Version": "2024-06-20" },
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Stripe-Version": "2025-03-31.basil" },
     body: method === "POST" ? body : undefined,
     cache: "no-store",
   });
@@ -58,9 +58,10 @@ export type StripeSubscription = {
   customer: string;
   status: string;
   cancel_at_period_end: boolean;
-  current_period_end: number;
+  /** Since API 2025-03-31.basil the billing period lives on each item. */
+  current_period_end?: number;
   metadata: Record<string, string>;
-  items: { data: { price: { unit_amount: number | null } }[] };
+  items: { data: { current_period_end?: number; price: { unit_amount: number | null } }[] };
 };
 
 export type StripeCheckoutSession = {

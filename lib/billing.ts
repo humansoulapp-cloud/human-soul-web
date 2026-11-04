@@ -25,6 +25,7 @@ export async function syncSubscription(sub: StripeSubscription, userIdHint?: str
   if (!userId) return;
 
   const active = ACTIVE.has(sub.status);
+  const periodEnd = sub.items?.data?.[0]?.current_period_end ?? sub.current_period_end ?? null;
   const { data: existing } = await service.from("subscriptions").select("first_paid_at").eq("user_id", userId).maybeSingle();
   const row = {
     user_id: userId,
@@ -33,7 +34,7 @@ export async function syncSubscription(sub: StripeSubscription, userIdHint?: str
     status: sub.status,
     price_cents: sub.items?.data?.[0]?.price?.unit_amount ?? null,
     tier: sub.metadata?.tier ? Number(sub.metadata.tier) : null,
-    current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+    current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
     cancel_at_period_end: Boolean(sub.cancel_at_period_end),
     first_paid_at: existing?.first_paid_at ?? (active ? new Date().toISOString() : null),
     updated_at: new Date().toISOString(),
