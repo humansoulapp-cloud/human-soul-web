@@ -22,8 +22,10 @@ export async function getLaunchOffer() {
   return launchOffer(await foundingSales());
 }
 
-/** Opens Stripe Checkout for a yearly subscription at the current launch price. */
-export async function startCheckout(): Promise<{ error: string } | never> {
+type Prepared = { error: string } | { params: Record<string, unknown> };
+
+/** Who is paying and at what price; null error means they can go ahead. */
+async function prepareCheckout(): Promise<Prepared> {
   const user = await signedIn();
   if (!stripeReady()) return { error: "Payments aren't switched on yet. Please try again soon." };
 
@@ -32,9 +34,8 @@ export async function startCheckout(): Promise<{ error: string } | never> {
   const { data: existing } = await service.from("subscriptions").select("stripe_customer_id, status").eq("user_id", user.id).maybeSingle();
   if (existing && ["active", "past_due", "trialing"].includes(existing.status as string)) redirect("/dashboard");
 
-  let url: string;
-  try {
-    const session = await stripe<{ url: string }>("POST", "/checkout/sessions", {
+  return {
+    params: {
       mode: "subscription",
       client_reference_id: user.id,
       ...(existing?.stripe_customer_id ? { customer: existing.stripe_customer_id } : { customer_email: user.email }),
@@ -55,6 +56,34 @@ export async function startCheckout(): Promise<{ error: string } | never> {
       metadata: { user_id: user.id, tier: offer.tier },
       subscription_data: { metadata: { user_id: user.id, tier: offer.tier } },
       allow_promotion_codes: true,
+    },
+  };
+}
+
+/** Payment inside /join: Stripe's embedded form. Returns the secret the page mounts it with. */
+export async function createEmbeddedCheckout(): Promise<{ error: string } | { clientSecret: string }> {
+  const prepared = await prepareCheckout();
+  if ("error" in prepared) return prepared;
+  try {
+    const session = await stripe<{ client_secret: string }>("POST", "/checkout/sessions", {
+      ...prepared.params,
+      ui_mode: "embedded",
+      return_url: `${SITE_URL}/join/done?session_id={CHECKOUT_SESSION_ID}`,
+    });
+    return { clientSecret: session.client_secret };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Checkout couldn't open. Please try again." };
+  }
+}
+
+/** Fallback: Stripe's hosted checkout page (used when no publishable key is set). */
+export async function startCheckout(): Promise<{ error: string } | never> {
+  const prepared = await prepareCheckout();
+  if ("error" in prepared) return prepared;
+  let url: string;
+  try {
+    const session = await stripe<{ url: string }>("POST", "/checkout/sessions", {
+      ...prepared.params,
       success_url: `${SITE_URL}/join/done?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/join`,
     });

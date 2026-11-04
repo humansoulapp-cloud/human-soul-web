@@ -123,3 +123,10 @@
 .au-inc .ai { flex: none; margin-top: 3px; color: var(--primary); }
 .au-form .au-inc + .au-err, .au-form .au-inc ~ .au-btn { margin-top: 28px; }
 .au-secure { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; font-size: 14px; }
+/* Join: Stripe's form inside the page */
+.au-form:has(.au-pay) { max-width: 480px; justify-content: flex-start; }
+.au-pay { display: flex; flex-direction: column; text-align: left; }
+.au-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 0; background: none; color: var(--muted-foreground); font: 500 14px/20px var(--hs-font-sans); cursor: pointer; }
+.au-back:hover { color: var(--foreground); }
+.au-pay-h { margin-top: 20px; text-align: left; }
+.au-pay-frame { margin-top: 24px; min-height: 120px; border-radius: 16px; overflow: hidden; }
