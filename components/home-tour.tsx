@@ -272,7 +272,7 @@ export default function HomeTour({
     if (rect.top > vh - 160) {
       /* Phone, target in the bottom bar: the card sits just above it and points down at it. */
       docked = false;
-      pos = { left: 12, right: 12, bottom: vh - rect.top + pad + 14 };
+      pos = { left: 12, right: 12, bottom: vh - rect.top + pad + 22 };
       arrow = { bottom: -7, left: Math.max(20, Math.min(vw - 60, rect.left + rect.width / 2 - 20)) };
     } else if (spot && cardH) {
       /* Phone, target in the page: the card is docked at the bottom and only the part above it stays lit. */
