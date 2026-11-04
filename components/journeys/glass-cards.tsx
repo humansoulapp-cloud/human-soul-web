@@ -45,7 +45,9 @@ export function JourneyProgressCard({
     <article className={`gl-card ${variant}`} aria-label={started ? "Continue your journey" : "Start a journey"}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="gl-bg" src={image} alt="" />
-      <div className="gl-pblur" aria-hidden="true" />
+      {/* A blurred copy of the photo, not a backdrop blur: it covers the card right to its edges. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="gl-pblur" src={image} alt="" aria-hidden="true" />
       <div className="gl-scrim" aria-hidden="true" />
       {variant === "wide" ? (
         <span className="gl-state">
@@ -114,7 +116,9 @@ export function CatalogCard({
     <article className="ct-card">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="ct-bg" src={image} alt="" loading="lazy" />
-      <div className="ct-pblur" aria-hidden="true" />
+      {/* A blurred copy of the photo, not a backdrop blur: it covers the card right to its edges. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="ct-pblur" src={image} alt="" aria-hidden="true" loading="lazy" />
       <div className="ct-scrim" aria-hidden="true" />
       {featured || premium ? (
         <div className="ct-top">
