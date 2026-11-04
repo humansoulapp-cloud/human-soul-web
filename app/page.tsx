@@ -23,6 +23,7 @@ import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
 import BetaRequest from "@/components/landing/BetaRequest";
 import { getBetaSeats } from "@/lib/actions/beta";
+import { createServiceClient } from "@/lib/supabase/service";
 import "./landing.css";
 
 export const revalidate = 60;
@@ -88,7 +89,23 @@ export default async function LandingPage() {
   const featuredCategory = featured?.category ?? "Human Soul Foundations";
   const featuredDays = featured ? daysOf(featured) || 7 : 7;
   // The phone mock-up shows a real day from "What makes a life meaningful" when it's in the library.
-  const phoneJourney = journeys.find((j) => /meaningful/i.test(j.title)) ?? featured;
+  // Matched loosely (the title may be spelled "meanful") and read with the service client, so it shows even if it isn't published yet.
+  const isPhoneJourney = (t?: string) => /life/i.test(t ?? "") && /mean/i.test(t ?? "");
+  let phoneJourney: JourneyRow | undefined = journeys.find((j) => isPhoneJourney(j.title));
+  if (!phoneJourney) {
+    try {
+      const { data } = await createServiceClient()
+        .from("journeys")
+        .select("*, journey_days(*)")
+        .ilike("title", "%life%")
+        .ilike("title", "%mean%")
+        .limit(1);
+      phoneJourney = (data?.[0] as JourneyRow | undefined) ?? undefined;
+    } catch {
+      phoneJourney = undefined;
+    }
+  }
+  phoneJourney = phoneJourney ?? featured;
   const phoneDays = phoneJourney ? [...(phoneJourney.journey_days ?? [])].sort((a, b) => a.day - b.day) : [];
   const phoneDay = phoneDays.find((d) => d.day === 3) ?? phoneDays[0];
   const firstSentences = (text?: string) => {
