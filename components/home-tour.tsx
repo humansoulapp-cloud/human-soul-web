@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
@@ -55,9 +56,10 @@ export default function HomeTour({
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [selected, setSelected] = useState<string | null>(pickedId ?? candidates[0]?.id ?? null);
+  const [cardH, setCardH] = useState(0);
   const card = useRef<HTMLDivElement>(null);
 
-  const steps: Step[] = [
+  const allSteps: Step[] = [
     ...(hasJourney || candidates.length === 0 ? [] : [{ kind: "pick" } as Pick]),
     {
       kind: "spot",
@@ -89,7 +91,19 @@ export default function HomeTour({
     },
   ];
 
-  /* Open for everyone who hasn't finished or skipped it, or when asked with ?tour=1. */
+  const find = useCallback((s: Step) => {
+    if (s.kind !== "spot" || typeof document === "undefined") return null;
+    for (const sel of s.target) {
+      for (const el of Array.from(document.querySelectorAll<HTMLElement>(sel))) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden") return el;
+      }
+    }
+    return null;
+  }, []);
+
+  /* Only steps that point at something on this screen: on a phone the Reflect button isn't there, so that step goes. */
+  const steps: Step[] = open ? allSteps.filter((s) => s.kind === "pick" || find(s)) : allSteps;
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const asked = params.get("tour") === "1";
@@ -101,37 +115,41 @@ export default function HomeTour({
     if (!selected && candidates[0]) setSelected(pickedId ?? candidates[0].id);
   }, [candidates, pickedId, selected]);
 
-  const find = useCallback((s: Step) => {
-    if (s.kind !== "spot") return null;
-    for (const sel of s.target) {
-      for (const el of Array.from(document.querySelectorAll<HTMLElement>(sel))) {
-        const r = el.getBoundingClientRect();
-        if (r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden") return el;
-      }
-    }
-    return null;
-  }, []);
-
   const measure = useCallback(() => {
-    const el = find(steps[i]);
+    const st = steps[Math.min(i, steps.length - 1)];
+    const el = st ? find(st) : null;
     setRect(el ? el.getBoundingClientRect() : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i, find, journeyTitle, hasJourney]);
+  }, [i, find, journeyTitle, hasJourney, steps.length]);
 
   useLayoutEffect(() => {
     if (!open) return;
-    const el = find(steps[i]);
+    const st = steps[Math.min(i, steps.length - 1)];
+    const el = st ? find(st) : null;
     if (el) {
       const r = el.getBoundingClientRect();
-      const fixed = getComputedStyle(el).position === "fixed" || el.closest(".hs-topbar");
-      if (!fixed && (r.top < 80 || r.bottom > window.innerHeight - 260)) {
-        window.scrollTo({ top: window.scrollY + r.top - 120, behavior: "instant" as ScrollBehavior });
+      const fixed = getComputedStyle(el).position === "fixed" || el.closest(".hs-topbar, .hs-bottombar");
+      if (!fixed) {
+        if (window.innerWidth < 640) {
+          /* Phone: the target goes just under the top bar, so the card docked below never covers it. */
+          const bar = document.querySelector<HTMLElement>(".hs-topbar")?.getBoundingClientRect().height ?? 0;
+          window.scrollTo({ top: window.scrollY + r.top - bar - 16, behavior: "instant" as ScrollBehavior });
+        } else if (r.top < 80 || r.bottom > window.innerHeight - 260) {
+          window.scrollTo({ top: window.scrollY + r.top - 120, behavior: "instant" as ScrollBehavior });
+        }
       }
     }
     measure();
-    card.current?.focus();
+    card.current?.focus({ preventScroll: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, i]);
+
+  /* The card's height decides how much of a tall target stays lit above it on a phone. */
+  useLayoutEffect(() => {
+    if (!open || !card.current) return;
+    const h = card.current.offsetHeight;
+    if (h !== cardH) setCardH(h);
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -176,6 +194,7 @@ export default function HomeTour({
 
   if (!open) return null;
 
+  if (steps.length === 0) return null;
   const s = steps[Math.min(i, steps.length - 1)];
   const last = i >= steps.length - 1;
   const counter = (
@@ -191,7 +210,7 @@ export default function HomeTour({
 
   /* ── Step 1 without a journey: choose it ── */
   if (s.kind === "pick") {
-    return (
+    return createPortal(
       <div className="ht" role="presentation">
         <div className="ht-scrim" />
         <div ref={card} className="ht-card ht-pick" role="dialog" aria-modal="true" aria-labelledby="ht-t" aria-describedby="ht-p" tabIndex={-1}>
@@ -231,7 +250,8 @@ export default function HomeTour({
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body,
     );
   }
 
@@ -245,6 +265,21 @@ export default function HomeTour({
 
   let pos: React.CSSProperties = {};
   let arrow: React.CSSProperties | null = null;
+  let spot = rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null;
+  let docked = mobile || !rect;
+  if (rect && mobile) {
+    const gap = 12;
+    if (rect.top > vh - 160) {
+      /* Phone, target in the bottom bar: the card sits just above it and points down at it. */
+      docked = false;
+      pos = { left: 12, right: 12, bottom: vh - rect.top + pad + 14 };
+      arrow = { bottom: -7, left: Math.max(20, Math.min(vw - 60, rect.left + rect.width / 2 - 20)) };
+    } else if (spot && cardH) {
+      /* Phone, target in the page: the card is docked at the bottom and only the part above it stays lit. */
+      const limit = vh - cardH - gap - pad - 12;
+      spot = { ...spot, height: Math.max(48, Math.min(spot.height, limit - spot.top)) };
+    }
+  }
   if (rect && !mobile) {
     const below = vh - rect.bottom > 260 || rect.top < 260;
     const left = Math.max(16, Math.min(vw - W - 16, rect.left + rect.width / 2 - W / 2));
@@ -258,20 +293,21 @@ export default function HomeTour({
     }
   }
 
-  return (
+  return createPortal(
     <div className="ht" role="presentation">
-      {rect ? (
+      {spot ? (
         <div
           className="ht-spot"
-          style={{ top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, borderRadius: Math.min(28, rect.height / 2 + pad) }}
+          style={{ top: spot.top - pad, left: spot.left - pad, width: spot.width + pad * 2, height: spot.height + pad * 2, borderRadius: Math.min(28, spot.height / 2 + pad) }}
         />
       ) : (
         <div className="ht-scrim" />
       )}
       <div
+        key={i}
         ref={card}
-        className={`ht-card${mobile || !rect ? " sheet" : ""}`}
-        style={mobile || !rect ? undefined : { ...pos, width: W }}
+        className={`ht-card${docked ? " sheet" : ""}`}
+        style={docked ? undefined : mobile ? pos : { ...pos, width: W }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="ht-t"
@@ -315,6 +351,7 @@ export default function HomeTour({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
