@@ -11,7 +11,6 @@ import {
   Heart,
   Lock,
   PenLine,
-  Play,
   Repeat,
   Search,
   Shield,
@@ -378,15 +377,6 @@ export default async function LandingPage() {
                   <div className="ds-t serif">Among Other People</div>
                   <p>No one experiences life entirely alone. Even quiet lives are shaped by other people: family, friends, strangers.</p>
                   <p>Think about one interaction that stayed with you recently. Rather than what the other person did, notice your own experience.</p>
-                  <div className="listen">
-                    <i>
-                      <Play size={12} fill="currentColor" />
-                    </i>
-                    <div className="bar">
-                      <b />
-                    </div>
-                    <span>2:14</span>
-                  </div>
                   <div className="ds-why">
                     <b style={{ color: "var(--foreground)", fontWeight: 600 }}>Today&apos;s intention.</b> Our
                     relationships become part of how we understand ourselves.
