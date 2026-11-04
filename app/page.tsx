@@ -18,7 +18,6 @@ import {
   Sun,
 } from "lucide-react";
 import type { JourneyRow } from "@/lib/actions/journeys";
-import { createPublicClient } from "@/lib/supabase/public";
 import { journeyImage } from "@/lib/journey-images";
 import LandingFaq from "@/components/landing-faq";
 import LandingMotion from "@/components/landing/LandingMotion";
@@ -60,8 +59,10 @@ function daysOf(j: JourneyRow) {
 export default async function LandingPage() {
   let journeys: JourneyRow[] = [];
   // No cookies here: reading them inside try/catch made the static render throw and fall back to an empty library.
+  // Read with the service client (server only): an older journeys rule in Supabase checks profiles, which signed-out
+  // visitors can't read, so the anonymous read failed and the library vanished. Only published rows are kept below.
   try {
-    const { data } = await createPublicClient()
+    const { data } = await createServiceClient()
       .from("journeys")
       .select("*, journey_days(*)")
       .order("created_at", { ascending: true });
@@ -151,12 +152,9 @@ export default async function LandingPage() {
             <a href="#beta">Beta</a>
           </nav>
           <div className="nav-r">
-            <Link className="signin" href="/sign-in">
+            <Link className="btn btn-pri" href="/sign-in">
               Sign in
             </Link>
-            <a className="btn btn-pri" href={ctaHref}>
-              {ctaLabel}
-            </a>
           </div>
         </div>
       </header>

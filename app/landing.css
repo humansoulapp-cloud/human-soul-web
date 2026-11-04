@@ -340,7 +340,12 @@
   .lp .lede{font-size:17px;line-height:28px}
   .lp .ctas{flex-direction:column;align-items:stretch;padding:0 8px}
   .lp .sec{padding:80px 16px 0}
-  .lp .ben,.lp .steps,.lp .lib,.lp .price,.lp .strip,.lp .mb-grid{grid-template-columns:1fr}
+  .lp .ben,.lp .steps,.lp .price,.lp .strip,.lp .mb-grid{grid-template-columns:1fr}
+  /* Library as a swipeable carousel: snap per card, the next one peeks in */
+  .lp .lib{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:40px -16px 0;padding:0 16px 4px;scroll-padding:0 16px;scrollbar-width:none}
+  .lp .lib::-webkit-scrollbar{display:none}
+  .lp .lib .lc{flex:none;width:78%;scroll-snap-align:start}
+  .lp .lib .lc:hover{transform:none}
   .lp .stage{padding:20px;min-height:0;flex-direction:column;gap:16px}
   .lp .fl-lock{position:static;align-self:flex-start}
   .lp .ds{grid-template-columns:1fr}
