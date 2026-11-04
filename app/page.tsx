@@ -5,20 +5,16 @@ import {
   BookOpen,
   Camera,
   Check,
-  Clock,
   Compass,
   Download,
   Eye,
   Heart,
-  Layers,
-  Leaf,
   Lock,
   PenLine,
   Play,
   Repeat,
   Search,
   Shield,
-  Smartphone,
   Sparkles,
   Sun,
 } from "lucide-react";
@@ -107,9 +103,8 @@ export default async function LandingPage() {
             <Wordmark />
           </Link>
           <nav className="links" aria-label="Main">
-            <a href="#how">How it works</a>
             <a href="#journeys">Journeys</a>
-            <a href="#privacy">Privacy</a>
+            <a href="#journal">Journal</a>
             <a href="#beta">Beta</a>
           </nav>
           <div className="nav-r">
@@ -139,7 +134,7 @@ export default async function LandingPage() {
               <a className="btn btn-pri btn-lg" href={ctaHref}>
                 {ctaLabel}
               </a>
-              <a className="btn btn-sec btn-lg" href="#how">
+              <a className="btn btn-sec btn-lg" href="#journeys">
                 See how it works
               </a>
             </div>
@@ -273,27 +268,6 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <div className="w strip">
-          {[
-            [Lock, "Private by default", "Only you can read it"],
-            [PenLine, "Read, then write", "At your own pace"],
-            [Repeat, "No streaks, no scores", "Nothing to keep up with"],
-            [Smartphone, "Phone and desktop", "Your journal, everywhere"],
-          ].map(([Icon, t, s], i) => {
-            const I = Icon as typeof Lock;
-            return (
-              <div className="pr" key={t as string} data-reveal="" style={{ ["--d" as string]: i }}>
-                <span className="pr-i">
-                  <I size={20} aria-hidden="true" />
-                </span>
-                <div>
-                  <b>{t as string}</b>
-                  <span>{s as string}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
         <section className="sec" id="journeys">
           <div className="w feat">
@@ -531,9 +505,6 @@ export default async function LandingPage() {
               {[
                 [Sun, "Notice the everyday", "A conversation, a passing thought, or a small moment you might otherwise overlook."],
                 [Repeat, "Recognize familiar patterns", "An opportunity to notice habits, reactions, and ways of thinking without needing to change them."],
-                [Clock, "Find your own rhythm", "Whenever it suits you. No schedule to keep or progress to measure."],
-                [Layers, "Make room for mixed feelings", "Not everything you experience needs to make sense or fit into a simple explanation."],
-                [Eye, "Consider another perspective", "An opportunity to look at familiar situations, beliefs, or experiences from a different angle."],
                 [Compass, "Explore what matters to you", "Space to reflect on your values, relationships, and choices, without being told what they should mean."],
               ].map(([Icon, t, s], i) => {
                 const I = Icon as typeof Sun;
@@ -604,29 +575,6 @@ export default async function LandingPage() {
           </section>
         )}
 
-        <section className="sec" id="how">
-          <div className="w">
-            <div className="sec-head" data-reveal="">
-              <span className="over">
-                How it works
-              </span>
-              <h2 className="h2 serif">A simple way to begin</h2>
-            </div>
-            <div className="steps">
-              {[
-                ["Choose a journey", "Explore the library and choose a subject that interests you."],
-                ["Read, reflect, write", "Begin with a short reading, explore the day's questions, and write what comes to mind. Go deeper if you want."],
-                ["Continue at your own pace", "Each new day becomes available when you complete the previous one. Take your time, and return whenever you're ready."],
-              ].map(([t, s], i) => (
-                <div className="st" key={t} data-reveal="" style={{ ["--d" as string]: i }}>
-                  <span className="st-n">{i + 1}</span>
-                  <b>{t}</b>
-                  <span>{s}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <section className="sec" id="privacy">
           <div className="w priv" data-reveal="">
@@ -676,72 +624,6 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <section className="sec" id="membership">
-          <div className="w">
-            <div className="sec-head" data-reveal="">
-              <span className="over">
-                Membership benefits
-              </span>
-              <h2 className="h2 serif">Your membership gives you space to keep exploring.</h2>
-              <p className="sub">
-                HumanSoul isn&apos;t something you finish in a weekend. It&apos;s a growing collection of
-                opportunities to pause and reflect on different parts of your life.
-              </p>
-            </div>
-            <p className="mb-lead">With membership, you get:</p>
-            <div className="mb">
-              <div className="mb-hero" data-reveal="">
-                <img src="/landing/membership.jpg" alt="" loading="lazy" />
-                <div className="mb-glass">
-                  <span className="mb-i">
-                    <BookOpen className="ai" size={18} aria-hidden="true" />
-                  </span>
-                  <b>Full access to the HumanSoul Library</b>
-                  <span>Explore the collection of guided 7-day journeys. One journey unlocked at a time.</span>
-                </div>
-              </div>
-              <div className="mb-grid">
-                <div className="mb-t" data-reveal="">
-                  <span className="mb-i">
-                    <Compass className="ai" size={18} aria-hidden="true" />
-                  </span>
-                  <b>New perspectives to explore</b>
-                  <span>
-                    Move between different areas of the human experience depending on what you&apos;re curious
-                    about.
-                  </span>
-                </div>
-                <div className="mb-t" data-reveal="" style={{ ["--d" as string]: 1 }}>
-                  <span className="mb-i">
-                    <Lock className="ai" size={18} aria-hidden="true" />
-                  </span>
-                  <b>A private place to write</b>
-                  <span>Keep your reflections in one place as you move through your journeys.</span>
-                </div>
-                <div className="mb-t" data-reveal="">
-                  <span className="mb-i">
-                    <PenLine className="ai" size={18} aria-hidden="true" />
-                  </span>
-                  <b>Create your own journals</b>
-                  <span>
-                    Make room for whatever is on your mind. Write freely, without prompts, prescribed topics, or
-                    a particular direction.
-                  </span>
-                </div>
-                <div className="mb-t" data-reveal="" style={{ ["--d" as string]: 1 }}>
-                  <span className="mb-i">
-                    <Leaf className="ai" size={18} aria-hidden="true" />
-                  </span>
-                  <b>A space that grows with you</b>
-                  <span>
-                    Return whenever you want to explore something new, or revisit something that still feels
-                    relevant.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section className="sec" id="beta">
           <div className="w bt">

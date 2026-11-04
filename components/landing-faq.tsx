@@ -30,8 +30,8 @@ const FAQS: [string, React.ReactNode][] = [
     </>,
   ],
   [
-    "Can I cancel my membership?",
-    "Yes. You can cancel your paid membership at any time through your account settings.",
+    "What happens when the beta ends?",
+    "Nothing you've written is deleted. Your journal stays yours, and you'll hear from us before your 90 days are up.",
   ],
   [
     "Will new journeys be added?",
