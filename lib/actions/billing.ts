@@ -45,7 +45,10 @@ export async function startCheckout(): Promise<{ error: string } | never> {
             currency: "usd",
             unit_amount: offer.cents,
             recurring: { interval: "year" },
-            product_data: { name: `HumanSoul · ${offer.name}` },
+            // The price people see is what they pay: taxes are included, not added on top.
+            tax_behavior: "inclusive",
+            // Software as a service, personal use (required by Stripe Managed Payments, which handles sales tax and VAT).
+            product_data: { name: `HumanSoul · ${offer.name}`, tax_code: "txcd_10103000" },
           },
         },
       ],
