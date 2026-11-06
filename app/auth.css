@@ -130,3 +130,4 @@
 .au-back:hover { color: var(--foreground); }
 .au-pay-h { margin-top: 20px; text-align: left; }
 .au-pay-frame { margin-top: 24px; min-height: 120px; border-radius: 16px; overflow: hidden; }
+.au-next { margin: 12px 0 0; text-align: center; font: 400 13px/18px var(--hs-font-sans); color: var(--muted-foreground); }

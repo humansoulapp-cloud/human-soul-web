@@ -105,11 +105,9 @@ export default function JoinForm({ price, left, nextPrice }: { price: string; le
         <>
           <h1 className="au-h">{price} for your first year</h1>
           <p className="au-p">
-            {left !== null && nextPrice ? (
+            {left !== null ? (
               <>
                 <b>{left} spots left</b> at this price.
-                <br />
-                After that, the first year is {nextPrice}.
               </>
             ) : (
               "Full access to HumanSoul for a year."
@@ -135,6 +133,8 @@ export default function JoinForm({ price, left, nextPrice }: { price: string; le
             {pending ? "Opening secure checkout…" : "Continue to payment"}
             {!pending && <ArrowRight size={16} aria-hidden="true" />}
           </button>
+
+          {left !== null && nextPrice && <p className="au-next">After that, the first year is {nextPrice}.</p>}
 
           <p className="au-alt au-secure">
             <Lock size={14} aria-hidden="true" />
